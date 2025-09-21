@@ -113,6 +113,10 @@ if (__DARWIN__) {
   require('../lib/fix-emoji-spacing')
 }
 
+if (__FLATPAK__) {
+  process.env['LD_LIBRARY_PATH'] = '/app/lib'
+}
+
 let currentState: IAppState | null = null
 
 const sendErrorWithContext = (
