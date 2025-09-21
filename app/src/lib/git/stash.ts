@@ -142,7 +142,8 @@ export function createDesktopStashMessage(branchName: string) {
 export async function createDesktopStashEntry(
   repository: Repository,
   branch: Branch | string,
-  untrackedFilesToStage: ReadonlyArray<WorkingDirectoryFileChange>
+  untrackedFilesToStage: ReadonlyArray<WorkingDirectoryFileChange>,
+  isStashAllChanges: boolean
 ): Promise<boolean> {
   // We must ensure that no untracked files are present before stashing
   // See https://github.com/desktop/desktop/pull/8085
@@ -155,13 +156,10 @@ export async function createDesktopStashEntry(
 
   const branchName = typeof branch === 'string' ? branch : branch.name
   const message = createDesktopStashMessage(branchName)
-  const args = [
-    'stash',
-    'push',
-    '-m',
-    message,
-    ...fullySelectedUntrackedFiles.map(x => x.path),
-  ]
+  const args = ['stash', 'push', '-m', message]
+  if (!isStashAllChanges) {
+    args.push(...fullySelectedUntrackedFiles.map(x => x.path))
+  }
 
   const result = await git(args, repository.path, 'createStashEntry').catch(
     e => {

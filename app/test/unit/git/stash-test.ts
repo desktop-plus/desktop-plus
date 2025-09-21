@@ -74,7 +74,7 @@ describe('git/stash', () => {
         'just testing stuff'
       )
 
-      await createDesktopStashEntry(repository, 'master', [])
+      await createDesktopStashEntry(repository, 'master', [], true)
 
       const stash = await getStashes(repository)
       const entries = stash.desktopEntries
@@ -98,7 +98,7 @@ describe('git/stash', () => {
         f => f.status.kind === AppFileStatusKind.Untracked
       )
 
-      await createDesktopStashEntry(repository, 'master', untrackedFiles)
+      await createDesktopStashEntry(repository, 'master', untrackedFiles, true)
 
       status = await getStatusOrThrow(repository)
       files = status.workingDirectory.files

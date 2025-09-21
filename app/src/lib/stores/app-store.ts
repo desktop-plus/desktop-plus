@@ -7314,7 +7314,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     const { workingDirectory } = changesState
     const untrackedFiles = getUntrackedFiles(workingDirectory)
 
-    return createDesktopStashEntry(repository, branch, untrackedFiles)
+    return createDesktopStashEntry(repository, branch, untrackedFiles, true)
   }
 
   private async createStashEntries(
@@ -7344,10 +7344,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
         ) === -1
     )
 
-    return createDesktopStashEntry(repository, branch, [
-      ...files,
-      ...stashPoppedFiles,
-    ])
+    return createDesktopStashEntry(
+      repository,
+      branch,
+      [...files, ...stashPoppedFiles],
+      false
+    )
   }
 
   /** This shouldn't be called directly. See `Dispatcher`. */
