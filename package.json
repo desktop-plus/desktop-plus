@@ -158,7 +158,7 @@
     "@types/webpack-merge": "^5.0.0",
     "@types/xml2js": "^0.4.11",
     "diff": "^7.0.0",
-    "electron": "38.1.0",
+    "electron": "37.5.1",
     "electron-builder": "^25.1.8",
     "electron-packager": "^17.1.1",
     "electron-winstaller": "^5.0.0",

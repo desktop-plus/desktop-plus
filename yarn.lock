@@ -3459,10 +3459,10 @@ electron-winstaller@*, electron-winstaller@^5.0.0:
     lodash.template "^4.2.2"
     temp "^0.9.0"
 
-electron@38.1.0:
-  version "38.1.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-38.1.0.tgz#caebed7f3d7b1d43a9d01811db1f62744a753aa4"
-  integrity sha512-ypA8GF8RU4HD5pA1sa0/2U8k+92EPP2c7pX+3XbgB760F7OmqrFXtYkOilVw6HfV4+lk88XxqigmsUKTACQYoQ==
+electron@37.5.1:
+  version "37.5.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-37.5.1.tgz#2f2758f57948f63d853a8c905c55ad8d9cd84ae7"
+  integrity sha512-RqN3dl6I5yhmynkUc3pUzM6qFCvANau3VGRX9xQEh7FYdwmkqVxKXYM5enrE9LW7j7PzHomQQn6+J2xaF7BHsQ==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^22.7.7"
@@ -7821,6 +7821,7 @@ stat-mode@^1.0.0:
   integrity sha512-jH9EhtKIjuXZ2cWxmXS8ZP80XyC3iasQxMDV8jzhNJpfDb7VbQLVW4Wvsxz9QZvzV+G4YoSfBUVKDOyxLzi/sg==
 
 "string-width-cjs@npm:string-width@^4.2.0", "string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.2.0, string-width@^4.2.3:
+  name string-width-cjs
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
