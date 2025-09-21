@@ -2,7 +2,6 @@
 /* eslint-disable no-sync */
 
 import * as Path from 'path'
-import * as Fs from 'fs'
 import { spawnSync, SpawnSyncOptions } from 'child_process'
 
 import glob from 'glob'
@@ -43,19 +42,6 @@ function findYarnVersion(callback: (path: string) => void) {
     // use the latest version here if multiple are found
     callback(forceUnwrap('Missing vendored yarn', files.at(-1)))
   })
-}
-
-function offlineDugite() {
-  const embeddedGitJsonPath = Path.join(
-    root,
-    'app',
-    'node_modules',
-    'dugite',
-    'script',
-    'embedded-git.json'
-  )
-  const embeddedGitJson = Fs.readFileSync(embeddedGitJsonPath, 'utf8')
-  console.log('Embedded Git JSON:', embeddedGitJson)
 }
 
 console.log('---> Running post-install script...')
@@ -99,5 +85,3 @@ findYarnVersion(path => {
     }
   }
 })
-
-offlineDugite()
