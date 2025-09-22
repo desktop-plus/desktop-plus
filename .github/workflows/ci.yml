@@ -164,7 +164,7 @@ jobs:
         with:
           name: ${{matrix.friendlyName}}-${{matrix.arch}}
           path: |
-            dist/GitHub Desktop-${{matrix.arch}}.zip
+            dist/GitHub Desktop Plus-${{matrix.arch}}.zip
             dist/GitHubDesktop-*.nupkg
             dist/GitHubDesktopSetup-${{matrix.arch}}.exe
             dist/GitHubDesktopSetup-${{matrix.arch}}.msi
@@ -211,9 +211,9 @@ jobs:
             mv --verbose "$file" "$new_name"
           done
 
-          # GitHub Desktop-<arch>.zip -> GitHubDesktopPlus-<release_tag>-macOS-<arch>.zip
-          find ./artifacts -type f -name "GitHub Desktop-*.zip" -print0 | while IFS= read -r -d '' file; do
-            new_name=$(echo "$file" | sed -E "s/GitHub Desktop-(.*)\\.zip/GitHubDesktopPlus-${{ env.RELEASE_TAG }}-macOS-\\1.zip/")
+          # GitHub Desktop Plus-<arch>.zip -> GitHubDesktopPlus-<release_tag>-macOS-<arch>.zip
+          find ./artifacts -type f -name "GitHub Desktop Plus-*.zip" -print0 | while IFS= read -r -d '' file; do
+            new_name=$(echo "$file" | sed -E "s/GitHub Desktop Plus-(.*)\\.zip/GitHubDesktopPlus-${{ env.RELEASE_TAG }}-macOS-\\1.zip/")
             mv --verbose "$file" "$new_name"
           done
 
