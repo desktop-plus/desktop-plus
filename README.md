@@ -13,6 +13,7 @@ This is an up-to-date fork of [GitHub Desktop](https://desktop.github.com) for L
 - Red color for destructive action buttons.
 - Add **icons** to some similar-looking buttons for faster visual recognition.
 - Allow generating **branch name presets** by calling an external script (e.g. fetching ticket numbers from an issue tracker). [Click here for more details](docs/branch-name-presets.md).
+- Allow using a **different text editor for a given repo**, by overriding it in the repository settings.
 - **Bitbucket** integration:
   - Preview and create pull requests.
   - View pull requests status, including checks.
@@ -47,7 +48,7 @@ Simply install `github-desktop-plus-bin` from the AUR.
 
 You can also build from source by installing `github-desktop-plus` or `github-desktop-plus-git` from the AUR.
 
-> `gnome-keyring` is required and the daemon must be launched either at login or when the X server is started. Normally this is handled by a display manager, but in other cases following the instructions found on the [Arch Wiki](https://wiki.archlinux.org/index.php/GNOME/Keyring#Using_the_keyring_outside_GNOME) will fix the issue of not being able to save login credentials.
+> `gnome-keyring` is required and the daemon must be launched either at login or when the X server / Wayland compositor is started. Normally this is handled by a display manager, but in other cases following the instructions found on the [Arch Wiki](https://wiki.archlinux.org/index.php/GNOME/Keyring#Using_the_keyring_outside_GNOME) will fix the issue of not being able to save login credentials.
 
 
 ### Debian / Ubuntu
