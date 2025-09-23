@@ -52,8 +52,8 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
-    <release version="3.5.2" date="2025-02-24">
-      <url>https://github.com/desktop/desktop/releases/tag/release-3.5.2</url>
+    <release version="[VERSION]" date="[DATE]">
+      <url>https://github.com/pol-rivero/github-desktop-plus/releases/tag/v[VERSION]</url>
     </release>
   </releases>
 </component>
