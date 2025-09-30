@@ -1,11 +1,13 @@
 #!/bin/bash
 
+# Exit if any command fails
+set -e
+
 cd /app
 
-export FORCE_COLOR=true 
-yarn test:unit || exit 1
-yarn test:eslint || exit 1
-yarn test:script || exit 1
+yarn test:unit
+yarn test:eslint
+yarn test:script
 
 echo '-------------------'
 echo 'All tests passed 🎉'
