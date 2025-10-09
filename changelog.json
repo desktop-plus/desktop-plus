@@ -1,5 +1,15 @@
 {
   "releases": {
+    "3.5.3": [
+      "[Added] Add Ptyxis shell integration - #20963. Thanks @logonoff!",
+      "[Fixed] Copilot message generation in progress message is announced to screen readers - #21008",
+      "[Fixed] Fix: Improve spacing between graphic and text - #7500. Thanks @robbierotman!",
+      "[Fixed] Focus lands on first interactive control instead of 'Continue' button in the conflict resolution dialog - #20880",
+      "[Improved] Upgrade Electron to v38.2.0 - #21060",
+      "[Improved] The text color of the 'File does not exist' merge conflict warning meets 4.5:1 contrast requirements - #20902",
+      "[Improved] Provides the tooltips for list items in a single condensed tooltip that allows keyboard users and screen reader users access upon navigation of a list item - #20804",
+      "[Removed] Remove support for macOS 11 - #21060"
+    ],
     "3.5.3-beta4": ["[Improved] Upgrade Electron to v38.2.0 - #21060"],
     "3.5.3-beta3": [
       "[Fixed] Copilot message generation in progress message is announced to screen readers - #21008",
