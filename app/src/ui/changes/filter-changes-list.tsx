@@ -1163,14 +1163,36 @@ export class FilterChangesList extends React.Component<
       return null
     }
 
+    const className = classNames(
+      'stashed-changes-button',
+      this.props.isShowingStashEntry ? 'selected' : null
+    )
+
+    if (stashEntries.length === 1) {
+      const entry = stashEntries[0]
+      return (
+        <button
+          className={className}
+          onClick={this.onStashEntryClickedFn(entry)}
+          onContextMenu={this.onStashEntryContextMenuFn(entry)}
+          tabIndex={0}
+          aria-expanded={this.props.isShowingStashEntry}
+          aria-controls={
+            this.props.isShowingStashEntry ? StashDiffViewerId : undefined
+          }
+        >
+          <Octicon className="stack-icon" symbol={StashIcon} />
+          <div className="text">1 stash ({entryToString(entry)})</div>
+          <Octicon symbol={octicons.chevronRight} />
+        </button>
+      )
+    }
+
     return (
       <div className="stashed-changes-section">
         <div className="stashed-changes-header">
           <Octicon className="stack-icon" symbol={StashIcon} />
-          <div className="text">
-            {stashEntries.length}{' '}
-            {stashEntries.length === 1 ? 'stash' : 'stashes'}
-          </div>
+          <div className="text">{stashEntries.length} stashes</div>
         </div>
         <div className="stashed-changes-list">
           {stashEntries.map(entry => {
