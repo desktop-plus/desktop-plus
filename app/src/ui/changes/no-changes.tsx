@@ -21,7 +21,7 @@ import {
   ForcePushBranchState,
   getCurrentBranchForcePushState,
 } from '../../lib/rebase'
-import { StashedChangesLoadStates } from '../../models/stash-entry'
+import { IStashEntry, StashedChangesLoadStates } from '../../models/stash-entry'
 import { Dispatcher } from '../dispatcher'
 import { SuggestedActionGroup } from '../suggested-actions'
 import { PreferencesTab } from '../../models/preferences'
@@ -429,28 +429,19 @@ export class NoChanges extends React.Component<
     }
 
     const { stashEntries } = changesState
-    if (stashEntries.length === 0) {
+    const descriptionText = this.getViewStashActionDescription(stashEntries)
+    if (descriptionText === null) {
       return null
     }
-
-    // TODO: Multiple stashes
-    if (stashEntries[0].files.kind !== StashedChangesLoadStates.Loaded) {
-      return null
-    }
-
-    const numChanges = stashEntries[0].files.files.length
-    const description = (
-      <>
-        You have {numChanges} {numChanges === 1 ? 'change' : 'changes'} in
-        progress that you have not yet committed.
-      </>
-    )
+    const description = <>{descriptionText}</>
     const discoverabilityContent = (
       <>
         When a stash exists, access it at the bottom of the Changes tab to the
         left.
       </>
     )
+    const viewStashesText =
+      stashEntries.length === 1 ? 'View stash' : 'View stashes'
     const itemId: MenuIDs = 'toggle-stashed-changes'
     const menuItem = this.getMenuItemInfo(itemId)
     if (menuItem === undefined) {
@@ -465,13 +456,30 @@ export class NoChanges extends React.Component<
         menuItemId={itemId}
         description={description}
         discoverabilityContent={discoverabilityContent}
-        buttonText="View stash"
+        buttonText={viewStashesText}
         icon={stash}
         type="primary"
         disabled={menuItem !== null && !menuItem.enabled}
         onClick={this.onViewStashClicked}
       />
     )
+  }
+
+  private getViewStashActionDescription(stashEntries: readonly IStashEntry[]) {
+    if (stashEntries.length === 0) {
+      return null
+    }
+    if (stashEntries.length > 1) {
+      return `You have ${stashEntries.length} stashes.`
+    }
+
+    const entry = stashEntries[0]
+    if (entry.files.kind !== StashedChangesLoadStates.Loaded) {
+      return null
+    }
+    const numChanges = entry.files.files.length
+    const changesPlural = numChanges === 1 ? 'change' : 'changes'
+    return `You have ${numChanges} ${changesPlural} in progress that you have not yet committed.`
   }
 
   private onViewStashClicked = () =>
