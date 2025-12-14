@@ -8,7 +8,7 @@ This is an **up-to-date** fork of [GitHub Desktop](https://desktop.github.com) f
 | <h4>Commit history search</h4> | <h4>Multiple stashes per branch</h4> |
 | :---: | :---: |
 | ![Commit search](docs/assets/github-desktop-plus-demo-search.webp) | ![Multiple stashes](docs/assets/github-desktop-plus-demo-stashes.webp) |
-| <h4>Indicator for branches missing in the remote</h4> | <h4>Buttons optimized for visual recognition</h4> |
+| <h4>Indicator for missing branches in the remote</h4> | <h4>Buttons optimized for visual recognition</h4> |
 | ![Push indicator](docs/assets/github-desktop-plus-demo-push-indicator.webp) | ![Stash header](docs/assets/github-desktop-plus-demo-stash-header.webp) |
 | <h4>Bitbucket & GitLab integration</h4> | <h4>Indicator for merge commits</h4> |
 | ![Bitbucket integration](docs/assets/github-desktop-plus-demo-bitbucket-integration.webp) | ![Merge commits](docs/assets/github-desktop-plus-demo-merge-commits.webp) |
@@ -24,7 +24,7 @@ This is an **up-to-date** fork of [GitHub Desktop](https://desktop.github.com) f
 - **Bitbucket** and **GitLab** integration:
   - Preview and create pull requests.
   - View pull requests status, including checks.
-  - Display a commit or PR in Bitbucket (web browser).
+  - Display a commit or PR in Bitbucket/GitLab (web browser).
   - Correctly set repository owner (instead of displaying "Other").
 
 ### Repositories list:
