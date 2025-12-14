@@ -6473,6 +6473,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     return this.signInStore.beginBitbucketSignIn(resultCallback)
   }
 
+  public _beginGitLabSignIn(resultCallback?: (result: SignInResult) => void) {
+    return this.signInStore.beginGitLabSignIn(resultCallback)
+  }
+
   public _setSignInEndpoint(url: string): Promise<void> {
     return this.signInStore.setEndpoint(url)
   }
@@ -6964,12 +6968,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return
     }
 
-    const showPrUrl =
-      pr.base.gitHubRepository.type === 'bitbucket'
-        ? `${baseRepoUrl}/pull-requests/${pr.pullRequestNumber}`
-        : `${baseRepoUrl}/pull/${pr.pullRequestNumber}`
+    const SHOW_PR_URL = {
+      github: `${baseRepoUrl}/pull/${pr.pullRequestNumber}`,
+      bitbucket: `${baseRepoUrl}/pull-requests/${pr.pullRequestNumber}`,
+      gitlab: `${baseRepoUrl}/merge_requests/${pr.pullRequestNumber}`,
+    }
 
-    await this._openInBrowser(showPrUrl)
+    const type = pr.base.gitHubRepository.type
+    await this._openInBrowser(SHOW_PR_URL[type])
   }
 
   public async _refreshPullRequests(repository: Repository): Promise<void> {
@@ -7044,7 +7050,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
 
     const { parent, owner, name, htmlURL, type } = gitHubRepository
-    const isBitbucket = type === 'bitbucket'
     const isForkContributingToParent =
       isForkedRepositoryContributingToParent(repository)
 
@@ -7052,12 +7057,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
       isForkContributingToParent && parent !== null
         ? `${parent.owner.login}:${parent.name}:`
         : ''
-    const dots = isBitbucket ? '' : '...'
     const encodedBaseBranch =
       baseBranch !== undefined
-        ? baseForkPreface +
-          encodeURIComponent(baseBranch.nameWithoutRemote) +
-          dots
+        ? baseForkPreface + encodeURIComponent(baseBranch.nameWithoutRemote)
         : ''
 
     const compareForkPreface = isForkContributingToParent
@@ -7070,12 +7072,20 @@ export class AppStore extends TypedBaseStore<IAppState> {
         compareBranch.upstreamWithoutRemote ?? compareBranch.nameWithoutRemote
       )
 
-    const compareString = `${encodedBaseBranch}${encodedCompareBranch}`
-    const baseURL = isBitbucket
-      ? `${htmlURL}/pull-requests/new?source=${encodedCompareBranch}&dest=${encodedBaseBranch}`
-      : `${htmlURL}/pull/new/${compareString}`
+    const param = (name: string, value: string): string => {
+      return value ? encodeURIComponent(name) + '=' + value : ''
+    }
 
-    await this._openInBrowser(baseURL)
+    // prettier-ignore
+    const PR_URLS = {
+      bitbucket:
+        `${htmlURL}/pull-requests/new?${param('source', encodedCompareBranch)}&${param('dest', encodedBaseBranch)}`,
+      github:
+        `${htmlURL}/pull/new/${encodedBaseBranch ? encodedBaseBranch + '...' : ''}${encodedCompareBranch}`,
+      gitlab:
+        `${htmlURL}/merge_requests/new?${param('merge_request[source_branch]', encodedCompareBranch)}&${param('merge_request[target_branch]', encodedBaseBranch)}`,
+    }
+    await this._openInBrowser(PR_URLS[type])
   }
 
   public async _updateExistingUpstreamRemote(

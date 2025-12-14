@@ -6,6 +6,10 @@ const devClientId = '3a723b10ac5575cc5bb9'
 const devClientSecret = '22c34d87789a365981ed921352a7b9a8c3f69d54'
 const devClientIdBitbucket = 'Cu6ZDZgjKEAMEj45cg'
 const devClientSecretBitbucket = 'DYGdmTAJKdk2YsX4Lch5M2ghtCMeCZry'
+const devClientIdGitLab =
+  'a6b3b9c8fb8a782d3a0284ac80378912e44272c4a41465b5b9f5a14a79d5526a'
+const devClientSecretGitLab =
+  'gloas-f3ace006b2563128e25b407fb4eef3583ca2220fc3392ca5311f3cc62076df9c'
 
 const channel = getChannel()
 
@@ -25,6 +29,12 @@ export function getReplacements() {
     __OAUTH_SECRET_BITBUCKET__: s(
       process.env.DESKTOP_OAUTH_CLIENT_SECRET_BITBUCKET ||
         devClientSecretBitbucket
+    ),
+    __OAUTH_CLIENT_ID_GITLAB__: s(
+      process.env.DESKTOP_OAUTH_CLIENT_ID_GITLAB || devClientIdGitLab
+    ),
+    __OAUTH_SECRET_GITLAB__: s(
+      process.env.DESKTOP_OAUTH_CLIENT_SECRET_GITLAB || devClientSecretGitLab
     ),
     __DARWIN__: process.platform === 'darwin',
     __WIN32__: process.platform === 'win32',

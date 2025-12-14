@@ -10,7 +10,7 @@ This is an **up-to-date** fork of [GitHub Desktop](https://desktop.github.com) f
 | ![Commit search](docs/assets/github-desktop-plus-demo-search.webp) | ![Multiple stashes](docs/assets/github-desktop-plus-demo-stashes.webp) |
 | <h4>Indicator for branches missing in the remote</h4> | <h4>Buttons optimized for visual recognition</h4> |
 | ![Push indicator](docs/assets/github-desktop-plus-demo-push-indicator.webp) | ![Stash header](docs/assets/github-desktop-plus-demo-stash-header.webp) |
-| <h4>Bitbucket integration</h4> | <h4>Indicator for merge commits</h4> |
+| <h4>Bitbucket & GitLab integration</h4> | <h4>Indicator for merge commits</h4> |
 | ![Bitbucket integration](docs/assets/github-desktop-plus-demo-bitbucket-integration.webp) | ![Merge commits](docs/assets/github-desktop-plus-demo-merge-commits.webp) |
 
 ## Additional Features in GitHub Desktop Plus
@@ -21,7 +21,7 @@ This is an **up-to-date** fork of [GitHub Desktop](https://desktop.github.com) f
 - Add **icons** to some similar-looking buttons for faster visual recognition.
 - Allow generating **branch name presets** by calling an external script (e.g. fetching ticket numbers from an issue tracker). [Click here for more details](docs/branch-name-presets.md).
 - Allow using a **different text editor for a given repo**, by overriding it in the repository settings.
-- **Bitbucket** integration:
+- **Bitbucket** and **GitLab** integration:
   - Preview and create pull requests.
   - View pull requests status, including checks.
   - Display a commit or PR in Bitbucket (web browser).

@@ -476,6 +476,8 @@ function getViewOnGitHubLabel(gitHubRepository: GitHubRepository) {
         : 'View on GitHub Enterprise'
     case 'bitbucket':
       return 'View on Bitbucket'
+    case 'gitlab':
+      return 'View on GitLab'
     default:
       assertNever(
         gitHubRepository.type,

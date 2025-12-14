@@ -17,6 +17,12 @@ declare const __OAUTH_CLIENT_ID_BITBUCKET__: string | undefined
 /** The OAuth secret the app should use for Bitbucket */
 declare const __OAUTH_SECRET_BITBUCKET__: string | undefined
 
+/** The OAuth client id the app should use for GitLab */
+declare const __OAUTH_CLIENT_ID_GITLAB__: string | undefined
+
+/** The OAuth secret the app should use for GitLab */
+declare const __OAUTH_SECRET_GITLAB__: string | undefined
+
 /** Is the app being built to run on Darwin? */
 declare const __DARWIN__: boolean
 

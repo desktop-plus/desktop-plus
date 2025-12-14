@@ -1,15 +1,12 @@
 import * as React from 'react'
 import { TextBox } from './text-box'
 import { Row } from './row'
-import {
-  Account,
-  isDotComAccount,
-  isEnterpriseAccount,
-} from '../../models/account'
+import { Account, isDotComAccount } from '../../models/account'
 import { Select } from './select'
 import { GitEmailNotFoundWarning } from './git-email-not-found-warning'
 import { getStealthEmailForAccount } from '../../lib/email'
 import memoizeOne from 'memoize-one'
+import { assertNever } from '../../lib/fatal-error'
 
 const OtherEmailSelectValue = 'Other'
 
@@ -171,12 +168,26 @@ export class GitConfigUserForm extends React.Component<
 
     // When the user signed in both accounts, show a suffix to differentiate
     // the origin of each email address
-    const shouldShowAccountType =
-      this.props.accounts.some(isDotComAccount) &&
-      this.props.accounts.some(isEnterpriseAccount)
+    const distinctAccountTypes = new Set<string>()
+    for (const account of this.props.accounts) {
+      distinctAccountTypes.add(account.apiType)
+    }
+    const shouldShowAccountType = distinctAccountTypes.size > 1
 
-    const accountSuffix = (account: Account) =>
-      isDotComAccount(account) ? '(GitHub.com)' : '(GitHub Enterprise)'
+    const accountSuffix = (account: Account) => {
+      switch (account.apiType) {
+        case 'dotcom':
+          return '(GitHub.com)'
+        case 'enterprise':
+          return '(GitHub Enterprise)'
+        case 'bitbucket':
+          return '(Bitbucket)'
+        case 'gitlab':
+          return '(GitLab)'
+        default:
+          assertNever(account.apiType, 'Unknown account apiType')
+      }
+    }
 
     return (
       <Row>

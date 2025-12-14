@@ -1,10 +1,5 @@
 import * as React from 'react'
-import {
-  Account,
-  isBitbucketAccount,
-  isDotComAccount,
-  isEnterpriseAccount,
-} from '../../models/account'
+import { Account } from '../../models/account'
 import { IAvatarUser } from '../../models/avatar'
 import { lookupPreferredEmail } from '../../lib/email'
 import { assertNever } from '../../lib/fatal-error'
@@ -16,6 +11,7 @@ import { CallToAction } from '../lib/call-to-action'
 import {
   enableMultipleEnterpriseAccounts,
   enableBitbucketIntegration,
+  enableGitLabIntegration,
 } from '../../lib/feature-flag'
 import { getHTMLURL } from '../../lib/api'
 
@@ -25,6 +21,7 @@ interface IAccountsProps {
   readonly onDotComSignIn: () => void
   readonly onEnterpriseSignIn: () => void
   readonly onBitbucketSignIn: () => void
+  readonly onGitLabSignIn: () => void
   readonly onLogout: (account: Account) => void
 }
 
@@ -32,13 +29,15 @@ enum SignInType {
   DotCom,
   Enterprise,
   Bitbucket,
+  GitLab,
 }
 
 export class Accounts extends React.Component<IAccountsProps, {}> {
   public render() {
     const { accounts } = this.props
-    const dotComAccount = accounts.find(isDotComAccount)
-    const bitbucketAccount = accounts.find(isBitbucketAccount)
+    const dotComAccount = accounts.find(a => a.apiType === 'dotcom')
+    const bitbucketAccount = accounts.find(a => a.apiType === 'bitbucket')
+    const gitlabAccount = accounts.find(a => a.apiType === 'gitlab')
 
     return (
       <DialogContent className="accounts-tab">
@@ -60,12 +59,23 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
               : this.renderSignIn(SignInType.Bitbucket)}
           </>
         )}
+
+        {enableGitLabIntegration() && (
+          <>
+            <h2>GitLab</h2>
+            {gitlabAccount
+              ? this.renderAccount(gitlabAccount, SignInType.GitLab)
+              : this.renderSignIn(SignInType.GitLab)}
+          </>
+        )}
       </DialogContent>
     )
   }
 
   private renderSingleEnterpriseAccount() {
-    const enterpriseAccount = this.props.accounts.find(isEnterpriseAccount)
+    const enterpriseAccount = this.props.accounts.find(
+      a => a.apiType === 'enterprise'
+    )
 
     return enterpriseAccount
       ? this.renderAccount(enterpriseAccount, SignInType.Enterprise)
@@ -73,7 +83,9 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
   }
 
   private renderMultipleEnterpriseAccounts() {
-    const enterpriseAccounts = this.props.accounts.filter(isEnterpriseAccount)
+    const enterpriseAccounts = this.props.accounts.filter(
+      a => a.apiType === 'enterprise'
+    )
 
     return (
       <>
@@ -110,7 +122,7 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
           <Avatar accounts={this.props.accounts} user={avatarUser} />
           <div className="user-info">
             {enableMultipleEnterpriseAccounts() &&
-            isEnterpriseAccount(account) ? (
+            account.apiType === 'enterprise' ? (
               <>
                 <div className="account-title">
                   {account.name === account.login
@@ -144,6 +156,10 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
 
   private onBitbucketSignIn = () => {
     this.props.onBitbucketSignIn()
+  }
+
+  private onGitLabSignIn = () => {
+    this.props.onGitLabSignIn()
   }
 
   private renderSignIn(type: SignInType) {
@@ -184,6 +200,17 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
           >
             <div>
               Sign in to your Bitbucket account to access your repositories.
+            </div>
+          </CallToAction>
+        )
+      case SignInType.GitLab:
+        return (
+          <CallToAction
+            actionTitle={signInTitle + ' GitLab'}
+            onAction={this.onGitLabSignIn}
+          >
+            <div>
+              Sign in to your GitLab account to access your repositories.
             </div>
           </CallToAction>
         )

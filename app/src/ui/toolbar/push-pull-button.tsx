@@ -31,6 +31,7 @@ import { PushPullButtonDropDown } from './push-pull-button-dropdown'
 import { AriaLiveContainer } from '../accessibility/aria-live-container'
 import { enableResizingToolbarButtons } from '../../lib/feature-flag'
 import { assertNever } from '../../lib/fatal-error'
+import { RepoType } from '../../models/github-repository'
 
 export const DropdownItemClassName = 'push-pull-dropdown-item'
 
@@ -566,7 +567,7 @@ export class PushPullButton extends React.Component<
   }
 
   private publishBranchButton(
-    repoType: 'github' | 'bitbucket' | null,
+    repoType: RepoType | null,
     onClick: () => void,
     shouldNudge: boolean
   ) {
@@ -595,12 +596,14 @@ export class PushPullButton extends React.Component<
     )
   }
 
-  private getToRemoteLabel(repoType: 'github' | 'bitbucket' | null) {
+  private getToRemoteLabel(repoType: RepoType | null) {
     switch (repoType) {
       case 'github':
         return 'to GitHub'
       case 'bitbucket':
         return 'to Bitbucket'
+      case 'gitlab':
+        return 'to GitLab'
       case null:
         return 'to the remote'
       default:

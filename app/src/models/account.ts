@@ -1,6 +1,7 @@
 import {
   getBitbucketAPIEndpoint,
   getDotComAPIEndpoint,
+  getGitLabAPIEndpoint,
   getHTMLURL,
   IAPIEmail,
 } from '../lib/api'
@@ -16,6 +17,8 @@ import {
 export function accountEquals(x: Account, y: Account) {
   return x.endpoint === y.endpoint && x.id === y.id
 }
+
+type AccountAPIType = 'dotcom' | 'enterprise' | 'bitbucket' | 'gitlab'
 
 /**
  * A GitHub account, representing the user found on GitHub The Website or GitHub Enterprise.
@@ -137,8 +140,16 @@ export class Account {
       : new URL(getHTMLURL(this.endpoint)).hostname)
   }
 
-  public get isBitbucketAccount(): boolean {
-    return this.endpoint === getBitbucketAPIEndpoint()
+  public get apiType(): AccountAPIType {
+    if (this.endpoint === getDotComAPIEndpoint()) {
+      return 'dotcom'
+    } else if (this.endpoint === getBitbucketAPIEndpoint()) {
+      return 'bitbucket'
+    } else if (this.endpoint === getGitLabAPIEndpoint()) {
+      return 'gitlab'
+    } else {
+      return 'enterprise'
+    }
   }
 }
 
@@ -147,14 +158,11 @@ export class Account {
  * a GitHub Enteprise account.
  */
 export const isDotComAccount = (account: Account) =>
-  account.endpoint === getDotComAPIEndpoint()
-
-export const isBitbucketAccount = (account: Account) =>
-  account.endpoint === getBitbucketAPIEndpoint()
+  account.apiType === 'dotcom'
 
 /**
  * Whether or not the given account is a GitHub Enterprise account (as opposed to
  * a GitHub.com account)
  */
 export const isEnterpriseAccount = (account: Account) =>
-  !isDotComAccount(account) && !isBitbucketAccount(account)
+  account.apiType === 'enterprise'

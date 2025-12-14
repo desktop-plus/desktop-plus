@@ -1694,6 +1694,13 @@ export class Dispatcher {
     this.appStore._showPopup({ type: PopupType.SignIn })
   }
 
+  public async showGitLabSignInDialog(
+    resultCallback?: (result: SignInResult) => void
+  ): Promise<void> {
+    this.appStore._beginGitLabSignIn(resultCallback)
+    this.appStore._showPopup({ type: PopupType.SignIn })
+  }
+
   /**
    * Show a dialog that helps the user create a fork of
    * their local repo.

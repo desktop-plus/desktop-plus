@@ -5,6 +5,7 @@ import { truncateWithEllipsis } from '../../lib/truncate-with-ellipsis'
 import { getLogDirectoryPath } from '../../lib/logging/get-log-path'
 import { UNSAFE_openDirectory } from '../shell'
 import { MenuLabelsEvent } from '../../models/menu-labels'
+import { RepoType } from '../../models/github-repository'
 import * as ipcWebContents from '../ipc-webcontents'
 import { mkdir } from 'fs/promises'
 import { buildTestMenu } from './build-test-menu'
@@ -669,12 +670,14 @@ function findClosestValue(arr: Array<number>, value: number) {
   })
 }
 
-function onGithubLabel(gitHubRepositoryType: 'github' | 'bitbucket' | null) {
+function onGithubLabel(gitHubRepositoryType: RepoType | null) {
   switch (gitHubRepositoryType) {
     case 'github':
       return 'on GitHub'
     case 'bitbucket':
       return 'on Bitbucket'
+    case 'gitlab':
+      return 'on GitLab'
     case null:
       return 'in your browser'
     default:

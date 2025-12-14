@@ -369,12 +369,12 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
     const encodedBranchName = encodeURIComponent(
       tip.branch.upstreamWithoutRemote
     )
-    const url =
-      gitHubRepository.type === 'bitbucket'
-        ? `${gitHubRepository.htmlURL}/src/${encodedBranchName}`
-        : `${gitHubRepository.htmlURL}/tree/${encodedBranchName}`
-
-    this.props.dispatcher.openInBrowser(url)
+    const VIEW_BRANCH_URL = {
+      github: `${gitHubRepository.htmlURL}/tree/${encodedBranchName}`,
+      bitbucket: `${gitHubRepository.htmlURL}/src/${encodedBranchName}`,
+      gitlab: `${gitHubRepository.htmlURL}/-/tree/${encodedBranchName}`,
+    }
+    this.props.dispatcher.openInBrowser(VIEW_BRANCH_URL[gitHubRepository.type])
   }
 
   private onViewPullRequestOnGithub = () => {

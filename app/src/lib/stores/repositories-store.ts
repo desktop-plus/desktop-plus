@@ -125,9 +125,15 @@ export class RepositoriesStore extends TypedBaseStore<
     }
 
     const isBitbucket = repo.htmlURL && this.isBitbucketUrl(repo.htmlURL)
+    const isGitLab = repo.htmlURL && this.isGitLabUrl(repo.htmlURL)
+    const repoType = isBitbucket
+      ? 'bitbucket'
+      : isGitLab
+        ? 'gitlab'
+        : 'github'
     const ghRepo = new GitHubRepository(
       repo.name,
-      isBitbucket ? 'bitbucket' : 'github',
+      repoType,
       owner,
       repo.id,
       repo.private,
@@ -148,6 +154,15 @@ export class RepositoriesStore extends TypedBaseStore<
     try {
       const parsedUrl = new URL(url)
       return parsedUrl.host === 'bitbucket.org'
+    } catch (e) {
+      return false
+    }
+  }
+
+  private isGitLabUrl(url: string): boolean {
+    try {
+      const parsedUrl = new URL(url)
+      return parsedUrl.host === 'gitlab.com'
     } catch (e) {
       return false
     }

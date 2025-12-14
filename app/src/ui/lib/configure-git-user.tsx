@@ -3,7 +3,7 @@ import { Commit } from '../../models/commit'
 import { lookupPreferredEmail } from '../../lib/email'
 import { setGlobalConfigValue } from '../../lib/git/config'
 import { CommitListItem } from '../history/commit-list-item'
-import { Account, isDotComAccount } from '../../models/account'
+import { Account } from '../../models/account'
 import { CommitIdentity } from '../../models/commit-identity'
 import { Form } from '../lib/form'
 import { Button } from '../lib/button'
@@ -17,6 +17,7 @@ import { ConfigLockFileExists } from './config-lock-file-exists'
 import { RadioButton } from './radio-button'
 import { Select } from './select'
 import { GitEmailNotFoundWarning } from './git-email-not-found-warning'
+import { assertNever } from '../../lib/fatal-error'
 
 interface IConfigureGitUserProps {
   /** The logged-in accounts. */
@@ -206,12 +207,12 @@ export class ConfigureGitUser extends React.Component<
       return
     }
 
-    const accountTypeSuffix = isDotComAccount(account) ? '' : ' Enterprise'
+    const accountType = this.getAccountTypeName(account)
 
     return (
       <div>
         <RadioButton
-          label={`Use my GitHub${accountTypeSuffix} account name and email address`}
+          label={`Use my ${accountType} account name and email address`}
           checked={this.state.useGitHubAuthorInfo}
           onSelected={this.onUseGitHubInfoSelected}
           value="github-account"
@@ -225,6 +226,21 @@ export class ConfigureGitUser extends React.Component<
         />
       </div>
     )
+  }
+
+  private getAccountTypeName(account: Account): string {
+    switch (account.apiType) {
+      case 'dotcom':
+        return 'GitHub'
+      case 'enterprise':
+        return 'GitHub Enterprise'
+      case 'bitbucket':
+        return 'Bitbucket'
+      case 'gitlab':
+        return 'GitLab'
+      default:
+        assertNever(account.apiType, 'Unknown account type')
+    }
   }
 
   private renderGitHubInfo() {

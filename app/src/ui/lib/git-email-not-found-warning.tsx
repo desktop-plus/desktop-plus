@@ -1,14 +1,11 @@
 import * as React from 'react'
-import {
-  Account,
-  isBitbucketAccount,
-  isDotComAccount,
-} from '../../models/account'
+import { Account } from '../../models/account'
 import { LinkButton } from './link-button'
 import { isAttributableEmailFor } from '../../lib/email'
 import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
 import { AriaLiveContainer } from '../accessibility/aria-live-container'
+import { assertNever } from '../../lib/fatal-error'
 
 interface IGitEmailNotFoundWarningProps {
   /** The account the commit should be attributed to. */
@@ -97,12 +94,17 @@ export class GitEmailNotFoundWarning extends React.Component<IGitEmailNotFoundWa
   }
 
   private getAccountType(account: Account) {
-    if (isDotComAccount(account)) {
-      return 'GitHub'
+    switch (account.apiType) {
+      case 'dotcom':
+        return 'GitHub'
+      case 'enterprise':
+        return 'GitHub Enterprise'
+      case 'bitbucket':
+        return 'Bitbucket'
+      case 'gitlab':
+        return 'GitLab'
+      default:
+        assertNever(account.apiType, 'Unknown account apiType')
     }
-    if (isBitbucketAccount(account)) {
-      return 'Bitbucket'
-    }
-    return 'GitHub Enterprise'
   }
 }

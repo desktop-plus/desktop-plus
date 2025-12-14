@@ -21,7 +21,6 @@ export async function getRemotes(
 export async function getRemotesFromPath(
   path: string
 ): Promise<ReadonlyArray<IRemote>> {
-  console.log('getRemotesFromPath -> via git')
   const result = await git(['remote', '-v'], path, 'getRemotes', {
     expectedErrors: new Set([GitError.NotAGitRepository]),
   })

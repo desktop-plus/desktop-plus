@@ -3,7 +3,7 @@ import { Owner } from './owner'
 
 export type GitHubRepositoryPermission = 'read' | 'write' | 'admin' | null
 
-export type RepoType = 'github' | 'bitbucket'
+export type RepoType = 'github' | 'bitbucket' | 'gitlab'
 
 /** A GitHub repository. */
 export class GitHubRepository {

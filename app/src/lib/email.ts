@@ -1,6 +1,6 @@
 import { IAPIEmail } from './api'
 import { Account } from '../models/account'
-import { isBitbucket, isGHES } from './endpoint-capabilities'
+import { isDotCom, isGHES } from './endpoint-capabilities'
 
 /**
  * Lookup a suitable email address to display in the application, based on the
@@ -55,10 +55,10 @@ function isEmailPublic(email: IAPIEmail): boolean {
 const getStealthEmailHostForEndpoint = (endpoint: string) => {
   if (isGHES(endpoint)) {
     return `users.noreply.${new URL(endpoint).hostname}`
-  } else if (isBitbucket(endpoint)) {
-    return `[unknown email]`
-  } else {
+  } else if (isDotCom(endpoint)) {
     return 'users.noreply.github.com'
+  } else {
+    return `[unknown email]`
   }
 }
 

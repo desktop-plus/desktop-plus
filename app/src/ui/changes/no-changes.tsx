@@ -6,6 +6,7 @@ import {
   isRepositoryWithGitHubRepository,
   Repository,
 } from '../../models/repository'
+import { RepoType } from '../../models/github-repository'
 import { LinkButton } from '../lib/link-button'
 import { MenuIDs } from '../../models/menu-ids'
 import { IMenu, MenuItem } from '../../models/app-menu'
@@ -298,14 +299,14 @@ export class NoChanges extends React.Component<
       return null
     }
 
-    const isGitHub = this.props.repository.gitHubRepository?.type === 'github'
-    const isBitbucket =
-      this.props.repository.gitHubRepository?.type === 'bitbucket'
-    const [browserTarget, icon] = isGitHub
-      ? ['on Github', octicons.markGithub]
-      : isBitbucket
-      ? ['on Bitbucket', octicons.repo]
-      : ['in your browser', octicons.globe]
+    const BROWSER_TARGETS: Record<RepoType | '_', [string, OcticonSymbol]> = {
+      github: ['on Github', octicons.markGithub],
+      bitbucket: ['on Bitbucket', octicons.repo],
+      gitlab: ['on GitLab', octicons.repo],
+      _: ['in your browser', octicons.globe],
+    }
+    const repoType = this.props.repository.gitHubRepository?.type ?? '_'
+    const [browserTarget, icon] = BROWSER_TARGETS[repoType]
 
     return this.renderMenuBackedAction(
       'view-repository-in-browser',
@@ -631,12 +632,14 @@ export class NoChanges extends React.Component<
     )
   }
 
-  private getRemoteName(remoteType: 'github' | 'bitbucket' | undefined) {
+  private getRemoteName(remoteType: RepoType | undefined) {
     switch (remoteType) {
       case 'github':
         return 'GitHub'
       case 'bitbucket':
         return 'Bitbucket'
+      case 'gitlab':
+        return 'GitLab'
       case undefined:
         return 'the remote'
       default:

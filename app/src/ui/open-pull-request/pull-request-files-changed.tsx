@@ -140,6 +140,8 @@ export class PullRequestFilesChanged extends React.Component<
           : 'View on GitHub'
       case 'bitbucket':
         return 'View on Bitbucket'
+      case 'gitlab':
+        return 'View on GitLab'
       default:
         assertNever(
           gitHubRepository.type,

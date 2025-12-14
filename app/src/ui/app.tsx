@@ -690,28 +690,31 @@ export class App extends React.Component<IAppProps, IAppState> {
       return
     }
 
-    let urlEncodedBranchName = encodeURIComponent(
+    const urlEncodedBranchName = encodeURIComponent(
       branchTip.branch.upstreamWithoutRemote
     )
 
     const repoType = state.repository.gitHubRepository?.type ?? 'github'
-    if (repoType === 'bitbucket' && view === 'compare') {
-      urlEncodedBranchName = urlEncodedBranchName + encodeURIComponent('\r')
-    }
-
-    const VIEW_REWRITE = {
+    const baseBranch =
+      state.repository.defaultBranch ??
+      state.state.branchesState.defaultBranch?.nameWithoutRemote ??
+      'main'
+    const URLS = {
       github: {
-        tree: 'tree',
-        compare: 'compare',
+        tree: `${htmlURL}/tree/${urlEncodedBranchName}`,
+        compare: `${htmlURL}/compare/${urlEncodedBranchName}`,
       },
       bitbucket: {
-        tree: 'src',
-        compare: 'branches/compare',
+        tree: `${htmlURL}/src/${urlEncodedBranchName}`,
+        compare: `${htmlURL}/branches/compare/${urlEncodedBranchName}..`,
+      },
+      gitlab: {
+        tree: `${htmlURL}/tree/${urlEncodedBranchName}`,
+        compare: `${htmlURL}/compare/${baseBranch}...${urlEncodedBranchName}`,
       },
     }
 
-    const url = `${htmlURL}/${VIEW_REWRITE[repoType][view]}/${urlEncodedBranchName}`
-    this.props.dispatcher.openInBrowser(url)
+    this.props.dispatcher.openInBrowser(URLS[repoType][view])
   }
 
   private openCurrentRepositoryWorkingDirectory() {

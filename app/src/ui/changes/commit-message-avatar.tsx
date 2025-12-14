@@ -18,11 +18,8 @@ import { Repository } from '../../models/repository'
 import classNames from 'classnames'
 import { RepoRulesMetadataFailures } from '../../models/repo-rules'
 import { RepoRulesMetadataFailureList } from '../repository-rules/repo-rules-failure-list'
-import {
-  Account,
-  isBitbucketAccount,
-  isDotComAccount,
-} from '../../models/account'
+import { Account } from '../../models/account'
+import { assertNever } from '../../lib/fatal-error'
 
 export type CommitMessageAvatarWarningType =
   | 'none'
@@ -480,12 +477,17 @@ export class CommitMessageAvatar extends React.Component<
     if (account === null) {
       return 'account'
     }
-    if (isDotComAccount(account)) {
-      return 'GitHub account'
+    switch (account.apiType) {
+      case 'dotcom':
+        return 'GitHub account'
+      case 'enterprise':
+        return 'GitHub Enterprise account'
+      case 'bitbucket':
+        return 'Bitbucket account'
+      case 'gitlab':
+        return 'GitLab account'
+      default:
+        assertNever(account.apiType, 'Unknown account type')
     }
-    if (isBitbucketAccount(account)) {
-      return 'Bitbucket account'
-    }
-    return 'GitHub Enterprise account'
   }
 }

@@ -394,6 +394,11 @@ export class Preferences extends React.Component<
     this.props.dispatcher.showBitbucketSignInDialog()
   }
 
+  private onGitLabSignIn = () => {
+    this.props.onDismissed()
+    this.props.dispatcher.showGitLabSignInDialog()
+  }
+
   private onLogout = (account: Account) => {
     this.props.dispatcher.removeAccount(account)
   }
@@ -418,6 +423,7 @@ export class Preferences extends React.Component<
             onDotComSignIn={this.onDotComSignIn}
             onEnterpriseSignIn={this.onEnterpriseSignIn}
             onBitbucketSignIn={this.onBitbucketSignIn}
+            onGitLabSignIn={this.onGitLabSignIn}
             onLogout={this.onLogout}
           />
         )

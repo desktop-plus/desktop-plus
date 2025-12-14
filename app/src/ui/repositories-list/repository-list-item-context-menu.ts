@@ -3,6 +3,7 @@ import {
   hasDefaultRemoteUrl,
   Repository,
 } from '../../models/repository'
+import { RepoType } from '../../models/github-repository'
 import { IMenuItem } from '../../lib/menu-item'
 import { Repositoryish } from './group-repositories'
 import { clipboard } from 'electron'
@@ -86,12 +87,14 @@ export const generateRepositoryListContextMenu = (
   return items
 }
 
-function getViewOnBrowserLabel(repoType: 'github' | 'bitbucket' | null) {
+function getViewOnBrowserLabel(repoType: RepoType | null) {
   switch (repoType) {
     case 'github':
       return 'View on GitHub'
     case 'bitbucket':
       return 'View on Bitbucket'
+    case 'gitlab':
+      return 'View on GitLab'
     default:
       return 'View in your browser'
   }
