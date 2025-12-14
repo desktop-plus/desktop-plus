@@ -606,26 +606,33 @@ export class GitStore extends BaseStore {
    * Load local commits into memory for the current repository.
    *
    * @param branch The branch to query for unpublished commits.
+   * @param skip The amount of commits to skip to support pagination loading of local commits. If skip is undefined,
+   * this will reset the local commits cache and treat it as a pagination reset.
    *
    * If the tip of the repository does not have commits (i.e. is unborn), this
    * should be invoked with `null`, which clears any existing commits from the
    * store.
+   *
+   * @returns The list of commit SHAs that were ammended to the list of commits, or null if not applicable
    */
-  public async loadLocalCommits(branch: Branch | null): Promise<void> {
+  public async loadLocalCommits(
+    branch: Branch | null,
+    skip?: number
+  ): Promise<string[] | null> {
     if (branch === null) {
       this._localCommitSHAs = []
-      return
+      return null
     }
 
     let localCommits: ReadonlyArray<Commit> | undefined
     if (branch.upstream) {
       const range = revRange(branch.upstream, branch.name)
       localCommits = await this.performFailableOperation(() =>
-        getCommits(this.repository, range, CommitBatchSize)
+        getCommits(this.repository, range, CommitBatchSize, skip)
       )
     } else {
       localCommits = await this.performFailableOperation(() =>
-        getCommits(this.repository, 'HEAD', CommitBatchSize, undefined, [
+        getCommits(this.repository, 'HEAD', CommitBatchSize, skip, [
           '--not',
           '--remotes',
         ])
@@ -633,12 +640,29 @@ export class GitStore extends BaseStore {
     }
 
     if (!localCommits) {
-      return
+      return null
     }
 
     this.storeCommits(localCommits)
-    this._localCommitSHAs = localCommits.map(c => c.sha)
+
+    let newCommitSHAs: string[]
+
+    if (skip !== undefined) {
+      // perform a soft ammend to the list of local commits
+      const previousSHAs = new Set(this._localCommitSHAs)
+      newCommitSHAs = localCommits
+        .map(c => c.sha)
+        .filter(sha => !previousSHAs.has(sha))
+      this._localCommitSHAs = [...this._localCommitSHAs, ...newCommitSHAs]
+    } else {
+      // reset the local commits since its a page reset
+      newCommitSHAs = localCommits.map(c => c.sha)
+      this._localCommitSHAs = Array.from(newCommitSHAs)
+    }
+
     this.emitUpdate()
+
+    return newCommitSHAs
   }
 
   /**
