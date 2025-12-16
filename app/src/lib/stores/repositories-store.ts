@@ -126,11 +126,7 @@ export class RepositoriesStore extends TypedBaseStore<
 
     const isBitbucket = repo.htmlURL && this.isBitbucketUrl(repo.htmlURL)
     const isGitLab = repo.htmlURL && this.isGitLabUrl(repo.htmlURL)
-    const repoType = isBitbucket
-      ? 'bitbucket'
-      : isGitLab
-        ? 'gitlab'
-        : 'github'
+    const repoType = isBitbucket ? 'bitbucket' : isGitLab ? 'gitlab' : 'github'
     const ghRepo = new GitHubRepository(
       repo.name,
       repoType,
