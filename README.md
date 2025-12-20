@@ -156,7 +156,10 @@ Download and execute the installer from the [releases page](https://github.com/p
 <details>
 <summary>Click to expand</summary>
 
-Download the ZIP file from the [releases page](https://github.com/pol-rivero/github-desktop-plus/releases/latest) and extract it. To run the installer, execute the file `GitHub Desktop Plus.app/Contents/MacOS/GitHub Desktop`.
+Download and extract the ZIP file from the [releases page](https://github.com/pol-rivero/github-desktop-plus/releases/latest). Click the app file to run it.
+
+> [!INFO]
+> If you encounter the error "Apple could not verify this app is free of malware", go to System Settings > Privacy & Security > Scroll down to Security and click Open Anyway on "GitHub Desktop Plus".
 
 | **64-bit x86** | **64-bit ARM (Apple Silicon)** |
 | --- | --- |

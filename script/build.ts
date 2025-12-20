@@ -50,11 +50,16 @@ import {
 } from 'fs'
 import { copySync } from 'fs-extra'
 
+// Always use ad-hoc code signing ('-'), even for published builds, to avoid "app is damaged" error.
+// This is the friendliest non-paid option.
+// https://wiki.freepascal.org/Code_Signing_for_macOS#Ad_hoc_signing
+const isGitHubDesktopPlus = true
 const isPublishableBuild = isPublishable()
 const isDevelopmentBuild = getChannel() === 'development'
+const useAdHocSigning = isGitHubDesktopPlus || isDevelopmentBuild
 
 const projectRoot = path.join(__dirname, '..')
-const entitlementsSuffix = isDevelopmentBuild ? '-dev' : ''
+const entitlementsSuffix = useAdHocSigning ? '-dev' : ''
 const entitlementsPath = `${projectRoot}/script/entitlements${entitlementsSuffix}.plist`
 const extendInfoPath = `${projectRoot}/script/info.plist`
 const outRoot = path.join(projectRoot, 'out')
@@ -197,13 +202,13 @@ function packageApp() {
         hardenedRuntime: true,
         entitlements: entitlementsPath,
       }),
-      type: isPublishableBuild ? 'distribution' : 'development',
+      type: useAdHocSigning ? 'development' : 'distribution',
       // For development, we will use '-' as the identifier so that codesign
       // will sign the app to run locally. We need to disable 'identity-validation'
       // or otherwise it will replace '-' with one of the regular codesigning
       // identities in our system.
-      identity: isDevelopmentBuild ? '-' : undefined,
-      identityValidation: !isDevelopmentBuild,
+      identity: useAdHocSigning ? '-' : undefined,
+      identityValidation: !useAdHocSigning,
     },
     osxNotarize,
     protocols: [
