@@ -69,7 +69,7 @@ export class SAMLReauthRequiredDialog extends React.Component<
     const { dispatcher, endpoint } = this.props
 
     const result = await new Promise<SignInResult>(async resolve => {
-      dispatcher.beginBrowserBasedSignIn(endpoint, resolve)
+      dispatcher.beginBrowserBasedSignIn('', endpoint, resolve)
     })
 
     if (result.kind === 'success' && this.props.retryAction) {

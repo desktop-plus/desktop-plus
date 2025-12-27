@@ -366,12 +366,12 @@ export class Preferences extends React.Component<
 
   private onDotComSignIn = () => {
     this.props.onDismissed()
-    this.props.dispatcher.showDotComSignInDialog()
+    this.props.dispatcher.showDotComSignInDialog('')
   }
 
   private onEnterpriseSignIn = () => {
     this.props.onDismissed()
-    this.props.dispatcher.showEnterpriseSignInDialog()
+    this.props.dispatcher.showEnterpriseSignInDialog('', '')
   }
 
   private onLogout = (account: Account) => {

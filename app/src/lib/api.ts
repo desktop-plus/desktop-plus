@@ -2224,7 +2224,8 @@ export async function deleteToken(account: Account) {
 /** Fetch the user authenticated by the token. */
 export async function fetchUser(
   endpoint: string,
-  token: string
+  token: string,
+  accountname?: string
 ): Promise<Account> {
   const api = new API(endpoint, token)
   try {
@@ -2244,6 +2245,7 @@ export async function fetchUser(
       user.id,
       user.name || user.login,
       user.plan?.name,
+      accountname,
       copilotInfo?.copilotEndpoint,
       copilotInfo?.isCopilotDesktopEnabled,
       features
@@ -2342,6 +2344,14 @@ export function getAccountForEndpoint(
   endpoint: string
 ): Account | null {
   return accounts.find(a => a.endpoint === endpoint) || null
+}
+
+/** Get the account for the login. */
+export function getAccountForLogin(
+  accounts: ReadonlyArray<Account>,
+  login: string
+): Account | null {
+  return accounts.find(a => a.login === login) || null
 }
 
 export function getOAuthAuthorizationURL(

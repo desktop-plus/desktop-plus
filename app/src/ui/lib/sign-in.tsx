@@ -2,6 +2,7 @@ import * as React from 'react'
 import { AuthenticationForm } from './authentication-form'
 import { assertNever } from '../../lib/fatal-error'
 import { EnterpriseServerEntry } from '../lib/enterprise-server-entry'
+import { AccountNameEntry } from '../lib/accountname-entry'
 import { Dispatcher } from '../dispatcher'
 import {
   SignInState,
@@ -9,6 +10,7 @@ import {
   IEndpointEntryState,
   IAuthenticationState,
   IExistingAccountWarning,
+  IAccountNameEntryState,
 } from '../../lib/stores'
 import { Ref } from './ref'
 import { getHTMLURL } from '../../lib/api'
@@ -26,6 +28,10 @@ interface ISignInProps {
 export class SignIn extends React.Component<ISignInProps, {}> {
   private onEndpointEntered = (url: string) => {
     this.props.dispatcher.setSignInEndpoint(url)
+  }
+
+  private onAccountNameEntered = (accountname: string) => {
+    this.props.dispatcher.setSignInAccountName(accountname)
   }
 
   private onBrowserSignInRequested = () => {
@@ -60,6 +66,20 @@ export class SignIn extends React.Component<ISignInProps, {}> {
     )
   }
 
+  private renderAccountNameEntryStep(
+    state: IAccountNameEntryState | IExistingAccountWarning
+  ) {
+    const children = this.props.children as ReadonlyArray<JSX.Element>
+    return (
+      <AccountNameEntry
+        loading={state.loading}
+        error={state.error}
+        onSubmit={this.onAccountNameEntered}
+        additionalButtons={children}
+      />
+    )
+  }
+
   private renderAuthenticationStep(
     state: IAuthenticationState | IExistingAccountWarning
   ) {
@@ -80,6 +100,8 @@ export class SignIn extends React.Component<ISignInProps, {}> {
     switch (state.kind) {
       case SignInStep.EndpointEntry:
         return this.renderEndpointEntryStep(state)
+      case SignInStep.AccountNameEntry:
+        return this.renderAccountNameEntryStep(state)
       case SignInStep.ExistingAccountWarning:
         return this.renderExistingAccountWarningStep(state)
       case SignInStep.Authentication:

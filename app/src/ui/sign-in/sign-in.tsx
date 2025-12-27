@@ -6,6 +6,7 @@ import {
   IEndpointEntryState,
   IAuthenticationState,
   IExistingAccountWarning,
+  IAccountNameEntryState,
 } from '../../lib/stores'
 import { assertNever } from '../../lib/fatal-error'
 import { Row } from '../lib/row'
@@ -26,6 +27,7 @@ interface ISignInProps {
 
 interface ISignInState {
   readonly endpoint: string
+  readonly accountname: string
 }
 
 const SignInWithBrowserTitle = __DARWIN__
@@ -50,6 +52,7 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
 
     this.state = {
       endpoint: '',
+      accountname: '',
     }
   }
 
@@ -89,6 +92,9 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
       case SignInStep.EndpointEntry:
         this.props.dispatcher.setSignInEndpoint(this.state.endpoint)
         break
+      case SignInStep.AccountNameEntry:
+        this.props.dispatcher.setSignInAccountName(this.state.accountname)
+        break
       case SignInStep.ExistingAccountWarning:
         this.props.dispatcher
           .removeAccount(state.existingAccount)
@@ -109,6 +115,10 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
     this.setState({ endpoint })
   }
 
+  private onAccountNameChanged = (accountname: string) => {
+    this.setState({ accountname })
+  }
+
   private renderFooter(): JSX.Element | null {
     const state = this.props.signInState
 
@@ -127,6 +137,10 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
     switch (state.kind) {
       case SignInStep.EndpointEntry:
         disableSubmit = this.state.endpoint.length === 0
+        primaryButtonText = 'Continue'
+        break
+      case SignInStep.AccountNameEntry:
+        disableSubmit = this.state.accountname.length === 0
         primaryButtonText = 'Continue'
         break
       case SignInStep.ExistingAccountWarning:
@@ -161,6 +175,21 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
           first be signed out.
         </p>
         {browserSignInInfoContent}
+      </DialogContent>
+    )
+  }
+
+  private renderAccountNameEntryStep(state: IAccountNameEntryState) {
+    return (
+      <DialogContent>
+        <Row>
+          <TextBox
+            label="Account Name"
+            value={this.state.accountname}
+            onValueChanged={this.onAccountNameChanged}
+            placeholder=""
+          />
+        </Row>
       </DialogContent>
     )
   }
@@ -209,6 +238,8 @@ export class SignIn extends React.Component<ISignInProps, ISignInState> {
     switch (state.kind) {
       case SignInStep.EndpointEntry:
         return this.renderEndpointEntryStep(state)
+      case SignInStep.AccountNameEntry:
+        return this.renderAccountNameEntryStep(state)
       case SignInStep.ExistingAccountWarning:
         return this.renderExistingAccountWarningStep(state)
       case SignInStep.Authentication:

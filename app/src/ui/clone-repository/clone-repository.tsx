@@ -409,7 +409,9 @@ export class CloneRepository extends React.Component<
     const selectedAccount =
       (tabState.selectedAccount
         ? tabAccounts.find(
-            a => a.endpoint === tabState.selectedAccount?.endpoint
+            a =>
+              a.endpoint === tabState.selectedAccount?.endpoint &&
+              a.accountname === tabState.selectedAccount?.accountname
           )
         : undefined) ?? tabAccounts.at(0)
 
@@ -546,11 +548,11 @@ export class CloneRepository extends React.Component<
   }
 
   private signInDotCom = () => {
-    this.props.dispatcher.showDotComSignInDialog()
+    this.props.dispatcher.showDotComSignInDialog('')
   }
 
   private signInEnterprise = () => {
-    this.props.dispatcher.showEnterpriseSignInDialog()
+    this.props.dispatcher.showEnterpriseSignInDialog('', '')
   }
 
   private onFilterTextChanged = (filterText: string) => {

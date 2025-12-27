@@ -6203,18 +6203,31 @@ export class AppStore extends TypedBaseStore<IAppState> {
     return Promise.resolve()
   }
 
-  public _beginDotComSignIn(resultCallback?: (result: SignInResult) => void) {
-    return this.signInStore.beginDotComSignIn(resultCallback)
+  public _beginDotComSignIn(
+    accountname: string,
+    resultCallback?: (result: SignInResult) => void
+  ) {
+    return this.signInStore.beginDotComSignIn(accountname, resultCallback)
   }
 
   public _beginEnterpriseSignIn(
+    endpoint: string,
+    accountname: string,
     resultCallback?: (result: SignInResult) => void
   ) {
-    return this.signInStore.beginEnterpriseSignIn(resultCallback)
+    return this.signInStore.beginEnterpriseSignIn(
+      endpoint,
+      accountname,
+      resultCallback
+    )
   }
 
   public _setSignInEndpoint(url: string): Promise<void> {
     return this.signInStore.setEndpoint(url)
+  }
+
+  public _setSignInAccountName(accountname: string): Promise<void> {
+    return this.signInStore.setAccountName(accountname)
   }
 
   public _requestBrowserAuthentication() {

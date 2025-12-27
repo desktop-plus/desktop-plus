@@ -21,6 +21,10 @@ import { IOAuthAction } from '../parse-app-url'
 import { shell } from '../app-shell'
 import noop from 'lodash/noop'
 import { AccountsStore } from './accounts-store'
+import {
+  enableMultipleDotComAccounts,
+  enableMultipleNamedAccounts,
+} from '../feature-flag'
 
 /**
  * An enumeration of the possible steps that the sign in
@@ -28,6 +32,7 @@ import { AccountsStore } from './accounts-store'
  */
 export enum SignInStep {
   EndpointEntry = 'EndpointEntry',
+  AccountNameEntry = 'AccountNameEntry',
   ExistingAccountWarning = 'ExistingAccountWarning',
   Authentication = 'Authentication',
   TwoFactorAuthentication = 'TwoFactorAuthentication',
@@ -40,6 +45,7 @@ export enum SignInStep {
  */
 export type SignInState =
   | IEndpointEntryState
+  | IAccountNameEntryState
   | IExistingAccountWarning
   | IAuthenticationState
   | ISuccessState
@@ -52,6 +58,8 @@ export interface ISignInState {
    * The sign in step represented by this state
    */
   readonly kind: SignInStep
+
+  readonly accountname: string
 
   /**
    * An error which, if present, should be presented to the
@@ -79,6 +87,7 @@ export interface ISignInState {
  */
 export interface IExistingAccountWarning extends ISignInState {
   readonly kind: SignInStep.ExistingAccountWarning
+  readonly enterprise: boolean
   /**
    * The URL to the host which we're currently authenticating
    * against. This will be either https://api.github.com when
@@ -88,6 +97,7 @@ export interface IExistingAccountWarning extends ISignInState {
    */
   readonly existingAccount: Account
   readonly endpoint: string
+  readonly accountname: string
 
   readonly resultCallback: (result: SignInResult) => void
 }
@@ -99,9 +109,23 @@ export interface IExistingAccountWarning extends ISignInState {
  */
 export interface IEndpointEntryState extends ISignInState {
   readonly kind: SignInStep.EndpointEntry
+  readonly enterprise: boolean
+  readonly existingAccount?: Account
   readonly resultCallback: (result: SignInResult) => void
 }
 
+/**
+ * State interface representing the endpoint entry step.
+ * This is the initial step in the Enterprise sign in
+ * flow and is not present when signing in to GitHub.com
+ */
+export interface IAccountNameEntryState extends ISignInState {
+  readonly kind: SignInStep.AccountNameEntry
+  readonly enterprise: boolean
+  readonly endpoint: string
+  readonly accountname: string
+  readonly resultCallback: (result: SignInResult) => void
+}
 /**
  * State interface representing the Authentication step where
  * the user provides credentials and/or initiates a browser
@@ -111,6 +135,7 @@ export interface IEndpointEntryState extends ISignInState {
  */
 export interface IAuthenticationState extends ISignInState {
   readonly kind: SignInStep.Authentication
+  readonly enterprise: boolean
 
   /**
    * The URL to the host which we're currently authenticating
@@ -121,11 +146,14 @@ export interface IAuthenticationState extends ISignInState {
    */
   readonly endpoint: string
 
+  readonly accountname: string
+
   readonly resultCallback: (result: SignInResult) => void
 
   readonly oauthState?: {
     state: string
     endpoint: string
+    accountname: string
     onAuthCompleted: (account: Account) => void
     onAuthError: (error: Error) => void
   }
@@ -139,6 +167,8 @@ export interface IAuthenticationState extends ISignInState {
  */
 export interface ISuccessState {
   readonly kind: SignInStep.Success
+  readonly enterprise: boolean
+  readonly accountname: string
   readonly resultCallback: (result: SignInResult) => void
 }
 
@@ -224,7 +254,10 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
    * Initiate a sign in flow for github.com. This will put the store
    * in the Authentication step ready to receive user credentials.
    */
-  public beginDotComSignIn(resultCallback?: (result: SignInResult) => void) {
+  public beginDotComSignIn(
+    accountname: string,
+    resultCallback?: (result: SignInResult) => void
+  ) {
     const endpoint = getDotComAPIEndpoint()
 
     if (this.state !== null) {
@@ -233,21 +266,27 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
 
     const existingAccount = this.accounts.find(isDotComAccount)
 
-    if (existingAccount) {
+    if (existingAccount && !enableMultipleDotComAccounts()) {
       this.setState({
         kind: SignInStep.ExistingAccountWarning,
         endpoint,
+        accountname,
         existingAccount,
         error: null,
         loading: false,
+        enterprise: false,
         resultCallback: resultCallback ?? noop,
       })
     } else {
       this.setState({
-        kind: SignInStep.Authentication,
+        kind: enableMultipleNamedAccounts()
+          ? SignInStep.AccountNameEntry
+          : SignInStep.Authentication,
         endpoint,
+        accountname,
         error: null,
         loading: false,
+        enterprise: false,
         resultCallback: resultCallback ?? noop,
       })
     }
@@ -285,17 +324,20 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
     const csrfToken = uuid()
 
     new Promise<Account>((resolve, reject) => {
-      const { endpoint, resultCallback } = currentState
+      const { endpoint, accountname, resultCallback, enterprise } = currentState
       log.info('[SignInStore] initializing OAuth flow')
       this.setState({
         kind: SignInStep.Authentication,
         endpoint,
+        accountname,
         resultCallback,
         error: null,
         loading: true,
+        enterprise,
         oauthState: {
           state: csrfToken,
           endpoint,
+          accountname,
           onAuthCompleted: resolve,
           onAuthError: reject,
         },
@@ -313,6 +355,8 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
         this.emitAuthenticate(account)
         this.setState({
           kind: SignInStep.Success,
+          enterprise: this.state.enterprise,
+          accountname: this.state.accountname,
           resultCallback: this.state.resultCallback,
         })
       })
@@ -346,11 +390,11 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
       return
     }
 
-    const { endpoint } = this.state
+    const { endpoint, accountname } = this.state
     const token = await requestOAuthToken(endpoint, action.code)
 
     if (token) {
-      const account = await fetchUser(endpoint, token)
+      const account = await fetchUser(endpoint, token, accountname)
       this.state.oauthState.onAuthCompleted(account)
     } else {
       this.state.oauthState.onAuthError(
@@ -365,6 +409,8 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
    * receive the url to the enterprise instance.
    */
   public beginEnterpriseSignIn(
+    endpoint: string,
+    accountname: string,
     resultCallback?: (result: SignInResult) => void
   ) {
     if (this.state !== null) {
@@ -372,11 +418,58 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
     }
 
     this.setState({
-      kind: SignInStep.EndpointEntry,
+      kind: enableMultipleNamedAccounts()
+        ? SignInStep.AccountNameEntry
+        : SignInStep.EndpointEntry,
+      accountname,
+      endpoint,
       error: null,
       loading: false,
+      enterprise: true,
       resultCallback: resultCallback ?? noop,
     })
+  }
+
+  public async setAccountName(accountname: string): Promise<void> {
+    const currentState = this.state
+
+    if (
+      currentState?.kind !== SignInStep.AccountNameEntry &&
+      currentState?.kind !== SignInStep.ExistingAccountWarning
+    ) {
+      const stepText = currentState ? currentState.kind : 'null'
+      return fatalError(
+        `Sign in step '${stepText}' not compatible with account name entry`
+      )
+    }
+
+    this.setState({ ...currentState, loading: true })
+
+    const existingAccount = this.accounts.find(
+      x => x.accountname === accountname
+    )
+
+    if (currentState.enterprise) {
+      this.setState({
+        kind: SignInStep.EndpointEntry,
+        accountname,
+        existingAccount,
+        error: null,
+        loading: false,
+        enterprise: currentState.enterprise,
+        resultCallback: currentState.resultCallback,
+      })
+    } else {
+      this.setState({
+        kind: SignInStep.Authentication,
+        endpoint: currentState.endpoint,
+        accountname,
+        error: null,
+        loading: false,
+        enterprise: currentState.enterprise,
+        resultCallback: currentState.resultCallback,
+      })
+    }
   }
 
   /**
@@ -410,7 +503,10 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
      * flow we'll redirect them to the GitHub.com sign-in flow.
      */
     if (/^(?:https:\/\/)?(?:api\.)?github\.com($|\/)/.test(url)) {
-      this.beginDotComSignIn(currentState.resultCallback)
+      this.beginDotComSignIn(
+        currentState.accountname,
+        currentState.resultCallback
+      )
       return
     }
 
@@ -437,23 +533,29 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
 
     const endpoint = getEnterpriseAPIURL(validUrl)
 
-    const existingAccount = this.accounts.find(x => x.endpoint === endpoint)
+    const existingAccount = currentState.existingAccount
+      ? currentState.existingAccount
+      : this.accounts.find(x => x.endpoint === endpoint)
 
     if (existingAccount) {
       this.setState({
         kind: SignInStep.ExistingAccountWarning,
         endpoint,
+        accountname: currentState.accountname,
         existingAccount,
         error: null,
         loading: false,
+        enterprise: endpoint === getDotComAPIEndpoint(),
         resultCallback: currentState.resultCallback,
       })
     } else {
       this.setState({
         kind: SignInStep.Authentication,
         endpoint,
+        accountname: currentState.accountname,
         error: null,
         loading: false,
+        enterprise: endpoint === getDotComAPIEndpoint(),
         resultCallback: currentState.resultCallback,
       })
     }

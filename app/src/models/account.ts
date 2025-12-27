@@ -20,7 +20,17 @@ export function accountEquals(x: Account, y: Account) {
 export class Account {
   /** Create an account which can be used to perform unauthenticated API actions */
   public static anonymous(): Account {
-    return new Account('', getDotComAPIEndpoint(), '', [], '', -1, '', 'free')
+    return new Account(
+      '',
+      '',
+      getDotComAPIEndpoint(),
+      [],
+      '',
+      -1,
+      '',
+      'free',
+      ''
+    )
   }
 
   private _friendlyEndpoint: string | undefined = undefined
@@ -28,6 +38,7 @@ export class Account {
   /**
    * Create an instance of an account
    *
+   * @param accountname The user defined account name for this account
    * @param login The login name for this account
    * @param endpoint The server for this account - GitHub or a GitHub Enterprise instance
    * @param token The access token used to perform operations on behalf of this account
@@ -49,6 +60,7 @@ export class Account {
     public readonly id: number,
     public readonly name: string,
     public readonly plan?: string,
+    public readonly accountname?: string,
     public readonly copilotEndpoint?: string,
     public readonly isCopilotDesktopEnabled?: boolean,
     public readonly features?: ReadonlyArray<string>
@@ -64,6 +76,7 @@ export class Account {
       this.id,
       this.name,
       this.plan,
+      this.accountname,
       this.copilotEndpoint,
       this.isCopilotDesktopEnabled,
       this.features

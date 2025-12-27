@@ -189,7 +189,8 @@ describe('PopupManager', () => {
         '',
         1,
         '',
-        'free'
+        'free',
+        ''
       )
       const popupTutorial: Popup = {
         type: PopupType.CreateTutorialRepository,

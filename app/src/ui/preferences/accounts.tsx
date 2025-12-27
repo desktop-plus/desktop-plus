@@ -12,7 +12,10 @@ import { Row } from '../lib/row'
 import { DialogContent, DialogPreferredFocusClassName } from '../dialog'
 import { Avatar } from '../lib/avatar'
 import { CallToAction } from '../lib/call-to-action'
-import { enableMultipleEnterpriseAccounts } from '../../lib/feature-flag'
+import {
+  enableMultipleEnterpriseAccounts,
+  enableMultipleDotComAccounts,
+} from '../../lib/feature-flag'
 import { getHTMLURL } from '../../lib/api'
 
 interface IAccountsProps {
@@ -30,21 +33,45 @@ enum SignInType {
 
 export class Accounts extends React.Component<IAccountsProps, {}> {
   public render() {
-    const { accounts } = this.props
-    const dotComAccount = accounts.find(isDotComAccount)
-
     return (
       <DialogContent className="accounts-tab">
         <h2>GitHub.com</h2>
-        {dotComAccount
-          ? this.renderAccount(dotComAccount, SignInType.DotCom)
-          : this.renderSignIn(SignInType.DotCom)}
+        {enableMultipleDotComAccounts()
+          ? this.renderMultipleDotComAccounts()
+          : this.renderSingleDotComAccount()}
 
         <h2>GitHub Enterprise</h2>
         {enableMultipleEnterpriseAccounts()
           ? this.renderMultipleEnterpriseAccounts()
           : this.renderSingleEnterpriseAccount()}
       </DialogContent>
+    )
+  }
+
+  private renderSingleDotComAccount() {
+    const dotComAccount = this.props.accounts.find(isDotComAccount)
+
+    return dotComAccount
+      ? this.renderAccount(dotComAccount, SignInType.DotCom)
+      : this.renderSignIn(SignInType.DotCom)
+  }
+
+  private renderMultipleDotComAccounts() {
+    const dotComAccounts = this.props.accounts.filter(isDotComAccount)
+
+    return (
+      <>
+        {dotComAccounts.map(account => {
+          return this.renderAccount(account, SignInType.DotCom)
+        })}
+        {dotComAccounts.length === 0 ? (
+          this.renderSignIn(SignInType.DotCom)
+        ) : (
+          <Button onClick={this.props.onDotComSignIn}>
+            Add GitHub account
+          </Button>
+        )}
+      </>
     )
   }
 
@@ -102,6 +129,15 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
                     : `@${account.login} (${account.name})`}
                 </div>
                 <div className="endpoint">{getHTMLURL(account.endpoint)}</div>
+              </>
+            ) : enableMultipleDotComAccounts() && isDotComAccount(account) ? (
+              <>
+                <div className="account-title">
+                  {account.name === account.login
+                    ? `@${account.login}`
+                    : `@${account.login} (${account.name})`}
+                </div>
+                <div className="endpoint">{account.accountname}</div>
               </>
             ) : (
               <>

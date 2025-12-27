@@ -200,7 +200,7 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
   private advanceToStep = (step: WelcomeStep) => {
     log.info(`[Welcome] advancing to step: ${step}`)
     if (step === WelcomeStep.SignInToEnterprise) {
-      this.props.dispatcher.beginEnterpriseSignIn()
+      this.props.dispatcher.beginEnterpriseSignIn('', '')
     }
 
     // Refresh the global user name and email if we're moving to the

@@ -113,7 +113,7 @@ export class Start extends React.Component<IStartProps, {}> {
     }
 
     this.props.advance(WelcomeStep.SignInToDotComWithBrowser)
-    this.props.dispatcher.requestBrowserAuthenticationToDotcom()
+    this.props.dispatcher.requestBrowserAuthenticationToDotcom('')
   }
 
   private cancelBrowserAuth = () => {

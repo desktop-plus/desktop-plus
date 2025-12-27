@@ -14,6 +14,7 @@ export interface IDatabaseOwner {
   readonly login: string
   readonly endpoint: string
   readonly type?: GitHubAccountType
+  readonly accountname?: string
 }
 
 export interface IDatabaseGitHubRepository {

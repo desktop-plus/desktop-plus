@@ -102,6 +102,7 @@ async function getCredential(cred: Credential, store: Store, token: string) {
   const accounts = await store.getAll()
 
   const endpoint = `${getCredentialUrl(cred)}`
+  const accountname = ''
   const apiEndpoint = getAPIEndpoint(endpoint)
 
   // If it appears as if the endpoint is a GitHub host and we don't have an
@@ -115,7 +116,7 @@ async function getCredential(cred: Credential, store: Store, token: string) {
       return undefined
     }
 
-    const account = await ui.promptForGitHubSignIn(endpoint)
+    const account = await ui.promptForGitHubSignIn(accountname, endpoint)
 
     if (!account) {
       setHasRejectedCredentialsForEndpoint(token, endpoint)
