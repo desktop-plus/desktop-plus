@@ -690,7 +690,6 @@ export class CreateRepository extends React.Component<
       this.state.creating ||
       this.state.isRepository
 
-    const readOnlyPath = !!this.props.initialPath
     const loadingDefaultDir = this.state.path === null
 
     return (
@@ -732,13 +731,10 @@ export class CreateRepository extends React.Component<
               label={__DARWIN__ ? 'Local Path' : 'Local path'}
               placeholder="repository path"
               onValueChanged={this.onPathChanged}
-              disabled={readOnlyPath || loadingDefaultDir}
+              disabled={loadingDefaultDir}
               ariaDescribedBy="existing-repository-path-error path-is-subfolder-of-repository"
             />
-            <Button
-              onClick={this.showFilePicker}
-              disabled={readOnlyPath || loadingDefaultDir}
-            >
+            <Button onClick={this.showFilePicker} disabled={loadingDefaultDir}>
               Choose…
             </Button>
           </Row>
