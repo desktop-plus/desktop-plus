@@ -376,6 +376,7 @@ export interface IAPIIdentity {
 export interface IBitbucketAPIIdentity {
   readonly uuid: string
   readonly display_name: string
+  readonly username: string
   readonly links: {
     readonly avatar: {
       readonly href: string
@@ -428,7 +429,7 @@ interface IAPIFullIdentity {
 function toIAPIFullIdentity(identity: IBitbucketAPIIdentity): IAPIFullIdentity {
   return {
     id: 0,
-    login: identity.display_name,
+    login: identity.username,
     avatar_url: identity.links.avatar.href,
     html_url: identity.links.html.href,
     name: identity.display_name,
