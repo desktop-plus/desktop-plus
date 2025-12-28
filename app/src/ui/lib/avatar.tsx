@@ -5,7 +5,6 @@ import { API, getDotComAPIEndpoint, getHTMLURL } from '../../lib/api'
 import { TooltippedContent } from './tooltipped-content'
 import { TooltipDirection } from './tooltip'
 import {
-  isBitbucket,
   isGHE,
   isGHES,
   supportsAvatarsAPI,
@@ -215,17 +214,6 @@ function getEmailAvatarUrl(ep: string) {
   }
 }
 
-function resolveBitbucketAvatarURL(avatarURL: string) {
-  const url = new URL(avatarURL)
-  if (url.hostname === 'secure.gravatar.com' && url.searchParams.has('d')) {
-    const d = url.searchParams.get('d')
-    if (d && d.startsWith('https://')) {
-      return d
-    }
-  }
-  return null
-}
-
 /**
  * Produces an ordered iterable of avatar urls to attempt to load for the
  * given user.
@@ -243,13 +231,6 @@ function getAvatarUrlCandidates(
 
   const { email, avatarURL } = user
   const ep = user.endpoint ?? getDotComAPIEndpoint()
-
-  if (isBitbucket(ep) && avatarURL) {
-    const resolvedAvatarURL = resolveBitbucketAvatarURL(avatarURL)
-    if (resolvedAvatarURL) {
-      candidates.push(resolvedAvatarURL)
-    }
-  }
 
   // By leveraging the avatar url from the API (if we've got it) we can
   // load the avatar from one of the load balanced domains (avatars). We can't
