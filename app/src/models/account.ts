@@ -18,7 +18,7 @@ export function accountEquals(x: Account, y: Account) {
   return x.endpoint === y.endpoint && x.id === y.id
 }
 
-type AccountAPIType = 'dotcom' | 'enterprise' | 'bitbucket' | 'gitlab'
+export type AccountAPIType = 'dotcom' | 'enterprise' | 'bitbucket' | 'gitlab'
 
 /**
  * A GitHub account, representing the user found on GitHub The Website or GitHub Enterprise.
@@ -43,6 +43,8 @@ export class Account {
   }
 
   private _friendlyEndpoint: string | undefined = undefined
+
+  private _apiType: AccountAPIType | undefined = undefined
 
   /**
    * Create an instance of an account
@@ -141,6 +143,10 @@ export class Account {
   }
 
   public get apiType(): AccountAPIType {
+    return (this._apiType ??= this.computeApiType())
+  }
+
+  private computeApiType(): AccountAPIType {
     if (this.endpoint === getDotComAPIEndpoint()) {
       return 'dotcom'
     } else if (this.endpoint === getBitbucketAPIEndpoint()) {
