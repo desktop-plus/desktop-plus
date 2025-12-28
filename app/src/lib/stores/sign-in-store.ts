@@ -29,7 +29,6 @@ import { enableMultipleDotComAccounts } from '../feature-flag'
  */
 export enum SignInStep {
   EndpointEntry = 'EndpointEntry',
-  AccountNameEntry = 'AccountNameEntry',
   ExistingAccountWarning = 'ExistingAccountWarning',
   Authentication = 'Authentication',
   TwoFactorAuthentication = 'TwoFactorAuthentication',

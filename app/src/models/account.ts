@@ -25,17 +25,7 @@ export function accountEquals(x: Account, y: Account) {
 export class Account {
   /** Create an account which can be used to perform unauthenticated API actions */
   public static anonymous(): Account {
-    return new Account(
-      '',
-      '',
-      getDotComAPIEndpoint(),
-      [],
-      '',
-      -1,
-      '',
-      'free',
-      ''
-    )
+    return new Account('', getDotComAPIEndpoint(), '', [], '', -1, '', 'free')
   }
 
   private _friendlyEndpoint: string | undefined = undefined

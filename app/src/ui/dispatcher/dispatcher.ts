@@ -1599,7 +1599,6 @@ export class Dispatcher {
     resultCallback?: (result: SignInResult) => void
   ): Promise<void> {
     this.appStore._beginDotComSignIn(resultCallback)
-
     this.appStore._showPopup({ type: PopupType.SignIn })
   }
 

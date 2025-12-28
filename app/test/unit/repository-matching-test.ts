@@ -21,8 +21,7 @@ describe('repository-matching', () => {
           '',
           1,
           '',
-          'free',
-          ''
+          'free'
         ),
       ]
       const repo = matchGitHubRepository(
@@ -44,8 +43,7 @@ describe('repository-matching', () => {
           '',
           1,
           '',
-          'free',
-          ''
+          'free'
         ),
       ]
       const repo = matchGitHubRepository(
@@ -67,8 +65,7 @@ describe('repository-matching', () => {
           '',
           1,
           '',
-          'free',
-          ''
+          'free'
         ),
       ]
       const repo = matchGitHubRepository(
@@ -90,8 +87,7 @@ describe('repository-matching', () => {
           '',
           1,
           '',
-          'free',
-          ''
+          'free'
         ),
       ]
       const repo = matchGitHubRepository(
@@ -113,8 +109,7 @@ describe('repository-matching', () => {
           '',
           1,
           '',
-          'free',
-          ''
+          'free'
         ),
       ]
       const repo = matchGitHubRepository(
