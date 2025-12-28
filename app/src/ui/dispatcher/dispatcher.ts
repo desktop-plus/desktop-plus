@@ -1600,10 +1600,6 @@ export class Dispatcher {
   ): Promise<void> {
     this.appStore._beginDotComSignIn(resultCallback)
 
-    // if (username !== undefined) {
-    //   this.appStore._setSignInEndpoint(username)
-    // }
-
     this.appStore._showPopup({ type: PopupType.SignIn })
   }
 

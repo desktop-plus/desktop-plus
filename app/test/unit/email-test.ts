@@ -22,8 +22,7 @@ describe('emails', () => {
         '',
         1234,
         'Caps Lock',
-        'free',
-        ''
+        'free'
       )
 
       assert.equal(
@@ -41,8 +40,7 @@ describe('emails', () => {
         '',
         1234,
         'Caps Lock',
-        'free',
-        ''
+        'free'
       )
 
       assert.equal(
@@ -81,8 +79,7 @@ describe('emails', () => {
         '',
         -1,
         'Caps Lock',
-        'free',
-        ''
+        'free'
       )
 
       assert.equal(
@@ -121,8 +118,7 @@ describe('emails', () => {
         '',
         -1,
         'Caps Lock',
-        'free',
-        ''
+        'free'
       )
 
       assert.equal(
@@ -161,8 +157,7 @@ describe('emails', () => {
         '',
         -1,
         'Caps Lock',
-        'free',
-        ''
+        'free'
       )
 
       assert.equal(
@@ -201,8 +196,7 @@ describe('emails', () => {
         '',
         -1,
         'Caps Lock',
-        'free',
-        ''
+        'free'
       )
 
       assert.equal(
@@ -235,8 +229,7 @@ describe('emails', () => {
         '',
         -1,
         'Caps Lock',
-        'free',
-        ''
+        'free'
       )
 
       assert.equal(lookupPreferredEmail(account), 'shiftkey@example.com')
@@ -275,8 +268,7 @@ describe('emails', () => {
         '',
         123,
         '',
-        'free',
-        ''
+        'free'
       )
 
       assert(isAttributableEmailFor(account, 'personal@gmail.com'))
@@ -293,17 +285,7 @@ describe('emails', () => {
 
     it('considers stealth emails when account has no emails', () => {
       const endpoint = getDotComAPIEndpoint()
-      const account = new Account(
-        'niik',
-        endpoint,
-        '',
-        [],
-        '',
-        123,
-        '',
-        'free',
-        ''
-      )
+      const account = new Account('niik', endpoint, '', [], '', 123, '', 'free')
 
       assert.equal(
         isAttributableEmailFor(account, 'niik@users.noreply.github.com'),
@@ -317,17 +299,7 @@ describe('emails', () => {
 
     it('considers stealth emails for GitHub Enterprise', () => {
       const endpoint = getDotComAPIEndpoint()
-      const account = new Account(
-        'niik',
-        endpoint,
-        '',
-        [],
-        '',
-        123,
-        '',
-        'free',
-        ''
-      )
+      const account = new Account('niik', endpoint, '', [], '', 123, '', 'free')
 
       assert.equal(
         isAttributableEmailFor(account, 'niik@users.noreply.github.com'),
@@ -355,8 +327,7 @@ describe('emails', () => {
         '',
         123,
         '',
-        'free',
-        ''
+        'free'
       )
 
       assert(isAttributableEmailFor(account, 'niik@github.com'))

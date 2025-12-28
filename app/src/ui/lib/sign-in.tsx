@@ -60,20 +60,6 @@ export class SignIn extends React.Component<ISignInProps, {}> {
     )
   }
 
-  // private renderAccountNameEntryStep(
-  //   state: IAccountNameEntryState | IExistingAccountWarning
-  // ) {
-  //   const children = this.props.children as ReadonlyArray<JSX.Element>
-  //   return (
-  //     <AccountNameEntry
-  //       loading={state.loading}
-  //       error={state.error}
-  //       onSubmit={this.onAccountNameEntered}
-  //       additionalButtons={children}
-  //     />
-  //   )
-  // }
-
   private renderAuthenticationStep(
     state: IAuthenticationState | IExistingAccountWarning
   ) {
@@ -94,8 +80,6 @@ export class SignIn extends React.Component<ISignInProps, {}> {
     switch (state.kind) {
       case SignInStep.EndpointEntry:
         return this.renderEndpointEntryStep(state)
-      // case SignInStep.AccountNameEntry:
-      //   return this.renderAccountNameEntryStep(state)
       case SignInStep.ExistingAccountWarning:
         return this.renderExistingAccountWarningStep(state)
       case SignInStep.Authentication:
