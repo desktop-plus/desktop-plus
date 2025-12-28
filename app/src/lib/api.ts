@@ -25,6 +25,10 @@ import {
 import { HttpStatusCode } from './http-status-code'
 import { CopilotError } from './copilot-error'
 import { BypassReasonType } from '../ui/secret-scanning/bypass-push-protection-dialog'
+import {
+  enableMultipleEnterpriseAccounts,
+  enableMultipleLoginAccounts,
+} from './feature-flag'
 
 const envEndpoint = process.env['DESKTOP_GITHUB_DOTCOM_API_ENDPOINT']
 const envHTMLURL = process.env['DESKTOP_GITHUB_DOTCOM_HTML_URL']
@@ -2342,6 +2346,34 @@ export function getAccountForEndpoint(
   endpoint: string
 ): Account | null {
   return accounts.find(a => a.endpoint === endpoint) || null
+}
+
+export function getAccountForEndpointLogin(
+  accounts: ReadonlyArray<Account>,
+  endpoint: string,
+  login: string
+): Account | null {
+  return (
+    accounts.find(
+      a =>
+        a.endpoint === endpoint &&
+        (enableMultipleLoginAccounts() || a.login === login)
+    ) || null
+  )
+}
+
+export function getAccountForEndpointToken(
+  accounts: ReadonlyArray<Account>,
+  endpoint: string,
+  token: string
+): Account | null {
+  return (
+    accounts.find(
+      a =>
+        a.endpoint === endpoint &&
+        (enableMultipleLoginAccounts() || a.token === token)
+    ) || null
+  )
 }
 
 /** Get the account for the login. */
