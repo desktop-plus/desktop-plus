@@ -40,16 +40,16 @@ export class CloneGenericRepository extends React.Component<
             autoFocus={true}
             label={
               <div className="clone-url-textbox-label">
-                <p>Repository URL or GitHub username and repository</p>
                 <p>
-                  (<Ref>hubot/cool-repo</Ref>)
+                  Repository URL or GitHub username and repository (
+                  <Ref>hubot/cool-repo</Ref>)
                 </p>
               </div>
             }
           />
         </Row>
 
-        <Row>
+        <Row className="clone-generic-repository-space">
           <TextBox
             value={this.props.path}
             label={__DARWIN__ ? 'Local Path' : 'Local path'}

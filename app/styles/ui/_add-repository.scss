@@ -78,6 +78,10 @@ dialog.clone-repository {
     .clone-url-textbox-label p {
       margin: 0;
     }
+
+    .clone-generic-repository-space {
+      margin-top: var(--spacing);
+    }
   }
 }
 
