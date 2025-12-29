@@ -98,7 +98,6 @@ import {
 import {
   API,
   deleteToken,
-  getAccountForEndpoint,
   getEndpointForRepository,
   IAPIComment,
   IAPICreatePushProtectionBypassResponse,
@@ -819,7 +818,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     refreshToken: string,
     tokenExpiresAt: number
   ) => {
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const account = getAccountForEndpointToken(this.accounts, endpoint, token)
     if (account === null) {
       return
     }
@@ -955,7 +954,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.accountsStore.onDidUpdate(accounts => {
       this.accounts = accounts
       const endpointTokens = accounts.map<EndpointToken>(
-        ({ endpoint, token }) => ({ endpoint, token })
+        ({ endpoint, token, login }) => ({ endpoint, token, login })
       )
 
       updateAccounts(endpointTokens)
@@ -2276,11 +2275,19 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
   public async fetchPullRequest(repoUrl: string, pr: string) {
     const endpoint = getEndpointForRepository(repoUrl)
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const remoteUrl = parseRemote(repoUrl)
+    if (!remoteUrl) {
+      return null
+    }
+    const account = getAccountForEndpointLogin(
+      this.accounts,
+      endpoint,
+      remoteUrl.owner
+    )
 
     if (account) {
       const api = API.fromAccount(account)
-      const remoteUrl = parseRemote(repoUrl)
+
       if (remoteUrl && remoteUrl.owner && remoteUrl.name) {
         return await api.fetchPullRequest(remoteUrl.owner, remoteUrl.name, pr)
       }
@@ -8845,7 +8852,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const { endpoint, name, owner } = repository.gitHubRepository
 
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const account = getAccountForEndpointLogin(
+      this.accounts,
+      endpoint,
+      owner.login
+    )
 
     if (account === null) {
       log.error(

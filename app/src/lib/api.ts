@@ -3658,12 +3658,12 @@ export function getGitLabAPIEndpoint(): string {
 }
 
 /** Get the account for the endpoint. */
-export function getAccountForEndpoint(
+/* export function getAccountForEndpoint(
   accounts: ReadonlyArray<Account>,
   endpoint: string
 ): Account | null {
   return accounts.find(a => a.endpoint === endpoint) || null
-}
+} */
 
 export function getAccountForEndpointLogin(
   accounts: ReadonlyArray<Account>,
