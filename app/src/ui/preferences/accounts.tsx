@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Account } from '../../models/account'
+import { Account, isDotComAccount } from '../../models/account'
 import { IAvatarUser } from '../../models/avatar'
 import { lookupPreferredEmail } from '../../lib/email'
 import { assertNever } from '../../lib/fatal-error'
@@ -36,7 +36,6 @@ enum SignInType {
 export class Accounts extends React.Component<IAccountsProps, {}> {
   public render() {
     const { accounts } = this.props
-    const dotComAccount = accounts.find(a => a.apiType === 'dotcom')
     const bitbucketAccount = accounts.find(a => a.apiType === 'bitbucket')
     const gitlabAccount = accounts.find(a => a.apiType === 'gitlab')
 
