@@ -102,6 +102,8 @@ import {
   getEndpointForRepository,
   IAPIComment,
   IAPICreatePushProtectionBypassResponse,
+  getAccountForEndpointToken,
+  getAccountForEndpointLogin,
   IAPIFullRepository,
   IAPIOrganization,
   IAPIRepoRuleset,
@@ -787,7 +789,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   private onTokenInvalidated = (endpoint: string, token: string) => {
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const account = getAccountForEndpointToken(this.accounts, endpoint, token)
 
     if (account === null) {
       return
@@ -1314,7 +1316,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
     const branchName = findRemoteBranchName(tip, currentRemote, gitHubRepo)
 
     if (branchName !== null) {
-      const account = getAccountForEndpoint(this.accounts, gitHubRepo.endpoint)
+      const account = getAccountForEndpointLogin(
+        this.accounts,
+        gitHubRepo.endpoint,
+        gitHubRepo.owner.login
+      )
 
       if (account === null) {
         return
@@ -2211,7 +2217,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   public async _refreshIssues(repository: GitHubRepository) {
-    const user = getAccountForEndpoint(this.accounts, repository.endpoint)
+    const user = getAccountForEndpointLogin(
+      this.accounts,
+      repository.endpoint,
+      repository.owner.login
+    )
     if (!user) {
       return
     }
@@ -2232,7 +2242,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   private refreshMentionables(repository: GitHubRepository) {
-    const account = getAccountForEndpoint(this.accounts, repository.endpoint)
+    const account = getAccountForEndpointLogin(
+      this.accounts,
+      repository.endpoint,
+      repository.owner.login
+    )
     if (!account) {
       return
     }
@@ -4579,9 +4593,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const { owner, name } = repository.gitHubRepository
 
-    const account = getAccountForEndpoint(
+    const account = getAccountForEndpointLogin(
       this.accounts,
-      repository.gitHubRepository.endpoint
+      repository.gitHubRepository.endpoint,
+      repository.gitHubRepository.owner.login
     )
 
     if (account === null) {

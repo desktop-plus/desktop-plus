@@ -28,6 +28,7 @@ import { IOAuthAction } from '../parse-app-url'
 import { shell } from '../app-shell'
 import noop from 'lodash/noop'
 import { AccountsStore } from './accounts-store'
+import { enableMultipleLoginAccounts } from '../feature-flag'
 import { RepoType } from '../../models/github-repository'
 
 /**
@@ -107,6 +108,7 @@ export interface IExistingAccountWarning extends ISignInState {
  */
 export interface IEndpointEntryState extends ISignInState {
   readonly kind: SignInStep.EndpointEntry
+  readonly existingAccount?: Account
   readonly resultCallback: (result: SignInResult) => void
 }
 
@@ -244,7 +246,7 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
 
     const existingAccount = this.accounts.find(a => a.apiType === 'dotcom')
 
-    if (existingAccount) {
+    if (existingAccount && !enableMultipleLoginAccounts()) {
       this.setState({
         kind: SignInStep.ExistingAccountWarning,
         endpoint,
@@ -546,7 +548,9 @@ export class SignInStore extends TypedBaseStore<SignInState | null> {
 
     const endpoint = getEnterpriseAPIURL(validUrl)
 
-    const existingAccount = this.accounts.find(x => x.endpoint === endpoint)
+    const existingAccount = currentState.existingAccount
+      ? currentState.existingAccount
+      : this.accounts.find(x => x.endpoint === endpoint)
 
     if (existingAccount) {
       this.setState({

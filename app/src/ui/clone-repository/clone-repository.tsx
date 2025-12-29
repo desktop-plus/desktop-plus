@@ -409,7 +409,9 @@ export class CloneRepository extends React.Component<
     const selectedAccount =
       (tabState.selectedAccount
         ? tabAccounts.find(
-            a => a.endpoint === tabState.selectedAccount?.endpoint
+            a =>
+              a.endpoint === tabState.selectedAccount?.endpoint &&
+              a.login === tabState.selectedAccount?.login
           )
         : undefined) ?? tabAccounts.at(0)
 
