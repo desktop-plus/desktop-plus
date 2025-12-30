@@ -232,7 +232,8 @@ export class PullRequestStore {
    */
   private async storePullRequests(
     pullRequestsFromAPI: ReadonlyArray<IAPIPullRequest>,
-    repository: GitHubRepository
+    repository: GitHubRepository,
+    login?: string
   ) {
     if (pullRequestsFromAPI.length === 0) {
       return false
@@ -262,7 +263,7 @@ export class PullRequestStore {
       // only thing we really care about to determine whether the
       // repository has already been inserted in the database is the clone
       // url since that's what the upsert method uses as its key.
-      cacheKey: (_, repo) => repo.clone_url,
+      cacheKey: (_, repo, login?) => repo.clone_url,
     })
 
     for (const pr of pullRequestsFromAPI) {
@@ -278,7 +279,7 @@ export class PullRequestStore {
         return fatalError('PR cannot have a null base repo')
       }
 
-      const baseGitHubRepo = await upsertRepo(endpoint, pr.base.repo)
+      const baseGitHubRepo = await upsertRepo(endpoint, pr.base.repo, login)
 
       if (pr.state === 'closed') {
         prsToDelete.push(getPullRequestKey(baseGitHubRepo, pr.number))
@@ -300,7 +301,7 @@ export class PullRequestStore {
         continue
       }
 
-      const headRepo = await upsertRepo(endpoint, pr.head.repo)
+      const headRepo = await upsertRepo(endpoint, pr.head.repo, login)
 
       prsToUpsert.push({
         number: pr.number,

@@ -71,13 +71,14 @@ export class RepositoriesStore extends TypedBaseStore<
    */
   public async upsertGitHubRepositoryLight(
     endpoint: string,
-    apiRepository: IAPIRepository
+    apiRepository: IAPIRepository,
+    login?: string
   ) {
     return this.db.transaction(
       'rw',
       this.db.gitHubRepositories,
       this.db.owners,
-      () => this._upsertGitHubRepository(endpoint, apiRepository, true)
+      () => this._upsertGitHubRepository(endpoint, apiRepository, true, login)
     )
   }
 
@@ -87,13 +88,14 @@ export class RepositoriesStore extends TypedBaseStore<
    */
   public async upsertGitHubRepository(
     endpoint: string,
-    apiRepository: IAPIFullRepository
+    apiRepository: IAPIFullRepository,
+    login?: string
   ): Promise<GitHubRepository> {
     return this.db.transaction(
       'rw',
       this.db.gitHubRepositories,
       this.db.owners,
-      () => this._upsertGitHubRepository(endpoint, apiRepository, false)
+      () => this._upsertGitHubRepository(endpoint, apiRepository, false, login)
     )
   }
 
@@ -227,7 +229,8 @@ export class RepositoriesStore extends TypedBaseStore<
   public async addTutorialRepository(
     path: string,
     endpoint: string,
-    apiRepo: IAPIFullRepository
+    apiRepo: IAPIFullRepository,
+    login?: string
   ) {
     await this.db.transaction(
       'rw',
@@ -235,7 +238,11 @@ export class RepositoriesStore extends TypedBaseStore<
       this.db.gitHubRepositories,
       this.db.owners,
       async () => {
-        const ghRepo = await this.upsertGitHubRepository(endpoint, apiRepo)
+        const ghRepo = await this.upsertGitHubRepository(
+          endpoint,
+          apiRepo,
+          login
+        )
         const existingRepo = await this.db.repositories.get({ path })
 
         return await this.db.repositories.put({
@@ -504,7 +511,8 @@ export class RepositoriesStore extends TypedBaseStore<
   }
 
   public async upsertGitHubRepositoryFromMatch(
-    match: IMatchedGitHubRepository
+    match: IMatchedGitHubRepository,
+    login?: string
   ) {
     return await this.db.transaction(
       'rw',
@@ -528,7 +536,7 @@ export class RepositoriesStore extends TypedBaseStore<
           lastPruneDate: null,
           name: match.name,
           ownerID: owner.id,
-          login: account.login,
+          login: login,
           parentID: null,
           private: null,
         }
@@ -574,19 +582,24 @@ export class RepositoriesStore extends TypedBaseStore<
   private async _upsertGitHubRepository(
     endpoint: string,
     gitHubRepository: IAPIRepository | IAPIFullRepository,
-    ignoreParent = false
+    ignoreParent = false,
+    login?: string
   ): Promise<GitHubRepository> {
     const parent =
       'parent' in gitHubRepository && gitHubRepository.parent !== undefined
         ? await this._upsertGitHubRepository(
             endpoint,
             gitHubRepository.parent,
-            true
+            true,
+            login
           )
         : await Promise.resolve(null) // Dexie gets confused if we return null
 
-    const { login, type } = gitHubRepository.owner
-    const owner = await this.putOwner(endpoint, login, type)
+    const owner = await this.putOwner(
+      endpoint,
+      gitHubRepository.owner.login,
+      gitHubRepository.owner.type
+    )
 
     const existingRepo = await this.db.gitHubRepositories
       .where('[ownerID+name]')
@@ -633,7 +646,7 @@ export class RepositoriesStore extends TypedBaseStore<
       ...(existingRepo?.id !== undefined && { id: existingRepo.id }),
       ownerID: owner.id,
       name: gitHubRepository.name,
-      login: gitHubRepository.login,
+      login: login,
       private: gitHubRepository.private ?? existingRepo?.private ?? null,
       htmlURL: gitHubRepository.html_url,
       cloneURL: (gitHubRepository.clone_url || existingRepo?.cloneURL) ?? null,

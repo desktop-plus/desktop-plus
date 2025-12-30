@@ -66,7 +66,8 @@ export async function setupRepository(
   repositoriesStateCache: RepositoryStateCache,
   includesGhRepo: boolean,
   defaultBranchName: string,
-  lastPruneDate?: Date
+  lastPruneDate?: Date,
+  login?: string
 ) {
   let repository = await repositoriesStore.addRepository(path, undefined)
   if (includesGhRepo) {
@@ -100,7 +101,7 @@ export async function setupRepository(
     const endpoint = getDotComAPIEndpoint()
     repository = await repositoriesStore.setGitHubRepository(
       repository,
-      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo)
+      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo, login)
     )
   }
   await primeCaches(repository, repositoriesStateCache)

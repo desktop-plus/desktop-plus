@@ -188,9 +188,15 @@ export class Dispatcher {
   public addTutorialRepository(
     path: string,
     endpoint: string,
-    apiRepository: IAPIFullRepository
+    apiRepository: IAPIFullRepository,
+    login: string
   ) {
-    return this.appStore._addTutorialRepository(path, endpoint, apiRepository)
+    return this.appStore._addTutorialRepository(
+      path,
+      endpoint,
+      apiRepository,
+      login
+    )
   }
 
   /** Resume an already started onboarding tutorial */
