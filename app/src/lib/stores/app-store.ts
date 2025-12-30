@@ -4576,8 +4576,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
       repository.login
     )
 
-    console.log(ghRepo)
-
     const freshRepo = await repoStore.setGitHubRepository(repository, ghRepo)
 
     await this.refreshBranchProtectionState(freshRepo)
