@@ -70,6 +70,7 @@ export interface IDatabaseRepository {
    * of Git and GitHub.
    */
   readonly isTutorialRepository?: boolean
+  readonly login?: string
 }
 
 /**

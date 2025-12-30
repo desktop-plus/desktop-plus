@@ -102,7 +102,7 @@ import {
   IAPIComment,
   IAPICreatePushProtectionBypassResponse,
   getAccountForEndpointToken,
-  getAccountForEndpointLogin,
+  getAccountForEndpoint,
   IAPIFullRepository,
   IAPIOrganization,
   IAPIRepoRuleset,
@@ -1315,7 +1315,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     const branchName = findRemoteBranchName(tip, currentRemote, gitHubRepo)
 
     if (branchName !== null) {
-      const account = getAccountForEndpointLogin(
+      const account = getAccountForEndpoint(
         this.accounts,
         gitHubRepo.endpoint,
         gitHubRepo.login
@@ -2216,7 +2216,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   public async _refreshIssues(repository: GitHubRepository) {
-    const user = getAccountForEndpointLogin(
+    const user = getAccountForEndpoint(
       this.accounts,
       repository.endpoint,
       repository.login
@@ -2241,7 +2241,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   private refreshMentionables(repository: GitHubRepository) {
-    const account = getAccountForEndpointLogin(
+    const account = getAccountForEndpoint(
       this.accounts,
       repository.endpoint,
       repository.login
@@ -2273,18 +2273,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.pullRequestCoordinator.stopPullRequestUpdater()
   }
 
-  public async fetchPullRequest(repoUrl: string, pr: string) {
+  public async fetchPullRequest(repoUrl: string, pr: string, login?: string) {
     const endpoint = getEndpointForRepository(repoUrl)
     const remoteUrl = parseRemote(repoUrl)
 
     if (!remoteUrl) {
       return null
     }
-    const account = getAccountForEndpointLogin(
-      this.accounts,
-      endpoint,
-      remoteUrl.owner
-    )
+    const account = getAccountForEndpoint(this.accounts, endpoint, login)
 
     if (account) {
       const api = API.fromAccount(account)
@@ -2821,7 +2817,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
         this.repositories.find(
           r =>
             r.constructor === selectedRepository.constructor &&
-            r.id === selectedRepository.id
+            r.id === selectedRepository.id &&
+            r.login === selectedRepository.login
         ) || null
 
       newSelectedRepository = r
@@ -4543,13 +4540,21 @@ export class AppStore extends TypedBaseStore<IAppState> {
     // https://github.com/desktop/desktop/issues/1144). So we can bail early at
     // this point.
     if (!match) {
+      console.log('match')
+      console.log(repository)
       return repository
     }
 
     const { account, owner, name } = match
+
+    console.log('account')
+    console.log(account)
     const { endpoint } = account
     const api = API.fromAccount(account)
     const apiRepo = await api.fetchRepository(owner, name)
+
+    console.log('fetchRepository')
+    console.log(apiRepo)
 
     if (apiRepo === null) {
       // If the request fails, we want to preserve the existing GitHub
@@ -4564,14 +4569,25 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
 
     if (repository.gitHubRepository) {
+      console.log('repository.gitHubRepository')
+      console.log(repository.gitHubRepository)
       const gitStore = this.gitStoreCache.get(repository)
       await updateRemoteUrl(gitStore, repository.gitHubRepository, apiRepo)
     }
 
     const ghRepo = await repoStore.upsertGitHubRepository(endpoint, apiRepo)
+
+    console.log('ghRepo')
+    console.log(ghRepo)
     const freshRepo = await repoStore.setGitHubRepository(repository, ghRepo)
 
+    console.log('freshRepo')
+    console.log(freshRepo)
+
     await this.refreshBranchProtectionState(freshRepo)
+
+    console.log('freshRepo.2')
+    console.log(freshRepo)
     return freshRepo
   }
 
@@ -4601,10 +4617,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const { owner, name } = repository.gitHubRepository
 
-    const account = getAccountForEndpointLogin(
+    const account = getAccountForEndpoint(
       this.accounts,
       repository.gitHubRepository.endpoint,
-      repository.login
+      repository.gitHubRepository.login
     )
 
     if (account === null) {
@@ -4626,13 +4642,16 @@ export class AppStore extends TypedBaseStore<IAppState> {
   ): Promise<IMatchedGitHubRepository | null> {
     const gitStore = this.gitStoreCache.get(repository)
 
+    console.log('matchGitHubRepository')
+    console.log(gitStore)
+
     if (!gitStore.defaultRemote) {
       await gitStore.loadRemotes()
     }
 
     const remote = gitStore.defaultRemote
     return remote !== null
-      ? matchGitHubRepository(this.accounts, remote.url)
+      ? matchGitHubRepository(this.accounts, remote.url, repository.login)
       : null
   }
 
@@ -6695,7 +6714,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   public async _addRepositories(
-    paths: ReadonlyArray<string>
+    paths: ReadonlyArray<string>,
+    login?: string
   ): Promise<ReadonlyArray<Repository>> {
     const addedRepositories = new Array<Repository>()
     const lfsRepositories = new Array<Repository>()
@@ -6708,9 +6728,13 @@ export class AppStore extends TypedBaseStore<IAppState> {
       })
 
       if (repositoryType.kind === 'unsafe') {
-        const repository = await this.repositoriesStore.addRepository(path, {
-          missing: true,
-        })
+        const repository = await this.repositoriesStore.addRepository(
+          path,
+          {
+            missing: true,
+          },
+          login
+        )
 
         addedRepositories.push(repository)
         continue
@@ -6718,7 +6742,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
       if (repositoryType.kind === 'regular') {
         const validatedPath = repositoryType.topLevelWorkingDirectory
-        log.info(`[AppStore] adding repository at ${validatedPath} to store`)
+        log.info(
+          `[AppStore] adding repository at ${validatedPath} @${login} to store`
+        )
 
         const repositories = this.repositories
         const existing = matchExistingRepository(repositories, validatedPath)
@@ -6731,18 +6757,32 @@ export class AppStore extends TypedBaseStore<IAppState> {
         }
 
         const addedRepo = await this.repositoriesStore.addRepository(
-          validatedPath
+          validatedPath,
+          undefined,
+          login
         )
+
+        console.log('addedRepo')
+        console.log(addedRepo)
 
         // initialize the remotes for this new repository to ensure it can fetch
         // it's GitHub-related details using the GitHub API (if applicable)
         const gitStore = this.gitStoreCache.get(addedRepo)
         await gitStore.loadRemotes()
 
+        console.log('addedRepo.2')
+        console.log(addedRepo)
+
+        console.log('gitStore')
+        console.log(gitStore)
+
         const [refreshedRepo, usingLFS] = await Promise.all([
           this.repositoryWithRefreshedGitHubRepository(addedRepo),
           this.isUsingLFS(addedRepo),
         ])
+
+        console.log('refreshedRepo')
+        console.log(refreshedRepo)
         addedRepositories.push(refreshedRepo)
 
         if (usingLFS) {
@@ -6763,6 +6803,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
         repositories: lfsRepositories,
       })
     }
+
+    console.log('addedRepositories')
+    console.log(addedRepositories)
 
     return addedRepositories
   }
@@ -8863,11 +8906,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const { endpoint, name, owner } = repository.gitHubRepository
 
-    const account = getAccountForEndpointLogin(
-      this.accounts,
-      endpoint,
-      owner.login
-    )
+    const account = getAccountForEndpoint(this.accounts, endpoint, owner.login)
 
     if (account === null) {
       log.error(

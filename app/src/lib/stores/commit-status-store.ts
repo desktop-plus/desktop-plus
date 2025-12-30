@@ -5,7 +5,7 @@ import { Disposable, DisposableLike } from 'event-kit'
 import xor from 'lodash/xor'
 import { Account } from '../../models/account'
 import { GitHubRepository } from '../../models/github-repository'
-import { API, getAccountForEndpointLogin, IAPICheckSuite } from '../api'
+import { API, getAccountForEndpoint, IAPICheckSuite } from '../api'
 import {
   apiCheckRunToRefCheck,
   apiStatusToRefCheck,
@@ -540,7 +540,7 @@ export class CommitStatusStore {
     checkSuiteId: number
   ): Promise<boolean> {
     const { owner, name } = repository
-    const account = getAccountForEndpointLogin(
+    const account = getAccountForEndpoint(
       this.accounts,
       repository.endpoint,
       repository.login
@@ -558,7 +558,7 @@ export class CommitStatusStore {
     jobId: number
   ): Promise<boolean> {
     const { owner, name } = repository
-    const account = getAccountForEndpointLogin(
+    const account = getAccountForEndpoint(
       this.accounts,
       repository.endpoint,
       repository.login
@@ -576,7 +576,7 @@ export class CommitStatusStore {
     workflowRunId: number
   ): Promise<boolean> {
     const { owner, name } = repository
-    const account = getAccountForEndpointLogin(
+    const account = getAccountForEndpoint(
       this.accounts,
       repository.endpoint,
       repository.login
@@ -594,7 +594,7 @@ export class CommitStatusStore {
     checkSuiteId: number
   ): Promise<IAPICheckSuite | null> {
     const { owner, name } = repository
-    const account = getAccountForEndpointLogin(
+    const account = getAccountForEndpoint(
       this.accounts,
       repository.endpoint,
       repository.login

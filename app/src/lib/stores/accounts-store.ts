@@ -100,23 +100,7 @@ export class AccountsStore extends TypedBaseStore<ReadonlyArray<Account>> {
 
     const multipleLoginAccounts = enableMultipleLoginAccounts()
 
-    try {
-      const key = getKeyForAccount(account)
-      await this.secureStore.setItem(key, account.login, account.token)
-    } catch (e) {
-      log.error(`Error adding account '${account.login}'`, e)
-
-      if (__DARWIN__ && isKeyChainError(e)) {
-        this.emitError(
-          new Error(
-            `GitHub Desktop was unable to store the account token in the keychain. Please check you have unlocked access to the 'login' keychain.`
-          )
-        )
-      } else {
-        this.emitError(e)
-      }
-      return null
-    }
+    this.storeAccountKey(account)
 
     const accountsByEndpoint = this.accounts.reduce(
       (map, x) =>

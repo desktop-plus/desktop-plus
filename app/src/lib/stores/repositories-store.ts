@@ -179,7 +179,8 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.defaultBranch,
       repo.workflowPreferences,
       repo.customEditorOverride,
-      repo.isTutorialRepository
+      repo.isTutorialRepository,
+      repo.login
     )
   }
 
@@ -260,7 +261,8 @@ export class RepositoriesStore extends TypedBaseStore<
    */
   public async addRepository(
     path: string,
-    opts?: AddRepositoryOptions
+    opts?: AddRepositoryOptions,
+    login?: string
   ): Promise<Repository> {
     const repository = await this.db.transaction(
       'rw',
@@ -281,6 +283,7 @@ export class RepositoriesStore extends TypedBaseStore<
           lastStashCheckDate: null,
           alias: null,
           defaultBranch: null,
+          login,
         }
         const id = await this.db.repositories.add(dbRepo)
         return this.toRepository({ id, ...dbRepo })
@@ -318,7 +321,8 @@ export class RepositoriesStore extends TypedBaseStore<
       repository.defaultBranch,
       repository.workflowPreferences,
       repository.customEditorOverride,
-      repository.isTutorialRepository
+      repository.isTutorialRepository,
+      repository.login
     )
   }
 
@@ -360,7 +364,8 @@ export class RepositoriesStore extends TypedBaseStore<
       defaultBranch,
       repository.workflowPreferences,
       repository.customEditorOverride,
-      repository.isTutorialRepository
+      repository.isTutorialRepository,
+      repository.login
     )
   }
 
@@ -408,7 +413,8 @@ export class RepositoriesStore extends TypedBaseStore<
       repository.defaultBranch,
       repository.workflowPreferences,
       repository.customEditorOverride,
-      repository.isTutorialRepository
+      repository.isTutorialRepository,
+      repository.login
     )
   }
 
@@ -557,7 +563,8 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.defaultBranch,
       repo.workflowPreferences,
       repo.customEditorOverride,
-      repo.isTutorialRepository
+      repo.isTutorialRepository,
+      repo.login
     )
 
     assertIsRepositoryWithGitHubRepository(updatedRepo)

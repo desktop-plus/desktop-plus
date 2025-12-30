@@ -1,6 +1,6 @@
 import { Repository } from '../../../models/repository'
 import { GitHubRepository } from '../../../models/github-repository'
-import { API, getAccountForEndpointLogin } from '../../api'
+import { API, getAccountForEndpoint } from '../../api'
 import { fatalError } from '../../fatal-error'
 import { AccountsStore } from '../accounts-store'
 
@@ -119,7 +119,7 @@ export class BackgroundFetcher {
   private async getFetchInterval(
     repository: GitHubRepository
   ): Promise<number> {
-    const account = getAccountForEndpointLogin(
+    const account = getAccountForEndpoint(
       await this.accountsStore.getAll(),
       repository.endpoint,
       repository.login

@@ -1,6 +1,6 @@
 import { Repository } from '../models/repository'
 import { Account } from '../models/account'
-import { getAccountForEndpointLogin } from './api'
+import { getAccountForEndpoint } from './api'
 
 /** Get the authenticated account for the repository. */
 export function getAccountForRepository(
@@ -12,9 +12,9 @@ export function getAccountForRepository(
     return null
   }
 
-  return getAccountForEndpointLogin(
+  return getAccountForEndpoint(
     accounts,
     gitHubRepository.endpoint,
-    repository.login
+    gitHubRepository.login
   )
 }

@@ -168,9 +168,10 @@ export class Dispatcher {
    * this will post an error to that affect.
    */
   public addRepositories(
-    paths: ReadonlyArray<string>
+    paths: ReadonlyArray<string>,
+    login?: string
   ): Promise<ReadonlyArray<Repository>> {
-    return this.appStore._addRepositories(paths)
+    return this.appStore._addRepositories(paths, login)
   }
 
   /**
@@ -834,7 +835,7 @@ export class Dispatcher {
         return null
       }
 
-      const addedRepositories = await this.addRepositories([path])
+      const addedRepositories = await this.addRepositories([path], login)
 
       if (addedRepositories.length < 1) {
         return null
@@ -1865,12 +1866,12 @@ export class Dispatcher {
   }
 
   private async openRepositoryFromUrl(action: IOpenRepositoryFromURLAction) {
-    const { url, pr, branch, filepath } = action
+    const { url, pr, branch, filepath, login } = action
 
     let repository: Repository | null
 
     if (pr !== null) {
-      repository = await this.openPullRequestFromUrl(url, pr)
+      repository = await this.openPullRequestFromUrl(url, pr, login)
     } else if (branch !== null) {
       repository = await this.openBranchNameFromUrl(url, branch)
     } else {
@@ -1924,9 +1925,10 @@ export class Dispatcher {
 
   private async openPullRequestFromUrl(
     url: string,
-    pr: string
+    pr: string,
+    login?: string
   ): Promise<RepositoryWithGitHubRepository | null> {
-    const pullRequest = await this.appStore.fetchPullRequest(url, pr)
+    const pullRequest = await this.appStore.fetchPullRequest(url, pr, login)
 
     if (pullRequest === null) {
       return null

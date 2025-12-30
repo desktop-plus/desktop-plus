@@ -21,6 +21,8 @@ export interface IOpenRepositoryFromURLAction {
 
   /** the file to open after cloning the repository */
   readonly filepath: string | null
+
+  readonly login?: string
 }
 
 export interface IUnknownAction {
@@ -99,6 +101,7 @@ export function parseAppURL(url: string): URLActionType {
     const pr = getQueryStringValue(query, 'pr')
     const branch = getQueryStringValue(query, 'branch')
     const filepath = getQueryStringValue(query, 'filepath')
+    const login = getQueryStringValue(query, 'username')
 
     if (pr != null) {
       if (!/^\d+$/.test(pr)) {
@@ -121,6 +124,7 @@ export function parseAppURL(url: string): URLActionType {
       branch,
       pr,
       filepath,
+      login: login || undefined,
     }
   }
 
