@@ -2,7 +2,12 @@ import * as Path from 'path'
 import * as React from 'react'
 import { Dispatcher } from '../dispatcher'
 import { getDefaultDir, setDefaultDir } from '../lib/default-dir'
-import { Account, AccountAPIType } from '../../models/account'
+import {
+  Account,
+  AccountAPIType,
+  isDotComAccount,
+  isEnterpriseAccount,
+} from '../../models/account'
 import { FoldoutType } from '../../lib/app-state'
 import {
   IRepositoryIdentifier,
@@ -441,44 +446,37 @@ export class CloneRepository extends React.Component<
       )
     }
 
-      case CloneRepositoryTab.DotCom:
-      case CloneRepositoryTab.Enterprise: {
-        const tabState = this.getGitHubTabState(tab)
-        const tabAccounts = this.getAccountsForTab(tab, this.props.accounts)
+    const tabState = this.getGitHubTabState(tab)
+    const tabAccounts = this.getAccountsForTab(tab, this.props.accounts)
 
-        if (!tabState.selectedAccount) {
-          return <DialogContent>{this.renderSignIn(tab)}</DialogContent>
-        } else {
-          const accountState = this.props.apiRepositories.get(
-            tabState.selectedAccount
-          )
-          const repositories =
-            accountState === undefined ? null : accountState.repositories
-          const loading =
-            accountState === undefined ? false : accountState.loading
+    if (!tabState.selectedAccount) {
+      return <DialogContent>{this.renderSignIn(tab)}</DialogContent>
+    } else {
+      const accountState = this.props.apiRepositories.get(
+        tabState.selectedAccount
+      )
+      const repositories =
+        accountState === undefined ? null : accountState.repositories
+      const loading = accountState === undefined ? false : accountState.loading
 
-          return (
-            <CloneGithubRepository
-              path={tabState.path ?? ''}
-              account={tabState.selectedAccount}
-              accounts={tabAccounts}
-              selectedItem={tabState.selectedItem}
-              onSelectionChanged={this.onSelectionChanged}
-              onPathChanged={this.onPathChanged}
-              onChooseDirectory={this.onChooseDirectory}
-              repositories={repositories}
-              loading={loading}
-              onRefreshRepositories={this.props.onRefreshRepositories}
-              filterText={tabState.filterText}
-              onFilterTextChanged={this.onFilterTextChanged}
-              onItemClicked={this.onItemClicked}
-              onSelectedAccountChanged={this.onSelectedAccountChanged}
-            />
-          )
-        }
-      }
-      default:
-        return assertNever(tab, `Unknown tab: ${tab}`)
+      return (
+        <CloneGithubRepository
+          path={tabState.path ?? ''}
+          account={tabState.selectedAccount}
+          accounts={tabAccounts}
+          selectedItem={tabState.selectedItem}
+          onSelectionChanged={this.onSelectionChanged}
+          onPathChanged={this.onPathChanged}
+          onChooseDirectory={this.onChooseDirectory}
+          repositories={repositories}
+          loading={loading}
+          onRefreshRepositories={this.props.onRefreshRepositories}
+          filterText={tabState.filterText}
+          onFilterTextChanged={this.onFilterTextChanged}
+          onItemClicked={this.onItemClicked}
+          onSelectedAccountChanged={this.onSelectedAccountChanged}
+        />
+      )
     }
   }
 
