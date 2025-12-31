@@ -250,7 +250,7 @@ export class RepositoriesList extends React.Component<
     } else if (kind === 'other') {
       return 'Other'
     } else if (kind === 'dotcom') {
-      return group.owner.login
+      return group.owner.login + (group.login ? ' (' + group.login + ')' : '')
     } else if (kind === 'recent') {
       return 'Recent'
     } else {

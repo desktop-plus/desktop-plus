@@ -177,10 +177,13 @@ export class MissingRepository extends React.Component<
       return
     }
 
+    const login = gitHubRepository.login || undefined
+
     try {
       await this.props.dispatcher.cloneAgain(
         cloneURL,
-        this.props.repository.path
+        this.props.repository.path,
+        login
       )
     } catch (error) {
       this.props.dispatcher.postError(error)

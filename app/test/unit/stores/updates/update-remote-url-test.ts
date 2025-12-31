@@ -40,7 +40,8 @@ describe('Update remote url', () => {
   const createRepository = async (
     t: TestContext,
     apiRepo: IAPIFullRepository,
-    remoteUrl: string | null = null
+    remoteUrl: string | null = null,
+    login?: string
   ) => {
     const db = new TestRepositoriesDatabase()
     await db.reset()
@@ -49,7 +50,7 @@ describe('Update remote url', () => {
     const repoPath = await setupFixtureRepository(t, 'test-repo')
     const repository = await repositoriesStore.setGitHubRepository(
       await repositoriesStore.addRepository(repoPath),
-      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo)
+      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo, login)
     )
     await addRemote(repository, 'origin', remoteUrl || apiRepo.clone_url)
     gitStore = new GitStore(repository, shell, new TestStatsStore())

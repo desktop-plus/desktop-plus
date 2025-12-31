@@ -12,5 +12,9 @@ export function getAccountForRepository(
     return null
   }
 
-  return getAccountForEndpoint(accounts, gitHubRepository.endpoint)
+  return getAccountForEndpoint(
+    accounts,
+    gitHubRepository.endpoint,
+    gitHubRepository.login
+  )
 }

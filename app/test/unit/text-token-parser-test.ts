@@ -53,6 +53,7 @@ describe('Tokenizer', () => {
 
     const gitHubRepository = gitHubRepoFixture({
       name,
+      login,
       owner: login,
       isPrivate: false,
     })

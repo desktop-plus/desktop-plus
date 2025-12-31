@@ -19,12 +19,15 @@ const memoizedGetGenericPassword = memoizeOne(
 
 export async function findGitHubTrampolineAccount(
   accountsStore: AccountsStore,
-  remoteUrl: string
+  remoteUrl: string,
+  login?: string
 ): Promise<Account | undefined> {
   const accounts = await accountsStore.getAll()
   const parsedUrl = new URL(remoteUrl)
   return accounts.find(
-    a => new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin
+    a =>
+      new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin &&
+      (!login || login === '' || a.login === login)
   )
 }
 

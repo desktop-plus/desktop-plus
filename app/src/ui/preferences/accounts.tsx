@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Account } from '../../models/account'
+import { Account, isDotComAccount } from '../../models/account'
 import { IAvatarUser } from '../../models/avatar'
 import { lookupPreferredEmail } from '../../lib/email'
 import { assertNever } from '../../lib/fatal-error'
@@ -10,6 +10,7 @@ import { Avatar } from '../lib/avatar'
 import { CallToAction } from '../lib/call-to-action'
 import {
   enableMultipleEnterpriseAccounts,
+  enableMultipleLoginAccounts,
   enableBitbucketIntegration,
   enableGitLabIntegration,
 } from '../../lib/feature-flag'
@@ -35,16 +36,15 @@ enum SignInType {
 export class Accounts extends React.Component<IAccountsProps, {}> {
   public render() {
     const { accounts } = this.props
-    const dotComAccount = accounts.find(a => a.apiType === 'dotcom')
     const bitbucketAccount = accounts.find(a => a.apiType === 'bitbucket')
     const gitlabAccount = accounts.find(a => a.apiType === 'gitlab')
 
     return (
       <DialogContent className="accounts-tab">
         <h2>GitHub.com</h2>
-        {dotComAccount
-          ? this.renderAccount(dotComAccount, SignInType.DotCom)
-          : this.renderSignIn(SignInType.DotCom)}
+        {enableMultipleLoginAccounts()
+          ? this.renderMultipleDotComAccounts()
+          : this.renderSingleDotComAccount()}
 
         <h2>GitHub Enterprise</h2>
         {enableMultipleEnterpriseAccounts()
@@ -69,6 +69,33 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
           </>
         )}
       </DialogContent>
+    )
+  }
+
+  private renderSingleDotComAccount() {
+    const dotComAccount = this.props.accounts.find(isDotComAccount)
+
+    return dotComAccount
+      ? this.renderAccount(dotComAccount, SignInType.DotCom)
+      : this.renderSignIn(SignInType.DotCom)
+  }
+
+  private renderMultipleDotComAccounts() {
+    const dotComAccounts = this.props.accounts.filter(isDotComAccount)
+
+    return (
+      <>
+        {dotComAccounts.map(account => {
+          return this.renderAccount(account, SignInType.DotCom)
+        })}
+        {dotComAccounts.length === 0 ? (
+          this.renderSignIn(SignInType.DotCom)
+        ) : (
+          <Button onClick={this.props.onDotComSignIn}>
+            Add GitHub account
+          </Button>
+        )}
+      </>
     )
   }
 

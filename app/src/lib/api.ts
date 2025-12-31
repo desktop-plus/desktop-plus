@@ -27,6 +27,7 @@ import {
 import { HttpStatusCode } from './http-status-code'
 import { CopilotError } from './copilot-error'
 import { BypassReasonType } from '../ui/secret-scanning/bypass-push-protection-dialog'
+import { enableMultipleLoginAccounts } from './feature-flag'
 import { assertNever } from './fatal-error'
 
 const envEndpoint = process.env['DESKTOP_GITHUB_DOTCOM_API_ENDPOINT']
@@ -190,6 +191,7 @@ export interface IAPIRepository {
   readonly ssh_url: string
   readonly html_url: string
   readonly name: string
+  readonly login?: string
   readonly owner: IAPIIdentity
   readonly private: boolean | null // null if unknown
   readonly fork: boolean
@@ -237,6 +239,7 @@ export interface IAPIRepositoryCloneInfo {
   /** Canonical clone URL of the repository. */
   readonly url: string
 
+  readonly login?: string
   /**
    * Default branch of the repository, if any. This is usually either retrieved
    * from the API for GitHub repositories, or undefined for other repositories.
@@ -284,6 +287,7 @@ export interface IBitbucketAPIRepository
   readonly parent?: IBitbucketAPIRepository
   readonly has_issues: boolean
   readonly updated_on: string
+  readonly login?: string
   readonly mainbranch: {
     readonly name: string
   }
@@ -308,6 +312,7 @@ function toIAPIRepository(repo: IBitbucketAPIRepository): IAPIRepository {
     ssh_url: sshUrl,
     html_url: repo.links.html.href,
     name: repo.name,
+    login: repo.login,
     owner: toIAPIIdentity(repo.owner),
     private: repo.is_private,
     fork: false,
@@ -1077,6 +1082,7 @@ function toIAPIEmailFromGitLab(
 export interface IGitLabAPIRepository {
   readonly id: number
   readonly name: string
+  readonly login: string
   readonly path: string
   readonly path_with_namespace: string
   readonly web_url: string
@@ -1104,6 +1110,7 @@ function toIAPIRepositoryFromGitLab(
     ssh_url: repo.ssh_url_to_repo,
     html_url: repo.web_url,
     name: repo.path,
+    login: repo.login,
     owner: {
       id: repo.owner?.id ?? 0,
       login: ownerLogin,
@@ -1392,12 +1399,17 @@ interface IAPIAliveWebSocket {
   readonly url: string
 }
 
-type TokenInvalidatedCallback = (endpoint: string, token: string) => void
+type TokenInvalidatedCallback = (
+  endpoint: string,
+  token: string,
+  login?: string
+) => void
 type TokenRefreshedCallback = (
   endpoint: string,
   token: string,
   refreshToken: string,
-  expiresAt: number
+  expiresAt: number,
+  login?: string
 ) => void
 
 export interface IAPICreatePushProtectionBypassResponse {
@@ -1428,9 +1440,13 @@ export class API {
     this.tokenRefreshedListeners.add(callback)
   }
 
-  protected static emitTokenInvalidated(endpoint: string, token: string) {
+  protected static emitTokenInvalidated(
+    endpoint: string,
+    token: string,
+    login?: string
+  ) {
     this.tokenInvalidatedListeners.forEach(callback =>
-      callback(endpoint, token)
+      callback(endpoint, token, login)
     )
   }
 
@@ -1438,10 +1454,11 @@ export class API {
     endpoint: string,
     token: string,
     refreshToken: string,
-    expiresAt: number
+    expiresAt: number,
+    login?: string
   ) {
     this.tokenRefreshedListeners.forEach(callback =>
-      callback(endpoint, token, refreshToken, expiresAt)
+      callback(endpoint, token, refreshToken, expiresAt, login)
     )
   }
 
@@ -1464,7 +1481,12 @@ export class API {
         )
       case 'dotcom':
       case 'enterprise':
-        return new API(account.endpoint, account.token, account.copilotEndpoint)
+        return new API(
+          account.endpoint,
+          account.token,
+          account.copilotEndpoint,
+          account.login
+        )
       default:
         assertNever(account.apiType, 'Unknown API type')
     }
@@ -1472,6 +1494,7 @@ export class API {
 
   protected endpoint: string
   protected token: string
+  protected login?: string
   private copilotEndpoint?: string
   private refreshTokenPromise?: Promise<void>
 
@@ -1479,11 +1502,13 @@ export class API {
   public constructor(
     endpoint: string,
     token: string,
-    copilotEndpoint?: string
+    copilotEndpoint?: string,
+    login?: string
   ) {
     this.endpoint = endpoint
     this.token = token
     this.copilotEndpoint = copilotEndpoint
+    this.login = login
   }
 
   public getToken() {
@@ -1648,7 +1673,8 @@ export class API {
   public async fetchRepositoryCloneInfo(
     owner: string,
     name: string,
-    protocol: GitProtocol | undefined
+    protocol: GitProtocol | undefined,
+    login?: string
   ): Promise<IAPIRepositoryCloneInfo | null> {
     const response = await this.ghRequest('GET', `repos/${owner}/${name}`, {
       // Make sure we don't run into cache issues when fetching the repositories,
@@ -1663,6 +1689,7 @@ export class API {
     const repo = await parsedResponse<IAPIRepository>(response)
     return {
       url: protocol === 'ssh' ? repo.ssh_url : repo.clone_url,
+      login,
       defaultBranch: repo.default_branch,
     }
   }
@@ -2474,7 +2501,8 @@ export class API {
       body?: Object
       customHeaders?: Object
       reloadCache?: boolean
-    } = {}
+    } = {},
+    login?: string
   ): Promise<Response> {
     const expiration = this.getTokenExpiration()
     if (expiration !== null && expiration.getTime() < Date.now()) {
@@ -2489,7 +2517,8 @@ export class API {
       path,
       options.body,
       { ...this.getExtraHeaders(), ...options.customHeaders },
-      options.reloadCache
+      options.reloadCache,
+      login
     )
   }
 
@@ -2506,7 +2535,13 @@ export class API {
       reloadCache?: boolean
     } = {}
   ): Promise<Response> {
-    const response = await this.request(this.endpoint, method, path, options)
+    const response = await this.request(
+      this.endpoint,
+      method,
+      path,
+      options,
+      this.login
+    )
 
     this.checkTokenInvalidated(response)
 
@@ -2926,7 +2961,8 @@ export class BitbucketAPI extends API {
         this.endpoint,
         this.token,
         this.apiRefreshToken,
-        this.expiresAt.getTime()
+        this.expiresAt.getTime(),
+        this.login
       )
     } catch (e) {
       log.warn('refreshOAuthTokenBitbucket failed', e)
@@ -3282,7 +3318,8 @@ export class GitLabAPI extends API {
         this.endpoint,
         this.token,
         this.apiRefreshToken,
-        this.expiresAt.getTime()
+        this.expiresAt.getTime(),
+        this.login
       )
     } catch (e) {
       log.warn('refreshOAuthTokenGitLab failed', e)
@@ -3603,7 +3640,8 @@ export async function fetchUser(
   endpoint: string,
   token: string,
   refreshToken: string,
-  expiresAt: number
+  expiresAt: number,
+  login?: string
 ): Promise<Account> {
   let api: API
   if (endpoint === getBitbucketAPIEndpoint()) {
@@ -3611,7 +3649,7 @@ export async function fetchUser(
   } else if (endpoint === getGitLabAPIEndpoint()) {
     api = GitLabAPI.get(token, refreshToken, expiresAt)
   } else {
-    api = new API(endpoint, token)
+    api = new API(endpoint, token, undefined, login)
   }
   try {
     const [user, emails, copilotInfo, features] = await Promise.all([
@@ -3757,9 +3795,38 @@ export function getGitLabAPIEndpoint(): string {
 /** Get the account for the endpoint. */
 export function getAccountForEndpoint(
   accounts: ReadonlyArray<Account>,
-  endpoint: string
+  endpoint: string,
+  login?: string
 ): Account | null {
-  return accounts.find(a => a.endpoint === endpoint) || null
+  return (
+    accounts.find(
+      a =>
+        a.endpoint === endpoint &&
+        (login === undefined || login === '' || a.login === login)
+    ) || null
+  )
+}
+
+export function getAccountForEndpointToken(
+  accounts: ReadonlyArray<Account>,
+  endpoint: string,
+  token: string
+): Account | null {
+  return (
+    accounts.find(
+      a =>
+        a.endpoint === endpoint &&
+        (!enableMultipleLoginAccounts() || a.token === token)
+    ) || null
+  )
+}
+
+/** Get the account for the login. */
+export function getAccountForLogin(
+  accounts: ReadonlyArray<Account>,
+  login: string
+): Account | null {
+  return accounts.find(a => a.login === login) || null
 }
 
 export function getOAuthAuthorizationURL(

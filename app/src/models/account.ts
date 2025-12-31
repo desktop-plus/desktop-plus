@@ -5,7 +5,7 @@ import {
   getHTMLURL,
   IAPIEmail,
 } from '../lib/api'
-
+import { enableMultipleLoginAccounts } from '../lib/feature-flag'
 /**
  * Returns a value indicating whether two account instances
  * can be considered equal. Equality is determined by comparing
@@ -15,7 +15,11 @@ import {
  * and a particular account.
  */
 export function accountEquals(x: Account, y: Account) {
-  return x.endpoint === y.endpoint && x.id === y.id
+  return (
+    x.endpoint === y.endpoint &&
+    x.id === y.id &&
+    (enableMultipleLoginAccounts() || x.login === y.login)
+  )
 }
 
 export type AccountAPIType = 'dotcom' | 'enterprise' | 'bitbucket' | 'gitlab'

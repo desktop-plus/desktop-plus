@@ -120,7 +120,8 @@ export function request(
   path: string,
   jsonBody?: Object,
   customHeaders?: Object,
-  reloadCache: boolean = false
+  reloadCache: boolean = false,
+  login?: string
 ): Promise<Response> {
   const url = getAbsoluteUrl(endpoint, path)
 

@@ -6,6 +6,7 @@ import { fatalError } from '../fatal-error'
 import { TypedBaseStore } from './base-store'
 import { isGHE } from '../endpoint-capabilities'
 import { compare, compareDescending } from '../compare'
+import { enableMultipleLoginAccounts } from '../feature-flag'
 
 // Ensure that GitHub.com accounts appear first followed by Enterprise
 // accounts, sorted by the order in which they were added.
@@ -97,15 +98,24 @@ export class AccountsStore extends TypedBaseStore<ReadonlyArray<Account>> {
   public async addAccount(account: Account): Promise<Account | null> {
     await this.loadingPromise
 
-    if (!(await this.storeAccountKey(account))) {
-      return null
-    }
+    const multipleLoginAccounts = enableMultipleLoginAccounts()
+
+    this.storeAccountKey(account)
 
     const accountsByEndpoint = this.accounts.reduce(
-      (map, x) => map.set(x.endpoint, x),
+      (map, x) =>
+        map.set(
+          multipleLoginAccounts ? x.endpoint + ':' + x.login : x.endpoint,
+          x
+        ),
       new Map<string, Account>()
     )
-    accountsByEndpoint.set(account.endpoint, account)
+    accountsByEndpoint.set(
+      multipleLoginAccounts
+        ? account.endpoint + ':' + account.login
+        : account.endpoint,
+      account
+    )
 
     this.accounts = sortAccounts([...accountsByEndpoint.values()])
 
@@ -203,7 +213,12 @@ export class AccountsStore extends TypedBaseStore<ReadonlyArray<Account>> {
     }
 
     this.accounts = this.accounts.filter(
-      a => !(a.endpoint === account.endpoint && a.id === account.id)
+      a =>
+        !(
+          a.endpoint === account.endpoint &&
+          a.login === account.login &&
+          a.id === account.id
+        )
     )
 
     this.save()
@@ -301,6 +316,7 @@ async function updatedAccount(account: Account): Promise<Account> {
     account.endpoint,
     account.token,
     account.refreshToken,
-    account.tokenExpiresAt
+    account.tokenExpiresAt,
+    account.login
   )
 }

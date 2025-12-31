@@ -1,4 +1,5 @@
-import { getKeyForEndpoint } from './auth'
+import { getKeyForEndpoint, getKeyForEndpointAndLogin } from './auth'
+import { enableMultipleLoginAccounts } from './feature-flag'
 import { TokenStore } from './stores/token-store'
 
 export const genericGitAuthUsernameKeyPrefix = 'genericGitAuth/username/'
@@ -25,7 +26,9 @@ export function setGenericPassword(
   username: string,
   password: string
 ): Promise<void> {
-  const key = getKeyForEndpoint(endpoint)
+  const key = enableMultipleLoginAccounts()
+    ? getKeyForEndpointAndLogin(endpoint, username)
+    : getKeyForEndpoint(endpoint)
   return TokenStore.setItem(key, username, password)
 }
 
@@ -40,10 +43,20 @@ export function setGenericCredential(
 
 /** Get the password for the given username and host. */
 export const getGenericPassword = (endpoint: string, username: string) =>
-  TokenStore.getItem(getKeyForEndpoint(endpoint), username)
+  TokenStore.getItem(
+    enableMultipleLoginAccounts()
+      ? getKeyForEndpointAndLogin(endpoint, username)
+      : getKeyForEndpoint(endpoint),
+    username
+  )
 
 /** Delete a generic credential */
 export function deleteGenericCredential(endpoint: string, username: string) {
   localStorage.removeItem(getKeyForUsername(endpoint))
-  return TokenStore.deleteItem(getKeyForEndpoint(endpoint), username)
+  return TokenStore.deleteItem(
+    enableMultipleLoginAccounts()
+      ? getKeyForEndpointAndLogin(endpoint, username)
+      : getKeyForEndpoint(endpoint),
+    username
+  )
 }

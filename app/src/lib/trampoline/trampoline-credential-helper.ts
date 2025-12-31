@@ -47,9 +47,13 @@ const error = (msg: string, e: any) => log.error(`credential-helper: ${msg}`, e)
 const credWithAccount = (c: Credential, a: IGitAccount | undefined) =>
   a && new Map(c).set('username', a.login).set('password', a.token)
 
-async function getGitHubCredential(cred: Credential, store: AccountsStore) {
+async function getGitHubCredential(
+  cred: Credential,
+  store: AccountsStore,
+  login?: string
+) {
   const endpoint = `${getCredentialUrl(cred)}`
-  const account = await findGitHubTrampolineAccount(store, endpoint)
+  const account = await findGitHubTrampolineAccount(store, endpoint, login)
   if (account) {
     info(`found GitHub credential for ${endpoint} in store`)
   }
@@ -91,14 +95,19 @@ async function getExternalCredential(input: Credential, token: string) {
 }
 
 /** Implementation of the 'get' git credential helper command */
-async function getCredential(cred: Credential, store: Store, token: string) {
-  const ghCred = await getGitHubCredential(cred, store)
+async function getCredential(
+  cred: Credential,
+  store: Store,
+  token: string,
+  login?: string
+) {
+  const ghCred = await getGitHubCredential(cred, store, login)
 
   if (ghCred) {
     return ghCred
   }
 
-  const endpointKind = await getEndpointKind(cred, store)
+  const endpointKind = await getEndpointKind(cred, store, login)
   const accounts = await store.getAll()
 
   const endpoint = `${getCredentialUrl(cred)}`
@@ -108,7 +117,11 @@ async function getCredential(cred: Credential, store: Store, token: string) {
   // account for that endpoint then we should prompt the user to sign in.
   if (
     endpointKind !== 'generic' &&
-    !accounts.some(a => a.endpoint === apiEndpoint)
+    !accounts.some(
+      a =>
+        a.endpoint === apiEndpoint &&
+        (!login || login === '' || a.login === login)
+    )
   ) {
     if (getIsBackgroundTaskEnvironment(token)) {
       debug('background task environment, skipping prompt')
@@ -134,7 +147,11 @@ async function getCredential(cred: Credential, store: Store, token: string) {
     : getGenericCredential(cred, token)
 }
 
-const getEndpointKind = async (cred: Credential, store: Store) => {
+const getEndpointKind = async (
+  cred: Credential,
+  store: Store,
+  login?: string
+) => {
   const credentialUrl = getCredentialUrl(cred)
   const endpoint = `${credentialUrl}`
 
@@ -164,7 +181,11 @@ const getEndpointKind = async (cred: Credential, store: Store) => {
     }
   }
 
-  const existingAccount = await findGitHubTrampolineAccount(store, endpoint)
+  const existingAccount = await findGitHubTrampolineAccount(
+    store,
+    endpoint,
+    login
+  )
   if (existingAccount) {
     return isDotCom(existingAccount.endpoint) ? 'github.com' : 'enterprise'
   }
@@ -179,8 +200,13 @@ const getEndpointKind = async (cred: Credential, store: Store) => {
 }
 
 /** Implementation of the 'store' git credential helper command */
-async function storeCredential(cred: Credential, store: Store, token: string) {
-  if ((await getEndpointKind(cred, store)) !== 'generic') {
+async function storeCredential(
+  cred: Credential,
+  store: Store,
+  token: string,
+  login?: string
+) {
+  if ((await getEndpointKind(cred, store, login)) !== 'generic') {
     return
   }
 
@@ -199,8 +225,13 @@ const storeExternalCredential = (cred: Credential, token: string) => {
 }
 
 /** Implementation of the 'erase' git credential helper command */
-async function eraseCredential(cred: Credential, store: Store, token: string) {
-  if ((await getEndpointKind(cred, store)) !== 'generic') {
+async function eraseCredential(
+  cred: Credential,
+  store: Store,
+  token: string,
+  login?: string
+) {
+  if ((await getEndpointKind(cred, store, login)) !== 'generic') {
     return
   }
 
@@ -227,6 +258,7 @@ export const createCredentialHelperTrampolineHandler: (
 
   const { trampolineToken: token } = command
   const input = parseCredential(command.stdin)
+  const login = input.get('username')
 
   if (__DEV__) {
     debug(
@@ -239,7 +271,7 @@ export const createCredentialHelperTrampolineHandler: (
 
   try {
     if (firstParameter === 'get') {
-      const cred = await getCredential(input, store, token)
+      const cred = await getCredential(input, store, token, login)
       if (!cred) {
         const endpoint = `${getCredentialUrl(input)}`
         info(`could not find credential for ${endpoint}`)
@@ -247,9 +279,9 @@ export const createCredentialHelperTrampolineHandler: (
       }
       return cred ? formatCredential(cred) : undefined
     } else if (firstParameter === 'store') {
-      await storeCredential(input, store, token)
+      await storeCredential(input, store, token, login)
     } else if (firstParameter === 'erase') {
-      await eraseCredential(input, store, token)
+      await eraseCredential(input, store, token, login)
     }
     return undefined
   } catch (e) {
