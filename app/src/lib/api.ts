@@ -2527,15 +2527,14 @@ export class API {
       body?: Object
       customHeaders?: Object
       reloadCache?: boolean
-    } = {},
-    login?: string
+    } = {}
   ): Promise<Response> {
     const response = await this.request(
       this.endpoint,
       method,
       path,
       options,
-      login
+      this.login
     )
 
     this.checkTokenInvalidated(response)
@@ -3543,7 +3542,8 @@ export async function fetchUser(
   endpoint: string,
   token: string,
   refreshToken: string,
-  expiresAt: number
+  expiresAt: number,
+  login?: string
 ): Promise<Account> {
   let api: API
   if (endpoint === getBitbucketAPIEndpoint()) {
@@ -3551,7 +3551,7 @@ export async function fetchUser(
   } else if (endpoint === getGitLabAPIEndpoint()) {
     api = GitLabAPI.get(token, refreshToken, expiresAt)
   } else {
-    api = new API(endpoint, token)
+    api = new API(endpoint, token, undefined, login)
   }
   try {
     const [user, emails, copilotInfo, features] = await Promise.all([
@@ -3704,10 +3704,7 @@ export function getAccountForEndpoint(
     accounts.find(
       a =>
         a.endpoint === endpoint &&
-        (!enableMultipleLoginAccounts() ||
-          !login ||
-          login === '' ||
-          a.login === login)
+        (login === undefined || login === '' || a.login === login)
     ) || null
   )
 }

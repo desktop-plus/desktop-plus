@@ -316,6 +316,7 @@ async function updatedAccount(account: Account): Promise<Account> {
     account.endpoint,
     account.token,
     account.refreshToken,
-    account.tokenExpiresAt
+    account.tokenExpiresAt,
+    account.login
   )
 }

@@ -197,12 +197,15 @@ export class CloneRepository extends React.Component<
         filterText: '',
         selectedItem: null,
         ...initialBaseTabState,
+        selectedAccount: props.accounts.filter(isDotComAccount).at(0) || null,
       },
       enterpriseTabState: {
         kind: 'enterpriseTabState',
         filterText: '',
         selectedItem: null,
         ...initialBaseTabState,
+        selectedAccount:
+          props.accounts.filter(isEnterpriseAccount).at(0) || null,
       },
       urlTabState: {
         kind: 'urlTabState',
@@ -358,12 +361,13 @@ export class CloneRepository extends React.Component<
       case CloneRepositoryTab.Enterprise: {
         const tabState = this.getGitHubTabState(tab)
         const tabAccounts = this.getAccountsForTab(tab, this.props.accounts)
-        const selectedAccount = this.getAccountForTab(tab)
 
-        if (!selectedAccount) {
+        if (!tabState.selectedAccount) {
           return <DialogContent>{this.renderSignIn(tab)}</DialogContent>
         } else {
-          const accountState = this.props.apiRepositories.get(selectedAccount)
+          const accountState = this.props.apiRepositories.get(
+            tabState.selectedAccount
+          )
           const repositories =
             accountState === undefined ? null : accountState.repositories
           const loading =
@@ -372,7 +376,7 @@ export class CloneRepository extends React.Component<
           return (
             <CloneGithubRepository
               path={tabState.path ?? ''}
-              account={selectedAccount}
+              account={tabState.selectedAccount}
               accounts={tabAccounts}
               selectedItem={tabState.selectedItem}
               onSelectionChanged={this.onSelectionChanged}
@@ -405,15 +409,7 @@ export class CloneRepository extends React.Component<
 
   private getAccountForTab(tab: CloneRepositoryTab): Account | null {
     const tabState = this.getTabState(tab)
-    const tabAccounts = this.getAccountsForTab(tab, this.props.accounts)
-    const selectedAccount =
-      (tabState.selectedAccount
-        ? tabAccounts.find(
-            a =>
-              a.endpoint === tabState.selectedAccount?.endpoint &&
-              a.login === tabState.selectedAccount?.login
-          )
-        : undefined) ?? tabAccounts.at(0)
+    const selectedAccount = tabState.selectedAccount
 
     return selectedAccount ?? null
   }
@@ -756,7 +752,7 @@ export class CloneRepository extends React.Component<
         })
     }
 
-    return { url, login }
+    return null
   }
 
   private onItemClicked = (repository: IAPIRepository, source: ClickSource) => {
@@ -771,9 +767,7 @@ export class CloneRepository extends React.Component<
     this.setState({ loading: true })
 
     const cloneInfo = await this.resolveCloneInfo()
-    const { path, selectedAccount } = this.getSelectedTabState()
-
-    const login = selectedAccount ? selectedAccount.login : undefined
+    const { path } = this.getSelectedTabState()
 
     if (path == null) {
       const error = new Error(`Directory could not be created at this path.`)
@@ -791,7 +785,7 @@ export class CloneRepository extends React.Component<
       return
     }
 
-    const { url, defaultBranch } = cloneInfo
+    const { url, defaultBranch, login } = cloneInfo
 
     this.props.dispatcher.closeFoldout(FoldoutType.Repository)
     try {

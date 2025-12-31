@@ -254,6 +254,7 @@ export class RepositoriesStore extends TypedBaseStore<
           missing: false,
           lastStashCheckDate: null,
           isTutorialRepository: true,
+          login,
         })
       }
     )

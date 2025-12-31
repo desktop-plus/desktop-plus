@@ -6,7 +6,8 @@ import { Account, isDotComAccount } from '../models/account'
 type RepositoryLookupFunc = (
   account: Account,
   owner: string,
-  name: string
+  name: string,
+  login?: string
 ) => Promise<boolean>
 
 /**
@@ -103,7 +104,7 @@ export async function findAccountForRemoteURL(
         }
       }
 
-      const canAccess = await canAccessRepository(account, owner, name)
+      const canAccess = await canAccessRepository(account, owner, name, login)
       if (canAccess) {
         return account
       }
