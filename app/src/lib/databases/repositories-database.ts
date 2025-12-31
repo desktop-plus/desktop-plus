@@ -20,7 +20,6 @@ export interface IDatabaseOwner {
 export interface IDatabaseGitHubRepository {
   readonly id?: number
   readonly ownerID: number
-  readonly login?: string
   readonly name: string
   readonly private: boolean | null
   readonly htmlURL: string | null
@@ -35,6 +34,7 @@ export interface IDatabaseGitHubRepository {
   readonly isArchived?: boolean
 
   readonly permissions?: 'read' | 'write' | 'admin' | null
+  readonly login?: string
 }
 
 /** A record to track the protected branch information for a GitHub repository */

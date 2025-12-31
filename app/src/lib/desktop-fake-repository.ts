@@ -19,5 +19,6 @@ export const DesktopFakeRepository = new Repository(
     false,
     desktopUrl
   ),
-  true
+  true,
+  ''
 )

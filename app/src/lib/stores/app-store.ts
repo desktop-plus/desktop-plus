@@ -5129,6 +5129,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private async performPull(repository: Repository): Promise<void> {
     return this.withPushPullFetch(repository, async () => {
       const gitStore = this.gitStoreCache.get(repository)
+
+      await gitStore.loadRemotes()
+
       const remote = gitStore.currentRemote
 
       if (!remote) {

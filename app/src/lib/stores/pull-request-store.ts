@@ -96,25 +96,32 @@ export class PullRequestStore {
     // after the timestamp we give it we will always get at least one issue
     // back. See `storePullRequests` for details on how that's handled.
     if (!lastUpdatedAt) {
-      return this.fetchAndStoreOpenPullRequests(api, repo)
+      return this.fetchAndStoreOpenPullRequests(api, repo, account.login)
     } else {
-      return this.fetchAndStoreUpdatedPullRequests(api, repo, lastUpdatedAt)
+      return this.fetchAndStoreUpdatedPullRequests(
+        api,
+        repo,
+        lastUpdatedAt,
+        account.login
+      )
     }
   }
 
   private async fetchAndStoreOpenPullRequests(
     api: API,
-    repository: GitHubRepository
+    repository: GitHubRepository,
+    login?: string
   ) {
     const { name, owner } = getNameWithOwner(repository)
     const open = await api.fetchAllOpenPullRequests(owner, name)
-    await this.storePullRequestsAndEmitUpdate(open, repository)
+    await this.storePullRequestsAndEmitUpdate(open, repository, login)
   }
 
   private async fetchAndStoreUpdatedPullRequests(
     api: API,
     repository: GitHubRepository,
-    lastUpdatedAt: Date
+    lastUpdatedAt: Date,
+    login?: string
   ) {
     const { name, owner } = getNameWithOwner(repository)
     const updated = await api
@@ -128,7 +135,11 @@ export class PullRequestStore {
       )
 
     if (updated !== null) {
-      return await this.storePullRequestsAndEmitUpdate(updated, repository)
+      return await this.storePullRequestsAndEmitUpdate(
+        updated,
+        repository,
+        login
+      )
     } else {
       // If we fail to load updated pull requests either because
       // there's too many updated PRs since the last time we
@@ -146,7 +157,7 @@ export class PullRequestStore {
       // the number of merged PRs since the last time we fetched could
       // number in the thousands.
       await this.db.deleteAllPullRequestsInRepository(repository)
-      await this.fetchAndStoreOpenPullRequests(api, repository)
+      await this.fetchAndStoreOpenPullRequests(api, repository, login)
     }
   }
 
@@ -216,9 +227,10 @@ export class PullRequestStore {
    */
   private async storePullRequestsAndEmitUpdate(
     pullRequestsFromAPI: ReadonlyArray<IAPIPullRequest>,
-    repository: GitHubRepository
+    repository: GitHubRepository,
+    login?: string
   ) {
-    if (await this.storePullRequests(pullRequestsFromAPI, repository)) {
+    if (await this.storePullRequests(pullRequestsFromAPI, repository, login)) {
       this.emitPullRequestsChanged(repository, await this.getAll(repository))
     }
   }
