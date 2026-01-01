@@ -24,10 +24,14 @@ export async function findGitHubTrampolineAccount(
 ): Promise<Account | undefined> {
   const accounts = await accountsStore.getAll()
   const parsedUrl = new URL(remoteUrl)
+  if (login !== undefined && login === '') {
+    // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+    throw new Error(`Empty string is not a valid login`)
+  }
   return accounts.find(
     a =>
       new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin &&
-      (!login || login === '' || a.login === login)
+      (login === undefined || a.login === login)
   )
 }
 

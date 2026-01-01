@@ -60,9 +60,13 @@ export async function findAccountForRemoteURL(
       allAccounts.find(a => {
         const htmlURL = getHTMLURL(a.endpoint)
         const parsedEndpoint = URL.parse(htmlURL)
+        if (login !== undefined && login === '') {
+          // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+          throw new Error(`Empty string is not a valid login`)
+        }
         return (
           parsedURL.hostname === parsedEndpoint.hostname &&
-          (!login || login === '' || a.login === login)
+          (login === undefined || a.login === login)
         )
       }) || null
 

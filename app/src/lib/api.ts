@@ -3798,11 +3798,13 @@ export function getAccountForEndpoint(
   endpoint: string,
   login?: string
 ): Account | null {
+  if (login !== undefined && login === '') {
+    // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+    throw new Error(`Empty string is not a valid login`)
+  }
   return (
     accounts.find(
-      a =>
-        a.endpoint === endpoint &&
-        (login === undefined || login === '' || a.login === login)
+      a => a.endpoint === endpoint && (login === undefined || a.login === login)
     ) || null
   )
 }

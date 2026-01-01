@@ -40,10 +40,14 @@ export function matchGitHubRepository(
     const { hostname } = URL.parse(htmlURL)
     const parsedRemote = parseRemote(remote)
 
+    if (login !== undefined && login === '') {
+      // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+      throw new Error(`Empty string is not a valid login`)
+    }
     if (parsedRemote !== null && hostname !== null) {
       if (
         parsedRemote.hostname.toLowerCase() === hostname.toLowerCase() &&
-        (!login || login === '' || account.login === login)
+        (login === undefined || account.login === login)
       ) {
         return {
           name: parsedRemote.name,

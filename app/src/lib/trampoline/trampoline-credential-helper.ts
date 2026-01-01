@@ -115,12 +115,16 @@ async function getCredential(
 
   // If it appears as if the endpoint is a GitHub host and we don't have an
   // account for that endpoint then we should prompt the user to sign in.
+  if (login !== undefined && login === '') {
+    // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+    throw new Error(`Empty string is not a valid login`)
+  }
+
   if (
     endpointKind !== 'generic' &&
     !accounts.some(
       a =>
-        a.endpoint === apiEndpoint &&
-        (!login || login === '' || a.login === login)
+        a.endpoint === apiEndpoint && (login === undefined || a.login === login)
     )
   ) {
     if (getIsBackgroundTaskEnvironment(token)) {

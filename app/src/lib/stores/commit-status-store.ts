@@ -276,9 +276,14 @@ export class CommitStatusStore {
     }
 
     const { endpoint, owner, name, ref, login } = subscription
+
+    if (login !== undefined && login === '') {
+      // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+      throw new Error(`Empty string is not a valid login`)
+    }
+
     const account = this.accounts.find(
-      a =>
-        a.endpoint === endpoint && (!login || login === '' || a.login === login)
+      a => a.endpoint === endpoint && (login === undefined || a.login === login)
     )
 
     if (account === undefined) {
@@ -503,9 +508,13 @@ export class CommitStatusStore {
     }
 
     const { endpoint, owner, name, login } = subscription
+
+    if (login !== undefined && login === '') {
+      // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+      throw new Error(`Empty string is not a valid login`)
+    }
     const account = this.accounts.find(
-      a =>
-        a.endpoint === endpoint && (!login || login === '' || a.login === login)
+      a => a.endpoint === endpoint && (login === undefined || a.login === login)
     )
     if (account === undefined) {
       return checkRuns
@@ -533,9 +542,13 @@ export class CommitStatusStore {
     }
 
     const { endpoint, owner, name, login } = subscription
+
+    if (login !== undefined && login === '') {
+      // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+      throw new Error(`Empty string is not a valid login`)
+    }
     const account = this.accounts.find(
-      a =>
-        a.endpoint === endpoint && (!login || login === '' || a.login === login)
+      a => a.endpoint === endpoint && (login === undefined || a.login === login)
     )
 
     if (account === undefined) {
