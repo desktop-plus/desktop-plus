@@ -117,7 +117,7 @@ async function getCredential(
   // account for that endpoint then we should prompt the user to sign in.
   if (login !== undefined && login === '') {
     // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
-    throw new Error(`Empty string is not a valid login`)
+    log.error(`Empty string is not a valid login`)
   }
 
   if (
@@ -127,6 +127,11 @@ async function getCredential(
         a.endpoint === apiEndpoint && (login === undefined || a.login === login)
     )
   ) {
+    if (login !== undefined) {
+      // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+      log.warn(`Could not find an account to match ${login}@${apiEndpoint}`)
+    }
+
     if (getIsBackgroundTaskEnvironment(token)) {
       debug('background task environment, skipping prompt')
       return undefined

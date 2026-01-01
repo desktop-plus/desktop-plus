@@ -279,7 +279,7 @@ export class CommitStatusStore {
 
     if (login !== undefined && login === '') {
       // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
-      throw new Error(`Empty string is not a valid login`)
+      log.error(`Empty string is not a valid login`)
     }
 
     const account = this.accounts.find(
@@ -287,6 +287,10 @@ export class CommitStatusStore {
     )
 
     if (account === undefined) {
+      if (login !== undefined) {
+        // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+        log.warn(`Could not find an account to match ${login}@${endpoint}`)
+      }
       return
     }
 
@@ -511,12 +515,16 @@ export class CommitStatusStore {
 
     if (login !== undefined && login === '') {
       // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
-      throw new Error(`Empty string is not a valid login`)
+      log.error(`Empty string is not a valid login`)
     }
     const account = this.accounts.find(
       a => a.endpoint === endpoint && (login === undefined || a.login === login)
     )
     if (account === undefined) {
+      if (login !== undefined) {
+        // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+        log.warn(`Could not find an account to match ${login}@${endpoint}`)
+      }
       return checkRuns
     }
 
@@ -545,13 +553,17 @@ export class CommitStatusStore {
 
     if (login !== undefined && login === '') {
       // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
-      throw new Error(`Empty string is not a valid login`)
+      log.error(`Empty string is not a valid login`)
     }
     const account = this.accounts.find(
       a => a.endpoint === endpoint && (login === undefined || a.login === login)
     )
 
     if (account === undefined) {
+      if (login !== undefined) {
+        // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+        log.warn(`Could not find an account to match ${login}@${endpoint}`)
+      }
       return checkRuns
     }
 

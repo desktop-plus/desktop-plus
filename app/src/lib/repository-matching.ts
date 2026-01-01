@@ -42,7 +42,7 @@ export function matchGitHubRepository(
 
     if (login !== undefined && login === '') {
       // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
-      throw new Error(`Empty string is not a valid login`)
+      log.error(`Empty string is not a valid login`)
     }
     if (parsedRemote !== null && hostname !== null) {
       if (
@@ -54,6 +54,11 @@ export function matchGitHubRepository(
           owner: parsedRemote.owner,
           account,
           login,
+        }
+      } else {
+        if (login !== undefined) {
+          // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+          log.warn(`Could not find an account to match ${login}@${remote}`)
         }
       }
     }

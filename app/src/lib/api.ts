@@ -3800,13 +3800,19 @@ export function getAccountForEndpoint(
 ): Account | null {
   if (login !== undefined && login === '') {
     // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
-    throw new Error(`Empty string is not a valid login`)
+    log.error(`Empty string is not a valid login`)
   }
-  return (
-    accounts.find(
-      a => a.endpoint === endpoint && (login === undefined || a.login === login)
-    ) || null
+
+  const result = accounts.find(
+    a => a.endpoint === endpoint && (login === undefined || a.login === login)
   )
+
+  if (login !== undefined && result === undefined) {
+    // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+    log.warn(`Could not find an account to match ${login}@${endpoint}`)
+  }
+
+  return result || null
 }
 
 export function getAccountForEndpointToken(

@@ -26,13 +26,21 @@ export async function findGitHubTrampolineAccount(
   const parsedUrl = new URL(remoteUrl)
   if (login !== undefined && login === '') {
     // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
-    throw new Error(`Empty string is not a valid login`)
+    log.error(`Empty string is not a valid login`)
   }
-  return accounts.find(
+
+  const result = accounts.find(
     a =>
       new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin &&
       (login === undefined || a.login === login)
   )
+
+  if (result === undefined && login !== undefined) {
+    // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+    log.warn(`Could not find an account to match ${login}@${remoteUrl}`)
+  }
+
+  return result
 }
 
 export async function findGenericTrampolineAccount(
