@@ -6,7 +6,8 @@ import { Account, isDotComAccount } from '../models/account'
 type RepositoryLookupFunc = (
   account: Account,
   owner: string,
-  name: string
+  name: string,
+  login?: string
 ) => Promise<boolean>
 
 /**
@@ -38,7 +39,8 @@ async function canAccessRepositoryUsingAPI(
 export async function findAccountForRemoteURL(
   urlOrRepositoryAlias: string,
   accounts: ReadonlyArray<Account>,
-  canAccessRepository: RepositoryLookupFunc = canAccessRepositoryUsingAPI
+  canAccessRepository: RepositoryLookupFunc = canAccessRepositoryUsingAPI,
+  login?: string
 ): Promise<Account | null> {
   const allAccounts = [...accounts, Account.anonymous()]
 
@@ -58,7 +60,23 @@ export async function findAccountForRemoteURL(
       allAccounts.find(a => {
         const htmlURL = getHTMLURL(a.endpoint)
         const parsedEndpoint = URL.parse(htmlURL)
-        return parsedURL.hostname === parsedEndpoint.hostname
+        if (login !== undefined && login === '') {
+          // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+          log.error(`Empty string is not a valid login`)
+        }
+
+        const result =
+          parsedURL.hostname === parsedEndpoint.hostname &&
+          (login === undefined || a.login === login)
+
+        if (login !== undefined && result === undefined) {
+          // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+          log.warn(
+            `Could not find an account to match ${login}@${parsedURL.hostname}`
+          )
+        }
+
+        return result
       }) || null
 
     // If we find an account whose hostname matches the URL to be cloned, it's
@@ -99,7 +117,7 @@ export async function findAccountForRemoteURL(
         }
       }
 
-      const canAccess = await canAccessRepository(account, owner, name)
+      const canAccess = await canAccessRepository(account, owner, name, login)
       if (canAccess) {
         return account
       }

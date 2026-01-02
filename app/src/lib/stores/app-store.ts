@@ -98,10 +98,11 @@ import {
 import {
   API,
   deleteToken,
-  getAccountForEndpoint,
   getEndpointForRepository,
   IAPIComment,
   IAPICreatePushProtectionBypassResponse,
+  getAccountForEndpointToken,
+  getAccountForEndpoint,
   IAPIFullRepository,
   IAPIOrganization,
   IAPIRepoRuleset,
@@ -787,7 +788,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   private onTokenInvalidated = (endpoint: string, token: string) => {
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const account = getAccountForEndpointToken(this.accounts, endpoint, token)
 
     if (account === null) {
       return
@@ -817,7 +818,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     refreshToken: string,
     tokenExpiresAt: number
   ) => {
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const account = getAccountForEndpointToken(this.accounts, endpoint, token)
     if (account === null) {
       return
     }
@@ -1314,7 +1315,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
     const branchName = findRemoteBranchName(tip, currentRemote, gitHubRepo)
 
     if (branchName !== null) {
-      const account = getAccountForEndpoint(this.accounts, gitHubRepo.endpoint)
+      const account = getAccountForEndpoint(
+        this.accounts,
+        gitHubRepo.endpoint,
+        gitHubRepo.login
+      )
 
       if (account === null) {
         return
@@ -2211,7 +2216,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   public async _refreshIssues(repository: GitHubRepository) {
-    const user = getAccountForEndpoint(this.accounts, repository.endpoint)
+    const user = getAccountForEndpoint(
+      this.accounts,
+      repository.endpoint,
+      repository.login
+    )
+
     if (!user) {
       return
     }
@@ -2232,7 +2242,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   private refreshMentionables(repository: GitHubRepository) {
-    const account = getAccountForEndpoint(this.accounts, repository.endpoint)
+    const account = getAccountForEndpoint(
+      this.accounts,
+      repository.endpoint,
+      repository.login
+    )
     if (!account) {
       return
     }
@@ -2260,9 +2274,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.pullRequestCoordinator.stopPullRequestUpdater()
   }
 
-  public async fetchPullRequest(repoUrl: string, pr: string) {
+  public async fetchPullRequest(repoUrl: string, pr: string, login?: string) {
     const endpoint = getEndpointForRepository(repoUrl)
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const remoteUrl = parseRemote(repoUrl)
+
+    if (!remoteUrl) {
+      return null
+    }
+    const account = getAccountForEndpoint(this.accounts, endpoint, login)
 
     if (account) {
       const api = API.fromAccount(account)
@@ -2799,7 +2818,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
         this.repositories.find(
           r =>
             r.constructor === selectedRepository.constructor &&
-            r.id === selectedRepository.id
+            r.id === selectedRepository.id &&
+            r.login === selectedRepository.login
         ) || null
 
       newSelectedRepository = r
@@ -4525,6 +4545,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
 
     const { account, owner, name } = match
+
     const { endpoint } = account
     const api = API.fromAccount(account)
     const apiRepo = await api.fetchRepository(owner, name)
@@ -4534,10 +4555,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
       // repository info. But if we didn't have a GitHub repository already or
       // the endpoint changed, the skeleton repository is better than nothing.
       if (endpoint !== repository.gitHubRepository?.endpoint) {
-        const ghRepo = await repoStore.upsertGitHubRepositoryFromMatch(match)
+        const ghRepo = await repoStore.upsertGitHubRepositoryFromMatch(
+          match,
+          repository.login
+        )
         return repoStore.setGitHubRepository(repository, ghRepo)
       }
-
       return repository
     }
 
@@ -4546,10 +4569,16 @@ export class AppStore extends TypedBaseStore<IAppState> {
       await updateRemoteUrl(gitStore, repository.gitHubRepository, apiRepo)
     }
 
-    const ghRepo = await repoStore.upsertGitHubRepository(endpoint, apiRepo)
+    const ghRepo = await repoStore.upsertGitHubRepository(
+      endpoint,
+      apiRepo,
+      repository.login
+    )
+
     const freshRepo = await repoStore.setGitHubRepository(repository, ghRepo)
 
     await this.refreshBranchProtectionState(freshRepo)
+
     return freshRepo
   }
 
@@ -4581,7 +4610,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const account = getAccountForEndpoint(
       this.accounts,
-      repository.gitHubRepository.endpoint
+      repository.gitHubRepository.endpoint,
+      repository.gitHubRepository.login
     )
 
     if (account === null) {
@@ -4609,7 +4639,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const remote = gitStore.defaultRemote
     return remote !== null
-      ? matchGitHubRepository(this.accounts, remote.url)
+      ? matchGitHubRepository(this.accounts, remote.url, repository.login)
       : null
   }
 
@@ -5099,6 +5129,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private async performPull(repository: Repository): Promise<void> {
     return this.withPushPullFetch(repository, async () => {
       const gitStore = this.gitStoreCache.get(repository)
+
+      await gitStore.loadRemotes()
+
       const remote = gitStore.currentRemote
 
       if (!remote) {
@@ -5291,12 +5324,18 @@ export class AppStore extends TypedBaseStore<IAppState> {
   public _clone(
     url: string,
     path: string,
-    options: { branch?: string; defaultBranch?: string } = {}
+    options: { branch?: string; defaultBranch?: string } = {},
+    login?: string
   ): {
     promise: Promise<boolean>
     repository: CloningRepository
   } {
-    const promise = this.cloningRepositoriesStore.clone(url, path, options)
+    const promise = this.cloningRepositoriesStore.clone(
+      url,
+      path,
+      options,
+      login
+    )
     const repository = this.cloningRepositoriesStore.repositories.find(
       r => r.url === url && r.path === path
     )!
@@ -6644,7 +6683,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
   public async _addTutorialRepository(
     path: string,
     endpoint: string,
-    apiRepository: IAPIFullRepository
+    apiRepository: IAPIFullRepository,
+    login?: string
   ) {
     const type = await getRepositoryType(path)
     if (type.kind === 'regular') {
@@ -6656,7 +6696,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
       await this.repositoriesStore.addTutorialRepository(
         validatedPath,
         endpoint,
-        apiRepository
+        apiRepository,
+        login
       )
       this.tutorialAssessor.onNewTutorialRepository()
     } else {
@@ -6666,7 +6707,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   public async _addRepositories(
-    paths: ReadonlyArray<string>
+    paths: ReadonlyArray<string>,
+    login?: string
   ): Promise<ReadonlyArray<Repository>> {
     const addedRepositories = new Array<Repository>()
     const lfsRepositories = new Array<Repository>()
@@ -6679,9 +6721,13 @@ export class AppStore extends TypedBaseStore<IAppState> {
       })
 
       if (repositoryType.kind === 'unsafe') {
-        const repository = await this.repositoriesStore.addRepository(path, {
-          missing: true,
-        })
+        const repository = await this.repositoriesStore.addRepository(
+          path,
+          {
+            missing: true,
+          },
+          login
+        )
 
         addedRepositories.push(repository)
         continue
@@ -6689,7 +6735,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
       if (repositoryType.kind === 'regular') {
         const validatedPath = repositoryType.topLevelWorkingDirectory
-        log.info(`[AppStore] adding repository at ${validatedPath} to store`)
+        log.info(
+          `[AppStore] adding repository at ${validatedPath} @${login} to store`
+        )
 
         const repositories = this.repositories
         const existing = matchExistingRepository(repositories, validatedPath)
@@ -6702,7 +6750,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
         }
 
         const addedRepo = await this.repositoriesStore.addRepository(
-          validatedPath
+          validatedPath,
+          undefined,
+          login
         )
 
         // initialize the remotes for this new repository to ensure it can fetch
@@ -6710,10 +6760,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
         const gitStore = this.gitStoreCache.get(addedRepo)
         await gitStore.loadRemotes()
 
+        // This is adding the gitHubRepository to refreshedRepo
         const [refreshedRepo, usingLFS] = await Promise.all([
           this.repositoryWithRefreshedGitHubRepository(addedRepo),
           this.isUsingLFS(addedRepo),
         ])
+
         addedRepositories.push(refreshedRepo)
 
         if (usingLFS) {
@@ -6776,8 +6828,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
   }
 
-  public async _cloneAgain(url: string, path: string): Promise<void> {
-    const { promise, repository } = this._clone(url, path)
+  public async _cloneAgain(
+    url: string,
+    path: string,
+    login?: string
+  ): Promise<void> {
+    const { promise, repository } = this._clone(url, path, {}, login)
     await this._selectRepository(repository)
     const success = await promise
     if (!success) {
@@ -7534,7 +7590,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
    */
   public async _convertRepositoryToFork(
     repository: RepositoryWithGitHubRepository,
-    fork: IAPIFullRepository
+    fork: IAPIFullRepository,
+    login?: string
   ): Promise<Repository> {
     const gitStore = this.gitStoreCache.get(repository)
     const defaultRemoteName = gitStore.defaultRemote?.name
@@ -7549,7 +7606,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
         // update associated github repo
         return this.repositoriesStore.setGitHubRepository(
           repository,
-          await this.repositoriesStore.upsertGitHubRepository(endpoint, fork)
+          await this.repositoriesStore.upsertGitHubRepository(
+            endpoint,
+            fork,
+            repository.login
+          )
         )
       }
     }
@@ -7589,7 +7650,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
         }
       )
 
-      await this._addTutorialRepository(path, account.endpoint, apiRepository)
+      await this._addTutorialRepository(
+        path,
+        account.endpoint,
+        apiRepository,
+        account.login
+      )
       await this.statsStore.recordTutorialRepoCreated()
     } catch (err) {
       sendNonFatalException('tutorialRepoCreation', err)
@@ -8830,7 +8896,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const { endpoint, name, owner } = repository.gitHubRepository
 
-    const account = getAccountForEndpoint(this.accounts, endpoint)
+    const account = getAccountForEndpoint(this.accounts, endpoint, owner.login)
 
     if (account === null) {
       log.error(

@@ -2,7 +2,12 @@ import * as Path from 'path'
 import * as React from 'react'
 import { Dispatcher } from '../dispatcher'
 import { getDefaultDir, setDefaultDir } from '../lib/default-dir'
-import { Account, AccountAPIType } from '../../models/account'
+import {
+  Account,
+  AccountAPIType,
+  isDotComAccount,
+  isEnterpriseAccount,
+} from '../../models/account'
 import { FoldoutType } from '../../lib/app-state'
 import {
   IRepositoryIdentifier,
@@ -208,6 +213,7 @@ export class CloneRepository extends React.Component<
         filterText: '',
         selectedItem: null,
         ...initialBaseTabState,
+        selectedAccount: props.accounts.filter(isDotComAccount).at(0) || null,
       },
       enterpriseTabState: {
         kind: 'enterprise',
@@ -226,6 +232,8 @@ export class CloneRepository extends React.Component<
         filterText: '',
         selectedItem: null,
         ...initialBaseTabState,
+        selectedAccount:
+          props.accounts.filter(isEnterpriseAccount).at(0) || null,
       },
       urlTabState: {
         kind: 'url',
@@ -440,12 +448,13 @@ export class CloneRepository extends React.Component<
 
     const tabState = this.getGitHubTabState(tab)
     const tabAccounts = this.getAccountsForTab(tab, this.props.accounts)
-    const selectedAccount = this.getAccountForTab(tab)
 
-    if (!selectedAccount) {
+    if (!tabState.selectedAccount) {
       return <DialogContent>{this.renderSignIn(tab)}</DialogContent>
     } else {
-      const accountState = this.props.apiRepositories.get(selectedAccount)
+      const accountState = this.props.apiRepositories.get(
+        tabState.selectedAccount
+      )
       const repositories =
         accountState === undefined ? null : accountState.repositories
       const loading = accountState === undefined ? false : accountState.loading
@@ -453,7 +462,7 @@ export class CloneRepository extends React.Component<
       return (
         <CloneGithubRepository
           path={tabState.path ?? ''}
-          account={selectedAccount}
+          account={tabState.selectedAccount}
           accounts={tabAccounts}
           selectedItem={tabState.selectedItem}
           onSelectionChanged={this.onSelectionChanged}
@@ -482,13 +491,7 @@ export class CloneRepository extends React.Component<
 
   private getAccountForTab(tab: CloneRepositoryTab): Account | null {
     const tabState = this.getTabState(tab)
-    const tabAccounts = this.getAccountsForTab(tab, this.props.accounts)
-    const selectedAccount =
-      (tabState.selectedAccount
-        ? tabAccounts.find(
-            a => a.endpoint === tabState.selectedAccount?.endpoint
-          )
-        : undefined) ?? tabAccounts.at(0)
+    const selectedAccount = tabState.selectedAccount
 
     return selectedAccount ?? null
   }
@@ -823,26 +826,35 @@ export class CloneRepository extends React.Component<
    * if possible.
    */
   private async resolveCloneInfo(): Promise<IAPIRepositoryCloneInfo | null> {
-    const { url, lastParsedIdentifier } = this.getSelectedTabState()
+    const { url, lastParsedIdentifier, selectedAccount } =
+      this.getSelectedTabState()
 
+    const login = selectedAccount ? selectedAccount.login : undefined
     if (url.endsWith('.wiki.git')) {
-      return { url }
+      return { url, login }
     }
 
-    const account = await findAccountForRemoteURL(url, this.props.accounts)
+    const account = await findAccountForRemoteURL(
+      url,
+      this.props.accounts,
+      undefined,
+      login
+    )
     if (lastParsedIdentifier !== null && account !== null) {
       const api = API.fromAccount(account)
       const { owner, name } = lastParsedIdentifier
       // Respect the user's preference if they provided an SSH URL
       const protocol = parseRemote(url)?.protocol
 
-      return api.fetchRepositoryCloneInfo(owner, name, protocol).catch(err => {
-        log.error(`Failed to look up repository clone info for '${url}'`, err)
-        return { url }
-      })
+      return api
+        .fetchRepositoryCloneInfo(owner, name, protocol, login)
+        .catch(err => {
+          log.error(`Failed to look up repository clone info for '${url}'`, err)
+          return { url, login }
+        })
     }
 
-    return { url }
+    return null
   }
 
   private onItemClicked = (repository: IAPIRepository, source: ClickSource) => {
@@ -875,11 +887,11 @@ export class CloneRepository extends React.Component<
       return
     }
 
-    const { url, defaultBranch } = cloneInfo
+    const { url, defaultBranch, login } = cloneInfo
 
     this.props.dispatcher.closeFoldout(FoldoutType.Repository)
     try {
-      this.cloneImpl(url.trim(), path, defaultBranch)
+      this.cloneImpl(url.trim(), path, login, defaultBranch)
     } catch (e) {
       log.error(`CloneRepository: clone failed to complete to ${path}`, e)
       this.setState({ loading: false })
@@ -887,8 +899,13 @@ export class CloneRepository extends React.Component<
     }
   }
 
-  private cloneImpl(url: string, path: string, defaultBranch?: string) {
-    this.props.dispatcher.clone(url, path, { defaultBranch })
+  private cloneImpl(
+    url: string,
+    path: string,
+    login?: string,
+    defaultBranch?: string
+  ) {
+    this.props.dispatcher.clone(url, path, { defaultBranch }, login)
     this.props.onDismissed()
 
     setDefaultDir(Path.resolve(path, '..'))

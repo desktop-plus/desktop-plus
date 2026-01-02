@@ -28,12 +28,21 @@ export async function clone(
   url: string,
   path: string,
   options: CloneOptions,
+  login?: string,
   progressCallback?: (progress: ICloneProgress) => void
 ): Promise<void> {
   const env = {
     ...(await envForRemoteOperation(url)),
     GIT_CLONE_PROTECTION_ACTIVE: 'false',
   }
+
+  const remoteUrl =
+    login && login !== ''
+      ? url.replace(
+          /^((?:https|http|git+ssh|git|ssh|file)?:\/\/)/i,
+          '$1' + login + '@'
+        )
+      : url
 
   const defaultBranch = options.defaultBranch ?? (await getDefaultBranch())
 
@@ -72,7 +81,7 @@ export async function clone(
     args.push('-b', options.branch)
   }
 
-  args.push('--', url, path)
+  args.push('--', remoteUrl, path)
 
   await git(args, __dirname, 'clone', opts)
 }

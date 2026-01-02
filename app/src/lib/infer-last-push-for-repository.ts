@@ -31,7 +31,11 @@ export async function inferLastPushForRepository(
 
   const api = API.fromAccount(account)
   if (currentRemote !== null) {
-    const matchedRepository = matchGitHubRepository(accounts, currentRemote.url)
+    const matchedRepository = matchGitHubRepository(
+      accounts,
+      currentRemote.url,
+      account.login
+    )
 
     if (matchedRepository !== null) {
       const { owner, name } = matchedRepository

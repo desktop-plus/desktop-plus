@@ -19,13 +19,28 @@ const memoizedGetGenericPassword = memoizeOne(
 
 export async function findGitHubTrampolineAccount(
   accountsStore: AccountsStore,
-  remoteUrl: string
+  remoteUrl: string,
+  login?: string
 ): Promise<Account | undefined> {
   const accounts = await accountsStore.getAll()
   const parsedUrl = new URL(remoteUrl)
-  return accounts.find(
-    a => new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin
+  if (login !== undefined && login === '') {
+    // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+    log.error(`Empty string is not a valid login`)
+  }
+
+  const result = accounts.find(
+    a =>
+      new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin &&
+      (login === undefined || a.login === login)
   )
+
+  if (result === undefined && login !== undefined) {
+    // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+    log.warn(`Could not find an account to match ${login}@${remoteUrl}`)
+  }
+
+  return result
 }
 
 export async function findGenericTrampolineAccount(

@@ -286,7 +286,7 @@ export class AddExistingRepository extends React.Component<
     return Path.resolve('/', untildify(path))
   }
 
-  private addRepository = async () => {
+  private addRepository = async (login?: string) => {
     const { path } = this.state
     const isValidPath = await this.validatePath(path)
 
@@ -299,7 +299,7 @@ export class AddExistingRepository extends React.Component<
     const { dispatcher } = this.props
 
     const resolvedPath = this.resolvedPath(path)
-    const repositories = await dispatcher.addRepositories([resolvedPath])
+    const repositories = await dispatcher.addRepositories([resolvedPath], login)
 
     if (repositories.length > 0) {
       dispatcher.closeFoldout(FoldoutType.Repository)

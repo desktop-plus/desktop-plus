@@ -24,6 +24,7 @@ interface IGitHubRepoFixtureOptions {
    * clone url and html url from this, even if its ''.
    */
   endpoint?: string
+  login?: string
 }
 
 /**
@@ -39,6 +40,7 @@ export function gitHubRepoFixture({
   parent,
   endpoint,
   isPrivate,
+  login,
 }: IGitHubRepoFixtureOptions): GitHubRepository {
   const htmlUrl = `${
     endpoint !== undefined ? endpoint : 'https://github.com'
@@ -58,6 +60,7 @@ export function gitHubRepoFixture({
     null,
     null,
     null,
-    parent
+    parent,
+    login
   )
 }

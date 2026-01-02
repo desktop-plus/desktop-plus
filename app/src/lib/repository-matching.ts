@@ -25,21 +25,41 @@ export interface IMatchedGitHubRepository {
 
   /** The account matching the repository remote */
   readonly account: Account
+
+  readonly login?: string
 }
 
 /** Try to use the list of users and a remote URL to guess a GitHub repository. */
 export function matchGitHubRepository(
   accounts: ReadonlyArray<Account>,
-  remote: string
+  remote: string,
+  login?: string
 ): IMatchedGitHubRepository | null {
   for (const account of accounts) {
     const htmlURL = getHTMLURL(account.endpoint)
     const { hostname } = URL.parse(htmlURL)
     const parsedRemote = parseRemote(remote)
 
+    if (login !== undefined && login === '') {
+      // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+      log.error(`Empty string is not a valid login`)
+    }
     if (parsedRemote !== null && hostname !== null) {
-      if (parsedRemote.hostname.toLowerCase() === hostname.toLowerCase()) {
-        return { name: parsedRemote.name, owner: parsedRemote.owner, account }
+      if (
+        parsedRemote.hostname.toLowerCase() === hostname.toLowerCase() &&
+        (login === undefined || account.login === login)
+      ) {
+        return {
+          name: parsedRemote.name,
+          owner: parsedRemote.owner,
+          account,
+          login,
+        }
+      } else {
+        if (login !== undefined) {
+          // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
+          log.warn(`Could not find an account to match ${login}@${remote}`)
+        }
       }
     }
   }

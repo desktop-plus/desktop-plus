@@ -1390,10 +1390,7 @@ export class GitStore extends BaseStore {
       parent.cloneURL
     )
 
-    this._upstreamRemote =
-      (await this.performFailableOperation(() =>
-        addRemote(this.repository, UpstreamRemoteName, url)
-      )) ?? null
+    await this.ensureUpstreamRemoteURL(url)
   }
 
   /**
@@ -1406,6 +1403,7 @@ export class GitStore extends BaseStore {
     await this.performFailableOperation(async () => {
       try {
         await addRemote(this.repository, UpstreamRemoteName, remoteUrl)
+        this._upstreamRemote = { url: remoteUrl, name: UpstreamRemoteName }
       } catch (e) {
         if (
           e instanceof DugiteError &&
@@ -1413,7 +1411,9 @@ export class GitStore extends BaseStore {
         ) {
           // update upstream remote if it already exists
           await setRemoteURL(this.repository, UpstreamRemoteName, remoteUrl)
+          this._upstreamRemote = { url: remoteUrl, name: UpstreamRemoteName }
         } else {
+          this._upstreamRemote = null
           throw e
         }
       }

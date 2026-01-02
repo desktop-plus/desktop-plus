@@ -22,6 +22,7 @@ export type RepositoryListGroup =
   | {
       kind: 'dotcom'
       owner: Owner
+      login: string
     }
   | {
       kind: 'enterprise'
@@ -39,7 +40,7 @@ export const getGroupKey = (group: RepositoryListGroup) => {
     case 'recent':
       return `0:recent`
     case 'dotcom':
-      return `1:dotcom:${group.owner.login}`
+      return `1:dotcom:${group.owner.login}:${group.login}`
     case 'enterprise':
       return enableMultipleEnterpriseAccounts()
         ? `2:enterprise:${group.host}`
@@ -71,7 +72,11 @@ const getGroupForRepository = (repo: Repositoryish): RepositoryListGroup => {
     return isGHE(repo.gitHubRepository.endpoint) ||
       isGHES(repo.gitHubRepository.endpoint)
       ? { kind: 'enterprise', host: getHostForRepository(repo) }
-      : { kind: 'dotcom', owner: repo.gitHubRepository.owner }
+      : {
+          kind: 'dotcom',
+          owner: repo.gitHubRepository.owner,
+          login: repo.login || '',
+        }
   }
   return { kind: 'other' }
 }
