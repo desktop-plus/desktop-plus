@@ -2,12 +2,7 @@ import * as Path from 'path'
 import * as React from 'react'
 import { Dispatcher } from '../dispatcher'
 import { getDefaultDir, setDefaultDir } from '../lib/default-dir'
-import {
-  Account,
-  AccountAPIType,
-  isDotComAccount,
-  isEnterpriseAccount,
-} from '../../models/account'
+import { Account, AccountAPIType } from '../../models/account'
 import { FoldoutType } from '../../lib/app-state'
 import {
   IRepositoryIdentifier,
@@ -213,19 +208,30 @@ export class CloneRepository extends React.Component<
         filterText: '',
         selectedItem: null,
         ...initialBaseTabState,
-        selectedAccount: props.accounts.filter(isDotComAccount).at(0) || null,
+        selectedAccount:
+          props.accounts
+            .filter(account => account.apiType === 'dotcom')
+            .at(0) || null,
       },
       enterpriseTabState: {
         kind: 'enterprise',
         filterText: '',
         selectedItem: null,
         ...initialBaseTabState,
+        selectedAccount:
+          props.accounts
+            .filter(account => account.apiType === 'enterprise')
+            .at(0) || null,
       },
       bitbucketTabState: {
         kind: 'bitbucket',
         filterText: '',
         selectedItem: null,
         ...initialBaseTabState,
+        selectedAccount:
+          props.accounts
+            .filter(account => account.apiType === 'bitbucket')
+            .at(0) || null,
       },
       gitlabTabState: {
         kind: 'gitlab',
@@ -233,7 +239,9 @@ export class CloneRepository extends React.Component<
         selectedItem: null,
         ...initialBaseTabState,
         selectedAccount:
-          props.accounts.filter(isEnterpriseAccount).at(0) || null,
+          props.accounts
+            .filter(account => account.apiType === 'gitlab')
+            .at(0) || null,
       },
       urlTabState: {
         kind: 'url',

@@ -8,6 +8,8 @@ import {
   IAPIRepoRuleset,
   getDotComAPIEndpoint,
   IAPICreatePushProtectionBypassResponse,
+  getAccountForEndpoint,
+  getEndpointForRepository,
 } from '../../lib/api'
 import { shell } from '../../lib/app-shell'
 import {
@@ -35,6 +37,7 @@ import {
   getBranches,
   getRebaseSnapshot,
   getRepositoryType,
+  setConfigValue,
 } from '../../lib/git'
 import { isGitOnPath } from '../../lib/is-git-on-path'
 import {
@@ -848,6 +851,28 @@ export class Dispatcher {
       }
 
       const addedRepository = addedRepositories[0]
+
+      if (login) {
+        const state = this.appStore.getState()
+        const accounts = state.accounts
+        const endpoint = getEndpointForRepository(url)
+        const account = getAccountForEndpoint(accounts, endpoint, login)
+
+        if (account) {
+          const verifiedEmails = account.emails
+            .filter(x => x.verified)
+            .map(x => x.email)
+          if (verifiedEmails && verifiedEmails.length > 0) {
+            await setConfigValue(addedRepository, 'user.name', account.name)
+            await setConfigValue(
+              addedRepository,
+              'user.email',
+              verifiedEmails[0]
+            )
+          }
+        }
+      }
+
       await this.selectRepository(addedRepository)
 
       if (isRepositoryWithForkedGitHubRepository(addedRepository)) {
