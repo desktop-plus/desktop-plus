@@ -144,7 +144,10 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
       type === SignInType.DotCom ? DialogPreferredFocusClassName : undefined
 
     return (
-      <Row className="account-info">
+      <Row
+        key={account.endpoint + ' ' + account.login}
+        className="account-info"
+      >
         <div className="user-info-container">
           <Avatar accounts={this.props.accounts} user={avatarUser} />
           <div className="user-info">
