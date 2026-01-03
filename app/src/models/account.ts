@@ -14,11 +14,14 @@ import { enableMultipleLoginAccounts } from '../lib/feature-flag'
  * while still maintaining the association between repositories
  * and a particular account.
  */
-export function accountEquals(x: Account, y: Account) {
+export function accountEquals(x: Account | null, y: Account | null) {
   return (
-    x.endpoint === y.endpoint &&
-    x.id === y.id &&
-    (enableMultipleLoginAccounts() || x.login === y.login)
+    (x === null && y === null) ||
+    (x !== null &&
+      y !== null &&
+      x.endpoint === y.endpoint &&
+      x.id === y.id &&
+      (enableMultipleLoginAccounts() || x.login === y.login))
   )
 }
 

@@ -902,6 +902,14 @@ export class Dispatcher {
     return this.appStore._updateRepositoryDefaultBranch(repository, branch)
   }
 
+  /** Changes the repository's account */
+  public updateRepositoryAccount(
+    repository: Repository,
+    account: Account | null
+  ): Promise<void> {
+    return this.appStore._updateRepositoryAccount(repository, account)
+  }
+
   public updateRepositoryEditorOverride(
     repository: Repository,
     customEditorOverride: EditorOverride | null

@@ -1629,7 +1629,8 @@ export class App extends React.Component<IAppProps, IAppState> {
         const state = this.props.repositoryStateManager.get(repository)
         const repositoryAccount = getAccountForRepository(
           this.state.accounts,
-          repository
+          repository,
+          true
         )
 
         return (
@@ -1640,6 +1641,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             dispatcher={this.props.dispatcher}
             repository={repository}
             repositoryAccount={repositoryAccount}
+            accounts={this.state.accounts}
             onDismissed={onPopupDismissedFn}
           />
         )
