@@ -29,6 +29,7 @@ import { clearTagsToPush } from './helpers/tags-to-push-storage'
 import { IMatchedGitHubRepository } from '../repository-matching'
 import { shallowEquals } from '../equality'
 import { EditorOverride } from '../../models/editor-override'
+import { Account } from '../../models/account'
 
 type AddRepositoryOptions = {
   missing?: boolean
@@ -374,6 +375,34 @@ export class RepositoriesStore extends TypedBaseStore<
       repository.customEditorOverride,
       repository.isTutorialRepository,
       repository.login
+    )
+  }
+
+  /**
+   * Update the alias for the specified repository.
+   *
+   * @param repository    The repository to update.
+   * @param defaultBranch The new default branch to use.
+   */
+  public async updateRepositoryAccount(
+    repository: Repository,
+    account: Account | null
+  ): Promise<Repository> {
+    await this.db.repositories.update(repository.id, { login: account?.login })
+
+    this.emitUpdatedRepositories()
+
+    return new Repository(
+      repository.path,
+      repository.id,
+      repository.gitHubRepository,
+      repository.missing,
+      repository.alias,
+      repository.defaultBranch,
+      repository.workflowPreferences,
+      repository.customEditorOverride,
+      repository.isTutorialRepository,
+      account?.login
     )
   }
 

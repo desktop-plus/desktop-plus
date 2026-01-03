@@ -4671,6 +4671,18 @@ export class AppStore extends TypedBaseStore<IAppState> {
     await this._refreshRepository(repo)
   }
 
+  /** This shouldn't be called directly. See `Dispatcher`. */
+  public async _updateRepositoryAccount(
+    repository: Repository,
+    account: Account | null
+  ): Promise<void> {
+    const repo = await this.repositoriesStore.updateRepositoryAccount(
+      repository,
+      account
+    )
+    await this._refreshRepository(repo)
+  }
+
   public async _updateRepositoryEditorOverride(
     repository: Repository,
     customEditorOverride: EditorOverride | null

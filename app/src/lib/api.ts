@@ -3796,7 +3796,8 @@ export function getGitLabAPIEndpoint(): string {
 export function getAccountForEndpoint(
   accounts: ReadonlyArray<Account>,
   endpoint: string,
-  login?: string
+  login?: string,
+  strict: boolean = false
 ): Account | null {
   if (login !== undefined && login === '') {
     // TODO: This is here temporarily for debugging, remove it when we're sure this isn't a possibility
@@ -3804,7 +3805,9 @@ export function getAccountForEndpoint(
   }
 
   const result = accounts.find(
-    a => a.endpoint === endpoint && (login === undefined || a.login === login)
+    a =>
+      a.endpoint === endpoint &&
+      ((strict !== true && login === undefined) || a.login === login)
   )
 
   if (login !== undefined && result === undefined) {

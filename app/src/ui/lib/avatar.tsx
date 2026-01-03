@@ -232,6 +232,10 @@ function getAvatarUrlCandidates(
   const { email, avatarURL } = user
   const ep = user.endpoint ?? getDotComAPIEndpoint()
 
+  if (user.name === '' || user.name === 'No Account') {
+    return []
+  }
+
   // By leveraging the avatar url from the API (if we've got it) we can
   // load the avatar from one of the load balanced domains (avatars). We can't
   // do the same for GHES/GHAE however since the URLs returned by the API are
