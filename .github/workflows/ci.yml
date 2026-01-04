@@ -186,8 +186,10 @@ jobs:
     name: Publish artifacts
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
+      issues: read
+      pull-requests: read
     needs: build
     steps:
       - name: Set release tag
