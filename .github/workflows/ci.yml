@@ -185,6 +185,9 @@ jobs:
   publish:
     name: Publish artifacts
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     needs: build
     steps:
       - name: Set release tag
