@@ -46,4 +46,17 @@
     caret-color: var(--text-color);
     background: transparent;
   }
+
+  .commitGraph-filter-autocomplete {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    z-index: 10;
+    background-color: var(--box-background-color);
+    border: 1px solid var(--box-border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--base-box-shadow);
+    color: var(--text-color);
+    padding: var(--spacing);
+  }
 }

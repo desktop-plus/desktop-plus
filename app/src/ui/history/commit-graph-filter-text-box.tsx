@@ -19,6 +19,9 @@ export class CommitGraphFilterTextBox extends React.Component<
   ICommitGraphFilterTextBoxState
 > {
   private backdropRef = React.createRef<HTMLDivElement>()
+  private wrapperRef = React.createRef<HTMLDivElement>()
+  private pendingTokenRef = React.createRef<HTMLSpanElement>()
+  private autocompleteRef = React.createRef<HTMLDivElement>()
   private inputElement: HTMLInputElement | null = null
 
   private get authorEmailSet() {
@@ -41,6 +44,7 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   public componentDidUpdate() {
     this.syncBackdropScroll()
+    this.positionAutocomplete()
   }
 
   public render() {
@@ -50,19 +54,30 @@ export class CommitGraphFilterTextBox extends React.Component<
       value !== '' &&
       (this.props.type === 'search' || this.props.displayClearButton === true)
 
+    const pendingAuthorValue = getPendingAuthorValue(value)
+
     return (
       <div
         className={classNames('commitGraph-filter-text-box', {
           'with-clear-button': hasClearButton,
         })}
+        ref={this.wrapperRef}
       >
         <div
           className="commitGraph-filter-text-box-backdrop"
           aria-hidden="true"
           ref={this.backdropRef}
         >
-          {renderSegments(value, this.authorEmailSet)}
+          {renderSegments(value, this.authorEmailSet, this.pendingTokenRef)}
         </div>
+        {pendingAuthorValue !== null && (
+          <div
+            className="commitGraph-filter-autocomplete"
+            ref={this.autocompleteRef}
+          >
+            Hello, world
+          </div>
+        )}
         <FancyTextBox
           ariaLabel={this.props.ariaLabel}
           type={this.props.type}
@@ -98,13 +113,18 @@ export class CommitGraphFilterTextBox extends React.Component<
     this.props.onSearchSubmitted(query, validEmailSet)
   }
 
+  private onInputScroll = () => {
+    this.syncBackdropScroll()
+    this.positionAutocomplete()
+  }
+
   private onTextBoxRef = (textBox: TextBox | null) => {
     this.detachScrollListener()
 
     this.inputElement = textBox !== null ? textBox.getInputElement() : null
 
     if (this.inputElement !== null) {
-      this.inputElement.addEventListener('scroll', this.syncBackdropScroll)
+      this.inputElement.addEventListener('scroll', this.onInputScroll)
     }
 
     if (this.props.onRef && textBox !== null) {
@@ -114,7 +134,7 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private detachScrollListener() {
     if (this.inputElement !== null) {
-      this.inputElement.removeEventListener('scroll', this.syncBackdropScroll)
+      this.inputElement.removeEventListener('scroll', this.onInputScroll)
       this.inputElement = null
     }
   }
@@ -128,30 +148,73 @@ export class CommitGraphFilterTextBox extends React.Component<
 
     backdrop.scrollLeft = this.inputElement.scrollLeft
   }
+
+  private positionAutocomplete = () => {
+    const autocomplete = this.autocompleteRef.current
+    const wrapper = this.wrapperRef.current
+    const pendingToken = this.pendingTokenRef.current
+
+    if (autocomplete === null || wrapper === null) {
+      return
+    }
+
+    let left = 0
+
+    if (pendingToken !== null) {
+      left =
+        pendingToken.getBoundingClientRect().left -
+        wrapper.getBoundingClientRect().left
+
+      const maxLeft = wrapper.offsetWidth - autocomplete.offsetWidth
+      left = Math.max(0, Math.min(left, maxLeft))
+    }
+
+    autocomplete.style.left = `${left}px`
+  }
 }
 
-function renderSegments(text: string, optionSet: ReadonlySet<string>) {
+function getPendingAuthorValue(text: string) {
+  const segments = text.split(/(\s+)/).filter(s => s.length > 0)
+  const lastSegment = segments.length > 0 ? segments[segments.length - 1] : ''
+  const match = /^author:(\S*)$/.exec(lastSegment)
+
+  return match === null ? null : match[1]
+}
+
+function renderSegments(
+  text: string,
+  optionSet: ReadonlySet<string>,
+  pendingTokenRef: React.RefObject<HTMLSpanElement>
+) {
   const segments = text.split(/(\s+)/).filter(s => s.length > 0)
 
   return segments.map((segment, i) => {
     const match = /^author:(\S+)$/.exec(segment)
 
     if (match === null) {
-      return <span key={i}>{segment}</span>
+      const isBareAuthorToken =
+        segment === 'author:' && i === segments.length - 1
+
+      return (
+        <span key={i} ref={isBareAuthorToken ? pendingTokenRef : undefined}>
+          {segment}
+        </span>
+      )
     }
+
+    const isLastSegment = i === segments.length - 1
+    const tokenRef = isLastSegment ? pendingTokenRef : undefined
 
     const validEmail = optionSet.has(match[1].toLowerCase())
 
-    const isUserTyping = i < segments.length - 1
-
     const valueClassName = validEmail
       ? 'token-value'
-      : isUserTyping
+      : isLastSegment
       ? 'token-value-invalid'
       : 'token-value-pending'
 
     return (
-      <span key={i}>
+      <span key={i} ref={tokenRef}>
         <span className="token">author:</span>
         <span className={valueClassName}>{match[1]}</span>
       </span>
