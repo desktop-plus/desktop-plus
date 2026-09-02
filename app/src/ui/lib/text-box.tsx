@@ -190,6 +190,25 @@ export class TextBox extends React.Component<ITextBoxProps, ITextBoxState> {
     return this.inputElement
   }
 
+  /**
+   * Updates the internally tracked cursor position to reflect the current
+   * position of the caret in the input element. Useful when the caret is
+   * moved without the value being modified (i.e. arrow keys or mouse clicks)
+   * to prevent the next re-render from restoring a stale position.
+   */
+  public syncCursorPosition() {
+    if (this.inputElement === null || this.isComposing) {
+      return
+    }
+
+    this.setState({
+      cursorPosition: {
+        start: this.inputElement.selectionStart ?? 0,
+        end: this.inputElement.selectionEnd ?? 0,
+      },
+    })
+  }
+
   /** Determines if the contained text input element is currently focused. */
   public get isFocused() {
     return (

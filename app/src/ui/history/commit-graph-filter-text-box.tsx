@@ -39,6 +39,7 @@ export class CommitGraphFilterTextBox extends React.Component<
   private pendingTokenRef = React.createRef<HTMLSpanElement>()
   private autocompleteRef = React.createRef<HTMLDivElement>()
   private inputElement: HTMLInputElement | null = null
+  private textBox: TextBox | null = null
 
   private get authorEmailSet() {
     return new Set(
@@ -147,6 +148,8 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private onCaretMoved = () => {
+    this.textBox?.syncCursorPosition()
+
     const { autocompleteAnchorOffset } = this.state
 
     if (autocompleteAnchorOffset === null) {
@@ -168,6 +171,7 @@ export class CommitGraphFilterTextBox extends React.Component<
   private onTextBoxRef = (textBox: TextBox | null) => {
     this.detachInputListeners()
 
+    this.textBox = textBox
     this.inputElement = textBox !== null ? textBox.getInputElement() : null
 
     if (this.inputElement !== null) {
@@ -183,6 +187,8 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private detachInputListeners() {
+    this.textBox = null
+
     if (this.inputElement !== null) {
       this.inputElement.removeEventListener('scroll', this.onInputScroll)
       this.inputElement.removeEventListener('keyup', this.onCaretMoved)
