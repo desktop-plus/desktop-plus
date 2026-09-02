@@ -95,8 +95,9 @@ export class CommitGraphFilterTextBox extends React.Component<
           <div
             className="commitGraph-filter-autocomplete"
             ref={this.autocompleteRef}
+            role="listbox"
           >
-            Hello, world
+            {renderAutocompleteItems()}
           </div>
         )}
         <FancyTextBox
@@ -233,6 +234,28 @@ export class CommitGraphFilterTextBox extends React.Component<
 }
 
 const authorTokenRegExp = /(?:^|\s)author:(\S*)/g
+
+const dummyAutocompleteItems: ReadonlyArray<TAuthorFilterOption> = [
+  { name: 'Ashfaq Naseem', email: 'ashfaqnaseem1@gmail.com' },
+  { name: 'Jane Doe', email: 'jane.doe@example.com' },
+  { name: 'John Smith', email: 'john.smith@example.com' },
+]
+
+function renderAutocompleteItems() {
+  return dummyAutocompleteItems.map((item, i) => (
+    <div
+      key={item.email}
+      className={classNames('commitGraph-filter-autocomplete-item', {
+        selected: i === 0,
+      })}
+      role="option"
+      aria-selected={i === 0}
+    >
+      <span className="name">{item.name}</span>
+      <span className="email">{item.email}</span>
+    </div>
+  ))
+}
 
 function isCaretAtEndOfAuthorToken(text: string, caretOffset: number) {
   const regex = new RegExp(authorTokenRegExp.source, 'g')

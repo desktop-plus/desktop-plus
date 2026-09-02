@@ -1,3 +1,5 @@
+@import '../../mixins';
+
 .commitGraph-filter-text-box {
   position: relative;
   flex-grow: 1;
@@ -16,9 +18,6 @@
     overflow: hidden;
     pointer-events: none;
 
-    // .token {
-    //    color: var(--box-selected-active-background-color);
-    // }
     .token-value {
       color: var(--md-accent-fg-color);
       background-color: var(--co-author-tag-background-color);
@@ -29,13 +28,9 @@
       background-color: var(--file-warning-background-color);
       border-radius: var(--outlined-border-radius);
     }
-    // .token-value-pending is intentionally unstyled: a token the user is
-    // still typing renders in the default text color until it is committed
-    // (delimited by whitespace).
   }
 
   &.with-clear-button .commitGraph-filter-text-box-backdrop {
-    // right: var(--text-field-height);
     right: calc(16px + var(--spacing-half) + 1px);
   }
 
@@ -52,11 +47,48 @@
     top: calc(100% + 2px);
     left: 0;
     z-index: 10;
+    width: 300px;
+    overflow: hidden;
     background-color: var(--box-background-color);
     border: 1px solid var(--box-border-color);
     border-radius: var(--border-radius);
     box-shadow: var(--base-box-shadow);
     color: var(--text-color);
-    padding: var(--spacing);
+
+    .commitGraph-filter-autocomplete-item {
+      display: flex;
+      align-items: center;
+      height: 29px;
+      padding: 0 var(--spacing);
+
+      & + .commitGraph-filter-autocomplete-item {
+        border-top: var(--base-border);
+      }
+
+      .name {
+        @include ellipsis;
+        font-weight: var(--font-weight-semibold);
+      }
+
+      .email {
+        @include ellipsis;
+        margin-left: auto;
+        padding-left: var(--spacing);
+        color: var(--text-secondary-color);
+      }
+
+      &.selected {
+        color: var(--box-selected-active-text-color);
+        background-color: var(--box-selected-active-background-color);
+
+        .email {
+          color: var(--box-selected-active-text-color);
+        }
+
+        & + .commitGraph-filter-autocomplete-item {
+          border-top-color: var(--box-selected-active-background-color);
+        }
+      }
+    }
   }
 }
