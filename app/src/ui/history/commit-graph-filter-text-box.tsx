@@ -12,7 +12,23 @@ interface ICommitGraphFilterTextBoxProps
 
 interface ICommitGraphFilterTextBoxState {
   readonly value: string
+  readonly autocompleteAnchorOffset: number | null
 }
+
+type TAuthorTokenState = 'valid' | 'invalid' | 'pending'
+
+type TFilterToken =
+  | { kind: 'query'; value: string; start: number; end: number }
+  | {
+      kind: 'author'
+      name: string
+      delimiter: string
+      value: string
+      start: number
+      end: number
+      state: TAuthorTokenState
+      isEdited: boolean
+    }
 
 export class CommitGraphFilterTextBox extends React.Component<
   ICommitGraphFilterTextBoxProps,
@@ -35,11 +51,11 @@ export class CommitGraphFilterTextBox extends React.Component<
   public constructor(props: ICommitGraphFilterTextBoxProps) {
     super(props)
 
-    this.state = { value: '' }
+    this.state = { value: '', autocompleteAnchorOffset: null }
   }
 
   public componentWillUnmount() {
-    this.detachScrollListener()
+    this.detachInputListeners()
   }
 
   public componentDidUpdate() {
@@ -54,7 +70,11 @@ export class CommitGraphFilterTextBox extends React.Component<
       value !== '' &&
       (this.props.type === 'search' || this.props.displayClearButton === true)
 
-    const pendingAuthorValue = getPendingAuthorValue(value)
+    const tokens = parseFilterTokens(
+      value,
+      this.authorEmailSet,
+      this.state.autocompleteAnchorOffset
+    )
 
     return (
       <div
@@ -68,9 +88,9 @@ export class CommitGraphFilterTextBox extends React.Component<
           aria-hidden="true"
           ref={this.backdropRef}
         >
-          {renderSegments(value, this.authorEmailSet, this.pendingTokenRef)}
+          {renderTokens(tokens, this.pendingTokenRef)}
         </div>
-        {pendingAuthorValue !== null && (
+        {this.state.autocompleteAnchorOffset !== null && (
           <div
             className="commitGraph-filter-autocomplete"
             ref={this.autocompleteRef}
@@ -94,8 +114,16 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private onValueChanged = (text: string) => {
+    const caretOffset = this.inputElement?.selectionEnd ?? null
+
+    const autocompleteAnchorOffset =
+      caretOffset !== null && isCaretAtEndOfAuthorToken(text, caretOffset)
+        ? caretOffset
+        : null
+
     this.setState({
       value: text,
+      autocompleteAnchorOffset,
     })
 
     if (text === '') {
@@ -118,13 +146,35 @@ export class CommitGraphFilterTextBox extends React.Component<
     this.positionAutocomplete()
   }
 
+  private onCaretMoved = () => {
+    const { autocompleteAnchorOffset } = this.state
+
+    if (autocompleteAnchorOffset === null) {
+      return
+    }
+
+    const input = this.inputElement
+
+    const isCollapsedCaretAtAnchor =
+      input !== null &&
+      input.selectionStart === input.selectionEnd &&
+      input.selectionEnd === autocompleteAnchorOffset
+
+    if (!isCollapsedCaretAtAnchor) {
+      this.setState({ autocompleteAnchorOffset: null })
+    }
+  }
+
   private onTextBoxRef = (textBox: TextBox | null) => {
-    this.detachScrollListener()
+    this.detachInputListeners()
 
     this.inputElement = textBox !== null ? textBox.getInputElement() : null
 
     if (this.inputElement !== null) {
       this.inputElement.addEventListener('scroll', this.onInputScroll)
+      this.inputElement.addEventListener('keyup', this.onCaretMoved)
+      this.inputElement.addEventListener('mouseup', this.onCaretMoved)
+      this.inputElement.addEventListener('select', this.onCaretMoved)
     }
 
     if (this.props.onRef && textBox !== null) {
@@ -132,9 +182,12 @@ export class CommitGraphFilterTextBox extends React.Component<
     }
   }
 
-  private detachScrollListener() {
+  private detachInputListeners() {
     if (this.inputElement !== null) {
       this.inputElement.removeEventListener('scroll', this.onInputScroll)
+      this.inputElement.removeEventListener('keyup', this.onCaretMoved)
+      this.inputElement.removeEventListener('mouseup', this.onCaretMoved)
+      this.inputElement.removeEventListener('select', this.onCaretMoved)
       this.inputElement = null
     }
   }
@@ -173,50 +226,111 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 }
 
-function getPendingAuthorValue(text: string) {
-  const segments = text.split(/(\s+)/).filter(s => s.length > 0)
-  const lastSegment = segments.length > 0 ? segments[segments.length - 1] : ''
-  const match = /^author:(\S*)$/.exec(lastSegment)
+const authorTokenRegExp = /(?:^|\s)author:(\S*)/g
 
-  return match === null ? null : match[1]
+function isCaretAtEndOfAuthorToken(text: string, caretOffset: number) {
+  const regex = new RegExp(authorTokenRegExp.source, 'g')
+
+  let match: RegExpExecArray | null = null
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index + match[0].length === caretOffset) {
+      return true
+    }
+  }
+
+  return false
 }
 
-function renderSegments(
+function parseFilterTokens(
   text: string,
-  optionSet: ReadonlySet<string>,
-  pendingTokenRef: React.RefObject<HTMLSpanElement>
-) {
-  const segments = text.split(/(\s+)/).filter(s => s.length > 0)
+  emailSet: ReadonlySet<string>,
+  anchorOffset: number | null
+): ReadonlyArray<TFilterToken> {
+  const tokens: Array<TFilterToken> = []
 
-  return segments.map((segment, i) => {
-    const match = /^author:(\S+)$/.exec(segment)
+  const regex = new RegExp(authorTokenRegExp.source, 'g')
 
-    if (match === null) {
-      const isBareAuthorToken =
-        segment === 'author:' && i === segments.length - 1
+  let cursor = 0
+  let match: RegExpExecArray | null = null
 
-      return (
-        <span key={i} ref={isBareAuthorToken ? pendingTokenRef : undefined}>
-          {segment}
-        </span>
-      )
+  while ((match = regex.exec(text)) !== null) {
+    const tokenEnd = match.index + match[0].length
+    const tokenStart = tokenEnd - match[1].length - 'author:'.length
+
+    if (tokenStart > cursor) {
+      tokens.push({
+        kind: 'query',
+        value: text.substring(cursor, tokenStart),
+        start: cursor,
+        end: tokenStart,
+      })
     }
 
-    const isLastSegment = i === segments.length - 1
-    const tokenRef = isLastSegment ? pendingTokenRef : undefined
+    const value = match[1]
+    const isEdited = anchorOffset !== null && tokenEnd === anchorOffset
+    const isLastToken = regex.lastIndex === text.length
 
-    const validEmail = optionSet.has(match[1].toLowerCase())
+    let state: TAuthorTokenState
 
-    const valueClassName = validEmail
-      ? 'token-value'
-      : isLastSegment
-      ? 'token-value-invalid'
-      : 'token-value-pending'
+    if (isEdited && !isLastToken) {
+      state = 'pending'
+    } else if (emailSet.has(value.toLowerCase())) {
+      state = 'valid'
+    } else if (isLastToken) {
+      state = 'pending'
+    } else {
+      state = 'invalid'
+    }
+
+    tokens.push({
+      kind: 'author',
+      name: 'author',
+      delimiter: ':',
+      value,
+      start: tokenStart,
+      end: tokenEnd,
+      state,
+      isEdited,
+    })
+
+    cursor = tokenEnd
+  }
+
+  if (cursor < text.length) {
+    tokens.push({
+      kind: 'query',
+      value: text.substring(cursor),
+      start: cursor,
+      end: text.length,
+    })
+  }
+
+  return tokens
+}
+
+function renderTokens(
+  tokens: ReadonlyArray<TFilterToken>,
+  pendingTokenRef: React.RefObject<HTMLSpanElement>
+) {
+  return tokens.map((token, i) => {
+    if (token.kind === 'query') {
+      return <span key={i}>{token.value}</span>
+    }
+
+    const valueClassName =
+      token.state === 'valid'
+        ? 'token-value'
+        : token.state === 'invalid'
+        ? 'token-value-invalid'
+        : 'token-value-pending'
 
     return (
-      <span key={i} ref={tokenRef}>
-        <span className="token">author:</span>
-        <span className={valueClassName}>{match[1]}</span>
+      <span key={i} ref={token.isEdited ? pendingTokenRef : undefined}>
+        <span className="token">
+          {token.name}
+          {token.delimiter}
+        </span>
+        <span className={valueClassName}>{token.value}</span>
       </span>
     )
   })
