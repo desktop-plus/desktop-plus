@@ -3,6 +3,11 @@ import { FancyTextBox, IFancyTextBoxProps } from '../lib/fancy-text-box'
 import { TextBox } from '../lib/text-box'
 import classNames from 'classnames'
 import { TAuthorFilterOption } from '../../lib/app-state'
+import {
+  Popover,
+  PopoverAnchorPosition,
+  PopoverDecoration,
+} from '../lib/popover'
 
 interface ICommitGraphFilterTextBoxProps
   extends Omit<IFancyTextBoxProps, 'value' | 'onValueChanged'> {
@@ -13,6 +18,7 @@ interface ICommitGraphFilterTextBoxProps
 interface ICommitGraphFilterTextBoxState {
   readonly value: string
   readonly autocompleteAnchorOffset: number | null
+  readonly autocompleteAnchorElement: HTMLSpanElement | null
 }
 
 type TAuthorTokenState = 'valid' | 'invalid' | 'pending'
@@ -35,9 +41,7 @@ export class CommitGraphFilterTextBox extends React.Component<
   ICommitGraphFilterTextBoxState
 > {
   private backdropRef = React.createRef<HTMLDivElement>()
-  private wrapperRef = React.createRef<HTMLDivElement>()
   private pendingTokenRef = React.createRef<HTMLSpanElement>()
-  private autocompleteRef = React.createRef<HTMLDivElement>()
   private inputElement: HTMLInputElement | null = null
   private textBox: TextBox | null = null
 
@@ -52,7 +56,11 @@ export class CommitGraphFilterTextBox extends React.Component<
   public constructor(props: ICommitGraphFilterTextBoxProps) {
     super(props)
 
-    this.state = { value: '', autocompleteAnchorOffset: null }
+    this.state = {
+      value: '',
+      autocompleteAnchorOffset: null,
+      autocompleteAnchorElement: null,
+    }
   }
 
   public componentWillUnmount() {
@@ -61,7 +69,20 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   public componentDidUpdate() {
     this.syncBackdropScroll()
-    this.positionAutocomplete()
+
+    // The pending token element ref is only assigned during the commit phase
+    // (after render) so the anchor element for the autocomplete popover is
+    // settled here. Rendering the popover before the anchor is available
+    // would briefly display it unpositioned.
+    if (this.state.autocompleteAnchorOffset !== null) {
+      const anchorElement = this.pendingTokenRef.current
+
+      if (this.state.autocompleteAnchorElement !== anchorElement) {
+        this.setState({ autocompleteAnchorElement: anchorElement })
+      }
+    } else if (this.state.autocompleteAnchorElement !== null) {
+      this.setState({ autocompleteAnchorElement: null })
+    }
   }
 
   public render() {
@@ -82,7 +103,6 @@ export class CommitGraphFilterTextBox extends React.Component<
         className={classNames('commitGraph-filter-text-box', {
           'with-clear-button': hasClearButton,
         })}
-        ref={this.wrapperRef}
       >
         <div
           className="commitGraph-filter-text-box-backdrop"
@@ -91,14 +111,18 @@ export class CommitGraphFilterTextBox extends React.Component<
         >
           {renderTokens(tokens, this.pendingTokenRef)}
         </div>
-        {this.state.autocompleteAnchorOffset !== null && (
-          <div
-            className="commitGraph-filter-autocomplete"
-            ref={this.autocompleteRef}
-            role="listbox"
+        {this.state.autocompleteAnchorElement !== null && (
+          <Popover
+            anchor={this.state.autocompleteAnchorElement}
+            anchorPosition={PopoverAnchorPosition.BottomLeft}
+            anchorOffset={2}
+            decoration={PopoverDecoration.None}
+            trapFocus={false}
+            isDialog={false}
+            className="autocompletion-popup filter"
           >
-            {renderAutocompleteItems()}
-          </div>
+            <div role="listbox">{renderAutocompleteItems()}</div>
+          </Popover>
         )}
         <FancyTextBox
           ariaLabel={this.props.ariaLabel}
@@ -145,7 +169,6 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private onInputScroll = () => {
     this.syncBackdropScroll()
-    this.positionAutocomplete()
   }
 
   private onCaretMoved = () => {
@@ -208,32 +231,9 @@ export class CommitGraphFilterTextBox extends React.Component<
 
     backdrop.scrollLeft = this.inputElement.scrollLeft
   }
-
-  private positionAutocomplete = () => {
-    const autocomplete = this.autocompleteRef.current
-    const wrapper = this.wrapperRef.current
-    const pendingToken = this.pendingTokenRef.current
-
-    if (autocomplete === null || wrapper === null) {
-      return
-    }
-
-    let left = 0
-
-    if (pendingToken !== null) {
-      left =
-        pendingToken.getBoundingClientRect().left -
-        wrapper.getBoundingClientRect().left
-
-      const maxLeft = wrapper.offsetWidth - autocomplete.offsetWidth
-      left = Math.max(0, Math.min(left, maxLeft))
-    }
-
-    autocomplete.style.left = `${left}px`
-  }
 }
 
-const authorTokenRegExp = /(?:^|\s)author:(\S*)/g
+const authorTokenRegExp = /(?:^|\s)author:(\S*)/
 
 const dummyAutocompleteItems: ReadonlyArray<TAuthorFilterOption> = [
   { name: 'Ashfaq Naseem', email: 'ashfaqnaseem1@gmail.com' },
@@ -245,14 +245,16 @@ function renderAutocompleteItems() {
   return dummyAutocompleteItems.map((item, i) => (
     <div
       key={item.email}
-      className={classNames('commitGraph-filter-autocomplete-item', {
+      className={classNames('autocompletion-item', {
         selected: i === 0,
       })}
       role="option"
       aria-selected={i === 0}
     >
-      <span className="name">{item.name}</span>
-      <span className="email">{item.email}</span>
+      <div className="author-filter">
+        <span className="name">{item.name}</span>
+        <span className="email">{item.email}</span>
+      </div>
     </div>
   ))
 }

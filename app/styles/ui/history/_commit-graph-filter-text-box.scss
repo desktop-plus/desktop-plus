@@ -41,54 +41,29 @@
     caret-color: var(--text-color);
     background: transparent;
   }
+}
 
-  .commitGraph-filter-autocomplete {
-    position: absolute;
-    top: calc(100% + 2px);
-    left: 0;
-    z-index: 10;
-    width: 300px;
-    overflow: hidden;
-    background-color: var(--box-background-color);
-    border: 1px solid var(--box-border-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--base-box-shadow);
-    color: var(--text-color);
+.autocompletion-popup.filter {
+  width: 300px;
 
-    .commitGraph-filter-autocomplete-item {
-      display: flex;
-      align-items: center;
-      height: 29px;
-      padding: 0 var(--spacing);
+  .author-filter {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
 
-      & + .commitGraph-filter-autocomplete-item {
-        border-top: var(--base-border);
-      }
+    height: 100%;
+    width: 100%;
 
-      .name {
-        @include ellipsis;
-        font-weight: var(--font-weight-semibold);
-      }
+    .name {
+      @include ellipsis;
+      font-weight: var(--font-weight-semibold);
+    }
 
-      .email {
-        @include ellipsis;
-        margin-left: auto;
-        padding-left: var(--spacing);
-        color: var(--text-secondary-color);
-      }
-
-      &.selected {
-        color: var(--box-selected-active-text-color);
-        background-color: var(--box-selected-active-background-color);
-
-        .email {
-          color: var(--box-selected-active-text-color);
-        }
-
-        & + .commitGraph-filter-autocomplete-item {
-          border-top-color: var(--box-selected-active-background-color);
-        }
-      }
+    .email {
+      @include ellipsis;
+      margin-left: auto;
+      padding-left: var(--spacing-half);
+      color: var(--text-secondary-color);
     }
   }
 }
