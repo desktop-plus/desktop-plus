@@ -8,6 +8,7 @@ import {
   PopoverAnchorPosition,
   PopoverDecoration,
 } from '../lib/popover'
+import { List } from '../lib/list'
 
 interface ICommitGraphFilterTextBoxProps
   extends Omit<IFancyTextBoxProps, 'value' | 'onValueChanged'> {
@@ -19,6 +20,7 @@ interface ICommitGraphFilterTextBoxState {
   readonly value: string
   readonly autocompleteAnchorOffset: number | null
   readonly autocompleteAnchorElement: HTMLSpanElement | null
+  readonly tokens: ReadonlyArray<TFilterToken>
 }
 
 type TAuthorTokenState = 'valid' | 'invalid' | 'pending'
@@ -45,6 +47,8 @@ export class CommitGraphFilterTextBox extends React.Component<
   private inputElement: HTMLInputElement | null = null
   private textBox: TextBox | null = null
 
+  private autocompleteItems: ReadonlyArray<TAuthorFilterOption> = []
+
   private get authorEmailSet() {
     return new Set(
       (this.props.authorFilterOptions ?? []).map(a =>
@@ -60,6 +64,7 @@ export class CommitGraphFilterTextBox extends React.Component<
       value: '',
       autocompleteAnchorOffset: null,
       autocompleteAnchorElement: null,
+      tokens: [],
     }
   }
 
@@ -92,11 +97,26 @@ export class CommitGraphFilterTextBox extends React.Component<
       value !== '' &&
       (this.props.type === 'search' || this.props.displayClearButton === true)
 
-    const tokens = parseFilterTokens(
-      value,
-      this.authorEmailSet,
-      this.state.autocompleteAnchorOffset
+    const editedAuthorToken = this.state.tokens.find(
+      (token): token is Extract<TFilterToken, { kind: 'author' }> =>
+        token.kind === 'author' && token.isEdited
     )
+
+    this.autocompleteItems = []
+
+    if (
+      editedAuthorToken !== undefined &&
+      this.props.authorFilterOptions !== null
+    ) {
+      const searchToken = editedAuthorToken.value.trim().toLowerCase()
+      this.autocompleteItems = this.props.authorFilterOptions.filter(
+        ({ email }) => email.toLowerCase().includes(searchToken)
+      )
+    }
+
+    const showAutocomplete =
+      this.state.autocompleteAnchorElement !== null &&
+      this.autocompleteItems.length > 0
 
     return (
       <div
@@ -109,9 +129,9 @@ export class CommitGraphFilterTextBox extends React.Component<
           aria-hidden="true"
           ref={this.backdropRef}
         >
-          {renderTokens(tokens, this.pendingTokenRef)}
+          {renderTokens(this.state.tokens, this.pendingTokenRef)}
         </div>
-        {this.state.autocompleteAnchorElement !== null && (
+        {showAutocomplete && (
           <Popover
             anchor={this.state.autocompleteAnchorElement}
             anchorPosition={PopoverAnchorPosition.BottomLeft}
@@ -120,8 +140,20 @@ export class CommitGraphFilterTextBox extends React.Component<
             trapFocus={false}
             isDialog={false}
             className="autocompletion-popup filter"
+            maxHeight={Math.min(
+              DefaultPopupHeight,
+              RowHeight * this.autocompleteItems.length
+            )}
+            minHeight={RowHeight * Math.min(this.autocompleteItems.length, 3)}
           >
-            <div role="listbox">{renderAutocompleteItems()}</div>
+            <List
+              rowCount={this.autocompleteItems.length}
+              rowHeight={RowHeight}
+              rowRenderer={this.renderAutocompleteRow}
+              selectedRows={[]}
+              invalidationProps={editedAuthorToken?.value ?? undefined}
+              shouldDisableTabFocus={true}
+            />
           </Popover>
         )}
         <FancyTextBox
@@ -140,6 +172,8 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private onValueChanged = (text: string) => {
+    this.setState({ value: text })
+
     const caretOffset = this.inputElement?.selectionEnd ?? null
 
     const autocompleteAnchorOffset =
@@ -147,14 +181,37 @@ export class CommitGraphFilterTextBox extends React.Component<
         ? caretOffset
         : null
 
+    const tokens = parseFilterTokens(
+      text,
+      this.authorEmailSet,
+      autocompleteAnchorOffset
+    )
+
     this.setState({
-      value: text,
       autocompleteAnchorOffset,
+      tokens,
     })
 
     if (text === '') {
       this.submitSearch('')
     }
+  }
+
+  private renderAutocompleteRow = (row: number) => {
+    const item = this.autocompleteItems[row]
+
+    if (item === undefined) {
+      return null
+    }
+
+    return (
+      <div className="autocompletion-item">
+        <div className="author-filter">
+          <span className="name">{item.name}</span>
+          <span className="email">{item.email}</span>
+        </div>
+      </div>
+    )
   }
 
   private onEnterPressed = (text: string) => {
@@ -235,29 +292,9 @@ export class CommitGraphFilterTextBox extends React.Component<
 
 const authorTokenRegExp = /(?:^|\s)author:(\S*)/
 
-const dummyAutocompleteItems: ReadonlyArray<TAuthorFilterOption> = [
-  { name: 'Ashfaq Naseem', email: 'ashfaqnaseem1@gmail.com' },
-  { name: 'Jane Doe', email: 'jane.doe@example.com' },
-  { name: 'John Smith', email: 'john.smith@example.com' },
-]
+const RowHeight = 29
 
-function renderAutocompleteItems() {
-  return dummyAutocompleteItems.map((item, i) => (
-    <div
-      key={item.email}
-      className={classNames('autocompletion-item', {
-        selected: i === 0,
-      })}
-      role="option"
-      aria-selected={i === 0}
-    >
-      <div className="author-filter">
-        <span className="name">{item.name}</span>
-        <span className="email">{item.email}</span>
-      </div>
-    </div>
-  ))
-}
+const DefaultPopupHeight = 100
 
 function isCaretAtEndOfAuthorToken(text: string, caretOffset: number) {
   const regex = new RegExp(authorTokenRegExp.source, 'g')
