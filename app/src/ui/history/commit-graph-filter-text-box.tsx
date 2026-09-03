@@ -8,7 +8,7 @@ import {
   PopoverAnchorPosition,
   PopoverDecoration,
 } from '../lib/popover'
-import { List } from '../lib/list'
+import { List, findNextSelectableRow } from '../lib/list'
 
 interface ICommitGraphFilterTextBoxProps
   extends Omit<IFancyTextBoxProps, 'value' | 'onValueChanged'> {
@@ -21,6 +21,7 @@ interface ICommitGraphFilterTextBoxState {
   readonly autocompleteAnchorOffset: number | null
   readonly autocompleteAnchorElement: HTMLSpanElement | null
   readonly tokens: ReadonlyArray<TFilterToken>
+  readonly selectedAutocompleteRow: number | null
 }
 
 type TAuthorTokenState = 'valid' | 'invalid' | 'pending'
@@ -49,6 +50,8 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private autocompleteItems: ReadonlyArray<TAuthorFilterOption> = []
 
+  private pendingCaretOffset: number | null = null
+
   private get authorEmailSet() {
     return new Set(
       (this.props.authorFilterOptions ?? []).map(a =>
@@ -65,6 +68,7 @@ export class CommitGraphFilterTextBox extends React.Component<
       autocompleteAnchorOffset: null,
       autocompleteAnchorElement: null,
       tokens: [],
+      selectedAutocompleteRow: null,
     }
   }
 
@@ -87,6 +91,24 @@ export class CommitGraphFilterTextBox extends React.Component<
       }
     } else if (this.state.autocompleteAnchorElement !== null) {
       this.setState({ autocompleteAnchorElement: null })
+    }
+
+    if (this.pendingCaretOffset !== null && this.inputElement !== null) {
+      // This component updates after the TextBox (children update first) so
+      // this runs after the TextBox has restored its (now stale) cursor
+      // position, overriding it with the caret position the completion
+      // insert warrants.
+      this.inputElement.setSelectionRange(
+        this.pendingCaretOffset,
+        this.pendingCaretOffset
+      )
+
+      // Make sure the TextBox won't restore the stale position on a
+      // subsequent re-render (e.g. when the author filter options arrive
+      // asynchronously).
+      this.textBox?.syncCursorPosition()
+
+      this.pendingCaretOffset = null
     }
   }
 
@@ -150,7 +172,13 @@ export class CommitGraphFilterTextBox extends React.Component<
               rowCount={this.autocompleteItems.length}
               rowHeight={RowHeight}
               rowRenderer={this.renderAutocompleteRow}
-              selectedRows={[]}
+              selectedRows={
+                this.state.selectedAutocompleteRow === null
+                  ? []
+                  : [this.state.selectedAutocompleteRow]
+              }
+              scrollToRow={this.state.selectedAutocompleteRow ?? undefined}
+              onRowClick={this.onAutocompleteRowClicked}
               invalidationProps={editedAuthorToken?.value ?? undefined}
               shouldDisableTabFocus={true}
             />
@@ -190,6 +218,7 @@ export class CommitGraphFilterTextBox extends React.Component<
     this.setState({
       autocompleteAnchorOffset,
       tokens,
+      selectedAutocompleteRow: null,
     })
 
     if (text === '') {
@@ -224,6 +253,97 @@ export class CommitGraphFilterTextBox extends React.Component<
     this.props.onSearchSubmitted(query, validEmailSet)
   }
 
+  private onInputKeyDown = (event: KeyboardEvent) => {
+    if (event.isComposing) {
+      return
+    }
+
+    const isAutocompleteVisible =
+      this.state.autocompleteAnchorElement !== null &&
+      this.autocompleteItems.length > 0
+
+    if (!isAutocompleteVisible) {
+      return
+    }
+
+    const { selectedAutocompleteRow } = this.state
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      // Prevent the input caret from being moved to the start/end of the
+      // text (which would hide the autocomplete) and make sure the TextBox
+      // never sees the key.
+      event.preventDefault()
+      event.stopPropagation()
+
+      const nextRow = findNextSelectableRow(this.autocompleteItems.length, {
+        direction: event.key === 'ArrowDown' ? 'down' : 'up',
+        row: selectedAutocompleteRow ?? -1,
+      })
+
+      this.setState({ selectedAutocompleteRow: nextRow })
+    } else if (event.key === 'Enter') {
+      if (selectedAutocompleteRow !== null) {
+        event.preventDefault()
+        event.stopPropagation()
+
+        this.insertCompletion(selectedAutocompleteRow)
+      }
+
+      // With no keyboard-selected row the event is left untouched so that
+      // the TextBox can submit the search.
+    } else if (event.key === 'Escape') {
+      // Close the autocomplete without clearing the input text (the TextBox
+      // would do so otherwise as it is a search input).
+      event.preventDefault()
+      event.stopPropagation()
+
+      this.setState({
+        autocompleteAnchorOffset: null,
+        autocompleteAnchorElement: null,
+        selectedAutocompleteRow: null,
+        tokens: parseFilterTokens(this.state.value, this.authorEmailSet, null),
+      })
+    }
+  }
+
+  private insertCompletion(row: number) {
+    const item = this.autocompleteItems[row]
+
+    if (item === undefined) {
+      return
+    }
+
+    const editedAuthorToken = this.state.tokens.find(
+      (token): token is Extract<TFilterToken, { kind: 'author' }> =>
+        token.kind === 'author' && token.isEdited
+    )
+
+    if (editedAuthorToken === undefined) {
+      return
+    }
+
+    const inserted = `author:${item.email} `
+
+    const newValue =
+      this.state.value.substring(0, editedAuthorToken.start) +
+      inserted +
+      this.state.value.substring(editedAuthorToken.end)
+
+    this.pendingCaretOffset = editedAuthorToken.start + inserted.length
+
+    this.setState({
+      value: newValue,
+      tokens: parseFilterTokens(newValue, this.authorEmailSet, null),
+      autocompleteAnchorOffset: null,
+      autocompleteAnchorElement: null,
+      selectedAutocompleteRow: null,
+    })
+  }
+
+  private onAutocompleteRowClicked = (row: number) => {
+    this.insertCompletion(row)
+  }
+
   private onInputScroll = () => {
     this.syncBackdropScroll()
   }
@@ -245,7 +365,10 @@ export class CommitGraphFilterTextBox extends React.Component<
       input.selectionEnd === autocompleteAnchorOffset
 
     if (!isCollapsedCaretAtAnchor) {
-      this.setState({ autocompleteAnchorOffset: null })
+      this.setState({
+        autocompleteAnchorOffset: null,
+        selectedAutocompleteRow: null,
+      })
     }
   }
 
@@ -260,6 +383,14 @@ export class CommitGraphFilterTextBox extends React.Component<
       this.inputElement.addEventListener('keyup', this.onCaretMoved)
       this.inputElement.addEventListener('mouseup', this.onCaretMoved)
       this.inputElement.addEventListener('select', this.onCaretMoved)
+      this.inputElement.addEventListener(
+        'keydown',
+        this.onInputKeyDown,
+        // The keydown listener is registered in the capture phase so that it
+        // gets a chance to intercept keys (Enter, Escape, arrows) bound for
+        // the autocomplete before the TextBox handles them.
+        true
+      )
     }
 
     if (this.props.onRef && textBox !== null) {
@@ -275,6 +406,11 @@ export class CommitGraphFilterTextBox extends React.Component<
       this.inputElement.removeEventListener('keyup', this.onCaretMoved)
       this.inputElement.removeEventListener('mouseup', this.onCaretMoved)
       this.inputElement.removeEventListener('select', this.onCaretMoved)
+      this.inputElement.removeEventListener(
+        'keydown',
+        this.onInputKeyDown,
+        true
+      )
       this.inputElement = null
     }
   }
