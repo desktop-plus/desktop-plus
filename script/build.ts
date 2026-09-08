@@ -55,6 +55,7 @@ import { updateLicenseDump } from './licenses/update-license-dump'
 import { removeCurlVersionRequirements } from './remove-curl-version-requirements'
 import { verifyInjectedSassVariables } from './validate-sass/validate-all'
 import { copyCopilotDependency } from './copilot'
+import { pruneCopilotDependency } from './copilot-prune'
 
 // Always use ad-hoc code signing ('-'), even for published builds, to avoid "app is damaged" error.
 // This is the friendliest non-paid option.
@@ -377,6 +378,7 @@ function copyDependencies() {
     process.platform,
     getDistArchitecture()
   )
+  pruneCopilotDependency(path.join(outRoot, 'copilot'))
 
   // Dev builds for macOS require a SSH wrapper to use SSH_ASKPASS
   if (process.platform === 'darwin' && isDevelopmentBuild) {
