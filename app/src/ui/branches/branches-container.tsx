@@ -294,6 +294,7 @@ export class BranchesContainer extends React.Component<
             renderPreList={this.renderPreList}
             onRenameBranch={this.props.onRenameBranch}
             onSetAsDefaultBranch={this.props.onSetAsDefaultBranch}
+            onDuplicateBranch={this.onDuplicateBranch}
             onDeleteBranch={this.props.onDeleteBranch}
             onDeleteUnusedLocalBranches={this.props.onDeleteUnusedLocalBranches}
             onPullSingleBranch={this.props.onPullSingleBranch}
@@ -462,6 +463,17 @@ export class BranchesContainer extends React.Component<
 
   private onCreateBranch = () => {
     this.onCreateBranchWithName('')
+  }
+
+  private onDuplicateBranch = (branch: Branch) => {
+    const { repository, dispatcher } = this.props
+
+    dispatcher.closeFoldout(FoldoutType.Branch)
+    dispatcher.showPopup({
+      type: PopupType.CreateBranch,
+      repository,
+      baseBranch: branch,
+    })
   }
 
   private onPullRequestSelectionChanged = (

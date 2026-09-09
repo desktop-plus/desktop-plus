@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import { Repository } from '../../models/repository'
 import { Dispatcher } from '../dispatcher'
-import { Branch, StartPoint } from '../../models/branch'
+import { Branch, BranchType, StartPoint } from '../../models/branch'
 import { Row } from '../lib/row'
 import { Ref } from '../lib/ref'
 import { LinkButton } from '../lib/link-button'
@@ -40,6 +40,11 @@ import { IBranchNamePreset } from '../../models/branch-preset'
 interface ICreateBranchProps {
   readonly repository: Repository
   readonly targetCommit?: CommitOneLine
+  /**
+   * If provided, the new branch is created based on this branch instead of
+   * letting the user pick a start point.
+   */
+  readonly baseBranch?: Branch
   readonly upstreamGitHubRepository: GitHubRepository | null
   readonly accounts: ReadonlyArray<Account>
   readonly cachedRepoRulesets: ReadonlyMap<number, IAPIRepoRuleset>
@@ -178,12 +183,19 @@ export class CreateBranch extends React.Component<
 
     const tipKind = tip.kind
     const targetCommit = this.props.targetCommit
+    const baseBranch = this.props.baseBranch
 
     if (targetCommit !== undefined) {
       return (
         <p>
           Your new branch will be based on the commit '{targetCommit.summary}' (
           {targetCommit.sha.substring(0, 7)}) from your repository.
+        </p>
+      )
+    } else if (baseBranch !== undefined) {
+      return (
+        <p>
+          This will create a new branch based on <Ref>{baseBranch.name}</Ref>.
         </p>
       )
     } else if (tip.kind === TipState.Detached) {
@@ -415,6 +427,9 @@ export class CreateBranch extends React.Component<
 
     if (this.props.targetCommit !== undefined) {
       startPoint = this.props.targetCommit.sha
+    } else if (this.props.baseBranch !== undefined) {
+      startPoint = this.props.baseBranch.name
+      noTrack = this.props.baseBranch.type === BranchType.Remote
     } else if (this.state.startPoint === StartPoint.DefaultBranch) {
       // This really shouldn't happen, we take all kinds of precautions
       // to make sure the startPoint state is valid given the current props.

@@ -337,6 +337,7 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
         branch.nameWithoutRemote === this.props.repository.defaultBranch
           ? undefined
           : this.onSetAsDefaultBranch,
+      onDuplicateBranch: this.onDuplicateBranch,
       onDeleteBranch: this.onDeleteBranch,
     })
 
@@ -409,6 +410,15 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
     }
 
     this.props.dispatcher.showPullRequestByPR(pr)
+  }
+
+  private onDuplicateBranch = (branch: Branch) => {
+    this.props.dispatcher.closeFoldout(FoldoutType.Branch)
+    this.props.dispatcher.showPopup({
+      type: PopupType.CreateBranch,
+      repository: this.props.repository,
+      baseBranch: branch,
+    })
   }
 
   private onSetAsDefaultBranch = (branchName: string) => {

@@ -229,6 +229,8 @@ export type PopupDetail =
       repository: Repository
       initialName?: string
       targetCommit?: CommitOneLine
+      /** If provided, the new branch is created based on this branch. */
+      baseBranch?: Branch
     }
   | {
       type: PopupType.SignIn

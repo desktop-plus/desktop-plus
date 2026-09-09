@@ -136,6 +136,9 @@ interface IBranchListProps {
   /** Optional: Callback for if set as default branch context menu should exist */
   readonly onSetAsDefaultBranch?: (branchName: string) => void
 
+  /** Optional: Callback for if duplicate branch context menu should exist */
+  readonly onDuplicateBranch?: (branch: Branch) => void
+
   /** Optional: Callback for if delete context menu should exist */
   readonly onDeleteBranch?: (branchName: string) => void
 
@@ -247,6 +250,7 @@ export class BranchList extends React.Component<IBranchListProps> {
       onDeleteUnusedLocalBranches: onDeleteUnusedLocalBranches,
       onCheckoutInNewWorktree,
       onSetAsDefaultBranch,
+      onDuplicateBranch,
       onPullSingleBranch,
     } = this.props
 
@@ -254,6 +258,7 @@ export class BranchList extends React.Component<IBranchListProps> {
       onRenameBranch === undefined &&
       onDeleteBranch === undefined &&
       onSetAsDefaultBranch === undefined &&
+      onDuplicateBranch === undefined &&
       onCheckoutInNewWorktree === undefined
     ) {
       return
@@ -278,6 +283,7 @@ export class BranchList extends React.Component<IBranchListProps> {
         branch.nameWithoutRemote === this.props.defaultBranch?.name
           ? undefined
           : onSetAsDefaultBranch,
+      onDuplicateBranch,
       onDeleteBranch,
       onDeleteUnusedLocalBranches: canDeleteUnusedLocalBranches
         ? onDeleteUnusedLocalBranches
