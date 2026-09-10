@@ -75,8 +75,6 @@ async function deserialize<T>(response: Response): Promise<T> {
   }
 }
 
-const StripApiVersionPrefixRegex = /^api\/v\d+\//g
-
 /**
  * Convert the endpoint and resource path into an absolute URL. As the app bakes
  * the `/api/v3/` path into the endpoint, we need to prevent duplicating this when
@@ -87,7 +85,7 @@ const StripApiVersionPrefixRegex = /^api\/v\d+\//g
  */
 export function getAbsoluteUrl(endpoint: string, path: string): string {
   let relativePath = path[0] === '/' ? path.substring(1) : path
-  relativePath = relativePath.replace(StripApiVersionPrefixRegex, '')
+  relativePath = relativePath.replace(/^api\/v\d+\//, '')
 
   // Our API endpoints are a bit sloppy in that they don't typically
   // include the trailing slash (i.e. we use https://api.github.com for
