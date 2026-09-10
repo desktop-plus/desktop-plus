@@ -119,6 +119,7 @@ interface IPreferencesProps {
   readonly selectedShell: Shell
   readonly selectedTheme: ApplicationTheme
   readonly selectedTabSize: number
+  readonly recentRepositoriesCount: number
   readonly selectedDiffFontSize: number
   readonly selectedDiffFontFamily: DiffFontFamily
   readonly useCustomEditor: boolean
@@ -757,6 +758,10 @@ export class Preferences extends React.Component<
             onSelectedThemeChanged={this.onSelectedThemeChanged}
             selectedTabSize={this.props.selectedTabSize}
             onSelectedTabSizeChanged={this.onSelectedTabSizeChanged}
+            recentRepositoriesCount={this.props.recentRepositoriesCount}
+            onRecentRepositoriesCountChanged={
+              this.onRecentRepositoriesCountChanged
+            }
             selectedDiffFontSize={this.props.selectedDiffFontSize}
             onSelectedDiffFontSizeChanged={this.onSelectedDiffFontSizeChanged}
             selectedDiffFontFamily={this.props.selectedDiffFontFamily}
@@ -1154,6 +1159,10 @@ export class Preferences extends React.Component<
 
   private onSelectedTabSizeChanged = (tabSize: number) => {
     this.props.dispatcher.setSelectedTabSize(tabSize)
+  }
+
+  private onRecentRepositoriesCountChanged = (count: number) => {
+    this.props.dispatcher.setRecentRepositoriesCount(count)
   }
 
   private onSelectedDiffFontSizeChanged = (diffFontSize: number) => {

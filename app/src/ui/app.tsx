@@ -1966,6 +1966,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             selectedShell={this.state.selectedShell}
             selectedTheme={this.state.selectedTheme}
             selectedTabSize={this.state.selectedTabSize}
+            recentRepositoriesCount={this.state.recentRepositoriesCount}
             selectedDiffFontSize={this.state.selectedDiffFontSize}
             selectedDiffFontFamily={this.state.selectedDiffFontFamily}
             useCustomEditor={this.state.useCustomEditor}

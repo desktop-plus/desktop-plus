@@ -11,7 +11,11 @@ import { RadioGroup } from '../lib/radio-group'
 import { Select } from '../lib/select'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { encodePathAsUrl } from '../../lib/path'
-import { tabSizeDefault } from '../../lib/stores/app-store'
+import { TextBox } from '../lib/text-box'
+import {
+  tabSizeDefault,
+  MaxRecentRepositoriesLength,
+} from '../../lib/stores/app-store'
 import { ShowBranchNameInRepoListSetting } from '../../models/show-branch-name-in-repo-list'
 import { parseEnumValue } from '../../lib/enum'
 import { assertNever } from '../../lib/fatal-error'
@@ -41,6 +45,8 @@ interface IAppearanceProps {
   readonly onSelectedThemeChanged: (theme: ApplicationTheme) => void
   readonly selectedTabSize: number
   readonly onSelectedTabSizeChanged: (tabSize: number) => void
+  readonly recentRepositoriesCount: number
+  readonly onRecentRepositoriesCountChanged: (count: number) => void
   readonly selectedDiffFontSize: number
   readonly onSelectedDiffFontSizeChanged: (diffFontSize: number) => void
   readonly selectedDiffFontFamily: DiffFontFamily
@@ -195,6 +201,12 @@ export class Appearance extends React.Component<
 
   private onSelectedThemeChanged = (theme: ApplicationTheme) => {
     this.props.onSelectedThemeChanged(theme)
+  }
+
+  private onRecentRepositoriesCountChanged = (countText: string) => {
+    const count = parseInt(countText, 10)
+    const coerced = isNaN(count) ? 0 : count
+    this.props.onRecentRepositoriesCountChanged(coerced)
   }
 
   private onShowRecentRepositoriesChanged = (
@@ -458,6 +470,19 @@ export class Appearance extends React.Component<
               : CheckboxValue.Off
           }
           onChange={this.onShowRecentRepositoriesChanged}
+        />
+        <TextBox
+          type="number"
+          min={0}
+          max={MaxRecentRepositoriesLength}
+          label="Recent repository count"
+          value={
+            this.props.recentRepositoriesCount === 0
+              ? ''
+              : this.props.recentRepositoriesCount.toString()
+          }
+          onValueChanged={this.onRecentRepositoriesCountChanged}
+          displayClearButton={true}
         />
         <Select
           label="Show current branch name next to repository name"

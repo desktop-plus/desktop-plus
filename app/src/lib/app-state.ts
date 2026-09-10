@@ -338,6 +338,9 @@ export interface IAppState {
   /** The selected tab size preference */
   readonly selectedTabSize: number
 
+  /** The number of recent repositories to show in the repository list */
+  readonly recentRepositoriesCount: number
+
   /** The selected font size preference for text diffs */
   readonly selectedDiffFontSize: number
 
