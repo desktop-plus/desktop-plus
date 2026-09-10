@@ -5,6 +5,16 @@ If you have not created an issue for your PR, please search the issue tracker to
 
 Closes #[issue number]
 
+<!--
+IMPORTANT: You must read and understand our AI use policy before submitting this pull request:
+https://desktop-plus.org/ai-policy
+
+Then, check the box below using an 'x' like this:
+- [x] I have read and understood the AI use policy.
+-->
+
+- [ ] I have read and understood the AI use policy.
+
 ## Description
 <!--
 A summary of the changes made along with any other information that would be helpful to a reviewer such as potential tradeoffs or alternative approaches you considered.
@@ -16,13 +26,3 @@ A summary of the changes made along with any other information that would be hel
 <!--
 If this PR touches the UI layer of the app, please include screenshots or animated gifs to show the changes.
 -->
-
-## Release notes
-
-<!--
-You can leave this blank if you're not sure.
-If you don't believe this PR needs to be mentioned in the release notes, write "Notes: no-notes".
-Rules for writing release notes can be found in the [Writing Release Notes](docs/process/writing-release-notes.md) document.
--->
-
-Notes:

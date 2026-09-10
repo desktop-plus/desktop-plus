@@ -1,10 +1,22 @@
 name: ⭐ Feature Request
 description: Submit a feature request
+type: feature
 body:
   - type: markdown
     attributes:
       value: |
         Thanks for submitting a feature request! This issue tracker is for [Desktop Plus](https://github.com/desktop-plus/desktop-plus). Please search the issue tracker to see if there is an existing issue for the feature you are requesting.
+  - type: checkboxes
+    id: ai-policy-acknowledgement
+    attributes:
+      label: AI Policy Acknowledgement
+      description: |
+        #### **Important:** Make sure you have read our [AI policy](https://desktop-plus.org/ai-policy) before submitting this feature request. Any submissions that violate it may be closed without further discussion.
+      options:
+        - label: I have read and understood the AI policy.
+          required: true
+    validations:
+      required: true
   - type: textarea
     id: the-feature-request
     attributes:
