@@ -461,7 +461,6 @@ export class Appearance extends React.Component<
               : this.props.recentRepositoriesCount.toString()
           }
           onValueChanged={this.onRecentRepositoriesCountChanged}
-          displayClearButton={true}
         />
         <Select
           label="Show current branch name next to repository name"
