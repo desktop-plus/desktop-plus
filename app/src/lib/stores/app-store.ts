@@ -4980,15 +4980,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.emitUpdate()
   }
 
-  public _setShowRecentRepositories(showRecentRepositories: boolean) {
-    if (this.showRecentRepositories === showRecentRepositories) {
-      return
-    }
-    setBoolean(showRecentRepositoriesKey, showRecentRepositories)
-    this.showRecentRepositories = showRecentRepositories
-    this.emitUpdate()
-  }
-
   public _setShowWorktrees(showWorktrees: boolean) {
     if (this.showWorktrees === showWorktrees) {
       return

@@ -3338,10 +3338,6 @@ export class Dispatcher {
     this.appStore._setRepositoryIndicatorsEnabled(repositoryIndicatorsEnabled)
   }
 
-  public setShowRecentRepositories(showRecentRepositories: boolean) {
-    this.appStore._setShowRecentRepositories(showRecentRepositories)
-  }
-
   public setShowWorktrees(showWorktrees: boolean) {
     this.appStore._setShowWorktrees(showWorktrees)
   }
