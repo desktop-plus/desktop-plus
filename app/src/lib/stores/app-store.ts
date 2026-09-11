@@ -2986,6 +2986,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.accounts = accounts
     this.repositories = repositories
 
+    // Must be read before selecting the initial repository, since that's what
+    // populates the list of visible recent repositories.
+    // Backward-compat: users who disabled the recent group in the previous
+    // checkbox setting start with 0 so they don't suddenly see it again.
+    this.recentRepositoriesCount = getNumber(
+      recentRepositoriesCountKey,
+      this.showRecentRepositories ? defaultRecentRepositoriesCount : 0
+    )
+
     this.updateRepositorySelectionAfterRepositoriesChanged()
 
     this.sidebarWidth = constrain(
@@ -3141,15 +3150,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     this.selectedTabSize = getNumber(tabSizeKey, tabSizeDefault)
     this.selectedDiffFontSize = getNumber(diffFontSizeKey, defaultDiffFontSize)
-    // Backward-compat: users who disabled the recent group in the previous
-    // checkbox setting start with 0 so they don't suddenly see it again.
-    const recentCountDefault = this.showRecentRepositories
-      ? defaultRecentRepositoriesCount
-      : 0
-    this.recentRepositoriesCount = getNumber(
-      recentRepositoriesCountKey,
-      recentCountDefault
-    )
     this.selectedDiffFontFamily =
       localStorage.getItem(diffFontFamilyKey) || defaultDiffFontFamily
 
