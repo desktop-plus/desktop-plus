@@ -21,9 +21,10 @@ cask "desktop-plus" do
   binary "#{appdir}/Desktop Plus.app/Contents/Resources/app/static/desktop-plus-cli.sh",
          target: "desktop-plus-cli"
 
-  postflight do
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Desktop Plus.app"]
+  postflight_steps do
+    run "/usr/bin/xattr",
+        args:         ["-dr", "com.apple.quarantine", "{{appdir}}/Desktop Plus.app"],
+        must_succeed: false
   end
 
   zap trash: [
