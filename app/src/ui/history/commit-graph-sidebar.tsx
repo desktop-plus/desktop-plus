@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import debounce from 'lodash/debounce'
 import memoizeOne from 'memoize-one'
 import { ICompareState, IConstrainedValue } from '../../lib/app-state'
 import { Emoji } from '../../lib/emoji'
@@ -538,38 +537,6 @@ export class CommitGraphSidebar extends React.Component<
         getAvatarUserFromAuthor(author, gitHubRepository)
       )
     }
-  )
-
-  private readonly onCommitQuery = debounce(
-    async (text: string, filters: TFilters) => {
-      if (this.state.commitGraphViewMode === CommitHistoryViewMode.Graph) {
-        this.props.dispatcher.updateCompareForm(this.props.repository, {
-          commitSearchQuery: text,
-        })
-
-        if (text.length > 0) {
-          void this.props.dispatcher.commitGraph_loadNextCommitBatch(
-            this.props.repository
-          )
-        }
-
-        return
-      }
-
-      try {
-        this.setState({ isSearching: true })
-        await this.props.dispatcher.setCommitSearchQuery(
-          this.props.repository,
-          text,
-          filters
-        )
-      } catch (error) {
-        console.error('Error while searching commits:', error)
-      } finally {
-        this.setState({ isSearching: false })
-      }
-    },
-    250
   )
 
   public constructor(props: ICommitGraphSidebarProps) {
@@ -1393,11 +1360,34 @@ export class CommitGraphSidebar extends React.Component<
     text: string,
     emailSet: Set<string>
   ) => {
-    const newFilters = {
+    const filters = {
       author: emailSet,
     }
 
-    await this.onCommitQuery(text, newFilters)
+    if (this.state.commitGraphViewMode === CommitHistoryViewMode.Graph) {
+      this.props.dispatcher.updateCompareForm(this.props.repository, {
+        commitSearchQuery: text,
+      })
+
+      if (text.length > 0) {
+        void this.props.dispatcher.commitGraph_loadNextCommitBatch(
+          this.props.repository
+        )
+      }
+    } else {
+      try {
+        this.setState({ isSearching: true })
+        await this.props.dispatcher.setCommitSearchQuery(
+          this.props.repository,
+          text,
+          filters
+        )
+      } catch (error) {
+        console.error('Error while searching commits:', error)
+      } finally {
+        this.setState({ isSearching: false })
+      }
+    }
   }
 
   private onCreateTag = (targetCommitSha: string) => {
