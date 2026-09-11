@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { pathExists as pathExistsInternal } from 'fs-extra'
+import { pathExists as pathExistsInternal } from '../path-exists'
 import {
   ChildProcess,
   spawn as nodeSpawn,

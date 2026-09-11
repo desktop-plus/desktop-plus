@@ -7,7 +7,7 @@ import { mkdtemp } from 'fs/promises'
 import glob = require('glob')
 const globPromise = promisify(glob)
 
-import { ensureDir, rename, writeFile } from 'fs-extra'
+import { mkdir, rename, writeFile } from 'fs/promises'
 
 import { getVersion } from '../app/package-info'
 import {
@@ -164,7 +164,7 @@ export async function packageTransitionalDebian(): Promise<string> {
     join(tmpdir(), 'github-desktop-plus-transitional-')
   )
   const debianDir = join(stagingDir, 'DEBIAN')
-  await ensureDir(debianDir)
+  await mkdir(debianDir, { recursive: true })
 
   const control =
     [

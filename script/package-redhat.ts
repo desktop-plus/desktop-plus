@@ -4,7 +4,7 @@ import { join } from 'path'
 import glob = require('glob')
 const globPromise = promisify(glob)
 
-import { readFile, writeFile, rename } from 'fs-extra'
+import { readFile, writeFile, rename } from 'fs/promises'
 
 import { getVersion } from '../app/package-info'
 import {

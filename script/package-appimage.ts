@@ -1,6 +1,6 @@
 import { execFileSync } from 'child_process'
 import { join } from 'path'
-import { chmod, copy, ensureDir, remove, symlink, writeFile } from 'fs-extra'
+import { chmod, copyFile, cp, mkdir, rm, symlink, writeFile } from 'fs/promises'
 
 import { description, productName } from '../app/package.json'
 import { getVersion } from '../app/package-info'
@@ -72,8 +72,8 @@ async function downloadAppImageTool(destination: string) {
 }
 
 async function createAppDir(appDir: string, executableName: string) {
-  await remove(appDir)
-  await copy(getDistPath(), appDir)
+  await rm(appDir, { recursive: true, force: true })
+  await cp(getDistPath(), appDir, { recursive: true })
   await chmod(appDir, 0o755)
 
   const appRunPath = join(appDir, 'AppRun')
@@ -85,8 +85,8 @@ async function createAppDir(appDir: string, executableName: string) {
   const iconsDir = join(appDir, 'usr', 'share', 'icons', 'hicolor')
   for (const size of ICON_SIZES) {
     const appsDir = join(iconsDir, `${size}x${size}`, 'apps')
-    await ensureDir(appsDir)
-    await copy(
+    await mkdir(appsDir, { recursive: true })
+    await copyFile(
       join(
         __dirname,
         '..',
@@ -146,8 +146,8 @@ export async function packageAppImage(): Promise<string> {
       },
     })
   } finally {
-    await remove(appDir)
-    await remove(appImageTool)
+    await rm(appDir, { recursive: true, force: true })
+    await rm(appImageTool, { force: true })
   }
 
   return join(distRoot, fileName)

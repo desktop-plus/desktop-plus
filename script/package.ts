@@ -2,8 +2,7 @@
 
 import * as cp from 'child_process'
 import { createReadStream } from 'fs'
-import { writeFile } from 'fs/promises'
-import { pathExists, chmod } from 'fs-extra'
+import { writeFile, chmod } from 'fs/promises'
 import * as path from 'path'
 import * as electronInstaller from 'electron-winstaller'
 import * as crypto from 'crypto'
@@ -227,7 +226,7 @@ async function generateChecksums(files: Array<string>) {
 
 async function packageLinux() {
   const helperPath = path.join(getDistPath(), 'chrome-sandbox')
-  const exists = await pathExists(helperPath)
+  const exists = existsSync(helperPath)
 
   if (exists) {
     console.log('Updating file mode for chrome-sandbox…')
