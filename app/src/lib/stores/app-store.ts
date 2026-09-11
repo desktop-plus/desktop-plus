@@ -3128,9 +3128,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     this.selectedTabSize = getNumber(tabSizeKey, tabSizeDefault)
     this.selectedDiffFontSize = getNumber(diffFontSizeKey, defaultDiffFontSize)
+    // Backward-compat: users who disabled the recent group in the previous
+    // checkbox setting start with 0 so they don't suddenly see it again.
+    const recentCountDefault = this.showRecentRepositories
+      ? defaultRecentRepositoriesCount
+      : 0
     this.recentRepositoriesCount = getNumber(
       recentRepositoriesCountKey,
-      defaultRecentRepositoriesCount
+      recentCountDefault
     )
     this.selectedDiffFontFamily =
       localStorage.getItem(diffFontFamilyKey) || defaultDiffFontFamily

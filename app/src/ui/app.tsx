@@ -1975,7 +1975,6 @@ export class App extends React.Component<IAppProps, IAppState> {
             customShell={this.state.customShell}
             branchPresetScript={this.state.branchPresetScript}
             titleBarStyle={this.state.titleBarStyle}
-            showRecentRepositories={this.state.showRecentRepositories}
             showWorktrees={this.state.showWorktrees}
             showWorktreesInRepoList={this.state.showWorktreesInRepoList}
             showCompareTab={this.state.showCompareTab}

@@ -128,7 +128,6 @@ interface IPreferencesProps {
   readonly customShell: ICustomIntegration | null
   readonly branchPresetScript: ICustomIntegration | null
   readonly titleBarStyle: TitleBarStyle
-  readonly showRecentRepositories: boolean
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -185,7 +184,6 @@ interface IPreferencesState {
   readonly availableShells: ReadonlyArray<Shell>
   readonly selectedShell: Shell
   readonly titleBarStyle: TitleBarStyle
-  readonly showRecentRepositories: boolean
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -286,7 +284,6 @@ export class Preferences extends React.Component<
       availableShells: [],
       selectedShell: this.props.selectedShell,
       titleBarStyle: this.props.titleBarStyle,
-      showRecentRepositories: this.props.showRecentRepositories,
       showWorktrees: this.props.showWorktrees,
       showWorktreesInRepoList: this.props.showWorktreesInRepoList,
       showCompareTab: this.props.showCompareTab,
@@ -770,10 +767,6 @@ export class Preferences extends React.Component<
             }
             titleBarStyle={this.props.titleBarStyle}
             onTitleBarStyleChanged={this.onTitleBarStyleChanged}
-            showRecentRepositories={this.props.showRecentRepositories}
-            onShowRecentRepositoriesChanged={
-              this.onShowRecentRepositoriesChanged
-            }
             showWorktrees={this.state.showWorktrees}
             onShowWorktreesChanged={this.onShowWorktreesChanged}
             showWorktreesInRepoList={this.state.showWorktreesInRepoList}
@@ -1179,12 +1172,6 @@ export class Preferences extends React.Component<
     this.setState({ titleBarStyle })
   }
 
-  private onShowRecentRepositoriesChanged = (
-    showRecentRepositories: boolean
-  ) => {
-    this.setState({ showRecentRepositories })
-  }
-
   private onShowWorktreesChanged = (showWorktrees: boolean) => {
     this.setState({ showWorktrees })
   }
@@ -1274,12 +1261,6 @@ export class Preferences extends React.Component<
         dispatcher.setRepositoryIndicatorsEnabled(
           this.state.repositoryIndicatorsEnabled
         )
-      }
-
-      if (
-        this.state.showRecentRepositories !== this.props.showRecentRepositories
-      ) {
-        dispatcher.setShowRecentRepositories(this.state.showRecentRepositories)
       }
 
       if (this.state.showWorktrees !== this.props.showWorktrees) {

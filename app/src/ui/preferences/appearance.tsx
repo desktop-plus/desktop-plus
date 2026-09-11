@@ -55,8 +55,6 @@ interface IAppearanceProps {
   ) => void
   readonly titleBarStyle: TitleBarStyle
   readonly onTitleBarStyleChanged: (titleBarStyle: TitleBarStyle) => void
-  readonly showRecentRepositories: boolean
-  readonly onShowRecentRepositoriesChanged: (show: boolean) => void
   readonly showWorktrees: boolean
   readonly onShowWorktreesChanged: (show: boolean) => void
   readonly showWorktreesInRepoList: boolean
@@ -88,7 +86,6 @@ interface IAppearanceState {
   readonly selectedDiffFontFamily: DiffFontFamily
   readonly availableDiffFontFamilies: ReadonlyArray<DiffFontFamily>
   readonly titleBarStyle: TitleBarStyle
-  readonly showRecentRepositories: boolean
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -127,7 +124,6 @@ export class Appearance extends React.Component<
           ? [defaultDiffFontFamily]
           : [props.selectedDiffFontFamily, defaultDiffFontFamily],
       titleBarStyle: props.titleBarStyle,
-      showRecentRepositories: props.showRecentRepositories,
       showWorktrees: props.showWorktrees,
       showWorktreesInRepoList: props.showWorktreesInRepoList,
       showCompareTab: props.showCompareTab,
@@ -207,14 +203,6 @@ export class Appearance extends React.Component<
     const count = parseInt(countText, 10)
     const coerced = isNaN(count) ? 0 : count
     this.props.onRecentRepositoriesCountChanged(coerced)
-  }
-
-  private onShowRecentRepositoriesChanged = (
-    event: React.FormEvent<HTMLInputElement>
-  ) => {
-    const show = event.currentTarget.checked
-    this.setState({ showRecentRepositories: show })
-    this.props.onShowRecentRepositoriesChanged(show)
   }
 
   private onShowWorktreesChanged = (
@@ -462,15 +450,6 @@ export class Appearance extends React.Component<
       <div className="advanced-section">
         <h2 id="repository-list-heading">{'Repository list'}</h2>
 
-        <Checkbox
-          label="Show recent repositories"
-          value={
-            this.state.showRecentRepositories
-              ? CheckboxValue.On
-              : CheckboxValue.Off
-          }
-          onChange={this.onShowRecentRepositoriesChanged}
-        />
         <TextBox
           type="number"
           min={0}
