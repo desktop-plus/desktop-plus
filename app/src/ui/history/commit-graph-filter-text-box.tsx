@@ -16,7 +16,7 @@ import { TextBox } from '../lib/text-box'
 interface ICommitGraphFilterTextBoxProps
   extends Omit<IFancyTextBoxProps, 'value' | 'onValueChanged'> {
   readonly accounts: ReadonlyArray<Account>
-  readonly authorFilterOptions: ReadonlyArray<IAvatarUser> | null
+  readonly filterAuthors: ReadonlyArray<IAvatarUser> | null
   readonly onSearchSubmitted: (text: string, emailSet: Set<string>) => void
 }
 
@@ -73,18 +73,18 @@ export class CommitGraphFilterTextBox extends React.Component<
       parseFilterTokens(value, emailSet, caretOffset)
   )
 
-  private readonly getAutocompleteItems = memoizeOne(
+  private readonly getAutocompleteAuthors = memoizeOne(
     (
-      options: ICommitGraphFilterTextBoxProps['authorFilterOptions'],
+      authors: ICommitGraphFilterTextBoxProps['filterAuthors'],
       partial: string
     ): ReadonlyArray<IAvatarUser> => {
-      if (options === null) {
+      if (authors === null) {
         return []
       }
 
       const searchToken = partial.trim().toLowerCase()
 
-      return options.filter(({ email }) =>
+      return authors.filter(({ email }) =>
         email.toLowerCase().includes(searchToken)
       )
     }
@@ -92,10 +92,9 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private readonly getEmailSet = memoizeOne(
     (
-      options: ICommitGraphFilterTextBoxProps['authorFilterOptions']
+      authors: ICommitGraphFilterTextBoxProps['filterAuthors']
     ): ReadonlySet<string> => {
-      const opts = options ?? []
-      const emails = opts.map(o => o.email.trim().toLowerCase())
+      const emails = (authors ?? []).map(o => o.email.trim().toLowerCase())
       return new Set(emails)
     }
   )
@@ -108,7 +107,7 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private get authorEmailSet() {
-    return this.getEmailSet(this.props.authorFilterOptions)
+    return this.getEmailSet(this.props.filterAuthors)
   }
 
   private get filterTokens() {
@@ -126,13 +125,13 @@ export class CommitGraphFilterTextBox extends React.Component<
     )
   }
 
-  private get autocompleteItems() {
+  private get autocompleteAuthors() {
     const editedAuthorToken = this.editedAuthorToken
 
     return editedAuthorToken === undefined
       ? []
-      : this.getAutocompleteItems(
-          this.props.authorFilterOptions,
+      : this.getAutocompleteAuthors(
+          this.props.filterAuthors,
           editedAuthorToken.value
         )
   }
@@ -141,7 +140,7 @@ export class CommitGraphFilterTextBox extends React.Component<
     return (
       !this.state.isAutocompleteDismissed &&
       this.state.autocompleteAnchorElement !== null &&
-      this.autocompleteItems.length > 0
+      this.autocompleteAuthors.length > 0
     )
   }
 
@@ -174,7 +173,7 @@ export class CommitGraphFilterTextBox extends React.Component<
       )
 
       // Make sure the TextBox won't restore the stale position on a
-      // subsequent re-render (e.g. when the author filter options arrive
+      // subsequent re-render (e.g. when the filter authors arrive
       // asynchronously).
       this.textBox?.syncCursorPosition()
 
@@ -264,12 +263,12 @@ export class CommitGraphFilterTextBox extends React.Component<
         className="autocompletion-popup filter"
         maxHeight={Math.min(
           DefaultPopupHeight,
-          RowHeight * this.autocompleteItems.length
+          RowHeight * this.autocompleteAuthors.length
         )}
-        minHeight={RowHeight * Math.min(this.autocompleteItems.length, 3)}
+        minHeight={RowHeight * Math.min(this.autocompleteAuthors.length, 3)}
       >
         <List
-          rowCount={this.autocompleteItems.length}
+          rowCount={this.autocompleteAuthors.length}
           rowHeight={RowHeight}
           rowRenderer={this.renderAutocompleteRow}
           selectedRows={
@@ -300,19 +299,19 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private renderAutocompleteRow = (row: number) => {
-    const item = this.autocompleteItems[row]
+    const author = this.autocompleteAuthors[row]
 
-    if (item === undefined) {
+    if (author === undefined) {
       return null
     }
 
     return (
       <div className="autocompletion-item">
         <div className="author-filter">
-          <Avatar user={item} accounts={this.props.accounts} />
+          <Avatar user={author} accounts={this.props.accounts} />
           <div className="author-filter-text">
-            <span className="name">{item.name}</span>
-            <span className="email">{item.email}</span>
+            <span className="name">{author.name}</span>
+            <span className="email">{author.email}</span>
           </div>
         </div>
       </div>
@@ -350,7 +349,7 @@ export class CommitGraphFilterTextBox extends React.Component<
       event.preventDefault()
       event.stopPropagation()
 
-      const nextRow = findNextSelectableRow(this.autocompleteItems.length, {
+      const nextRow = findNextSelectableRow(this.autocompleteAuthors.length, {
         direction: event.key === 'ArrowDown' ? 'down' : 'up',
         row: selectedAutocompleteRow ?? -1,
       })
@@ -380,9 +379,9 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private insertCompletion(row: number) {
-    const item = this.autocompleteItems[row]
+    const author = this.autocompleteAuthors[row]
 
-    if (item === undefined) {
+    if (author === undefined) {
       return
     }
 
@@ -392,7 +391,7 @@ export class CommitGraphFilterTextBox extends React.Component<
       return
     }
 
-    const inserted = `author:${item.email} `
+    const inserted = `author:${author.email} `
 
     const newValue =
       this.state.value.substring(0, editedAuthorToken.start) +

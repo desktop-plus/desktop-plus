@@ -525,17 +525,17 @@ export class CommitGraphSidebar extends React.Component<
       commitGraph_buildRows(commits, refColors, primaryLaneSha)
   )
 
-  private readonly commitGraph_getAuthorFilterOptionsWithAvatar = memoizeOne(
+  private readonly commitGraph_getFilterAuthorsWithAvatar = memoizeOne(
     (
-      authorFilterOptions: ICommitGraphSidebarProps['compareState']['commitGraphAuthorFilterOptions'],
+      filterAuthors: ICommitGraphSidebarProps['compareState']['commitGraphFilterAuthors'],
       gitHubRepository: ICommitGraphSidebarProps['repository']['gitHubRepository']
     ): ReadonlyArray<IAvatarUser> | null => {
-      if (!authorFilterOptions) {
+      if (!filterAuthors) {
         return null
       }
 
-      return authorFilterOptions.map(option =>
-        getAvatarUserFromAuthor(option, gitHubRepository)
+      return filterAuthors.map(author =>
+        getAvatarUserFromAuthor(author, gitHubRepository)
       )
     }
   )
@@ -589,7 +589,7 @@ export class CommitGraphSidebar extends React.Component<
   public componentDidMount() {
     this.commitGraph_ensureLoaded()
 
-    void this.props.dispatcher.commitGraph_loadAuthorFilterOptions(
+    void this.props.dispatcher.commitGraph_loadFilterAuthors(
       this.props.repository
     )
   }
@@ -602,9 +602,9 @@ export class CommitGraphSidebar extends React.Component<
     this.commitListRef.current?.focus()
   }
 
-  private get authorFilterOptions() {
-    return this.commitGraph_getAuthorFilterOptionsWithAvatar(
-      this.props.compareState.commitGraphAuthorFilterOptions,
+  private get filterAuthors() {
+    return this.commitGraph_getFilterAuthorsWithAvatar(
+      this.props.compareState.commitGraphFilterAuthors,
       this.props.repository.gitHubRepository
     )
   }
@@ -623,7 +623,7 @@ export class CommitGraphSidebar extends React.Component<
                 }
                 symbolClassName={this.state.isSearching ? 'spin' : undefined}
                 placeholder={__DARWIN__ ? 'Search Commits' : 'Search commits'}
-                authorFilterOptions={this.authorFilterOptions}
+                filterAuthors={this.filterAuthors}
                 accounts={this.props.accounts}
                 onSearchSubmitted={this.onCommitSearchSubmitted}
               />
