@@ -2180,7 +2180,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     repository: Repository,
     alreadyFiltered: number,
     queryTextLowercase?: string,
-    authorFiltersLowercase?: string[]
+    filterAuthorsLowercase?: string[]
   ): Promise<void> {
     const gitStore = this.gitStoreCache.get(repository)
 
@@ -2191,7 +2191,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
     const isSearching = Boolean(
       queryTextLowercase ||
-        (authorFiltersLowercase && authorFiltersLowercase.length > 0)
+        (filterAuthorsLowercase && filterAuthorsLowercase.length > 0)
     )
 
     const tip = state.branchesState.tip
@@ -2224,10 +2224,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     )
 
     const newFilteredCommits =
-      authorFiltersLowercase && authorFiltersLowercase.length > 0
+      filterAuthorsLowercase && filterAuthorsLowercase.length > 0
         ? baseFilteredCommits.filter(sha => {
             const commit = gitStore.commitLookup.get(sha)
-            return authorFiltersLowercase.some(filter =>
+            return filterAuthorsLowercase.some(filter =>
               this.commitIsIncludedByAuthorFilter(commit, filter)
             )
           })
@@ -2252,7 +2252,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
         repository,
         numFilteredCommits,
         queryTextLowercase,
-        authorFiltersLowercase
+        filterAuthorsLowercase
       )
     }
     return
@@ -2463,11 +2463,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   /** This shouldn't be called directly. See `Dispatcher`. */
-  public async _commitGraph_loadAuthorFilterOptions(
+  public async _commitGraph_loadFilterAuthors(
     repository: Repository
   ): Promise<void> {
     const gitStore = this.gitStoreCache.get(repository)
-    const authors = await gitStore.commitGraph_loadAuthorFilterOptions()
+    const authors = await gitStore.commitGraph_loadFilterAuthors()
 
     if (authors === null) {
       return
@@ -2475,12 +2475,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const state = this.repositoryStateCache.get(repository)
 
-    if (state.compareState.commitGraphAuthorFilterOptions === authors) {
+    if (state.compareState.commitGraphFilterAuthors === authors) {
       return
     }
 
     this.repositoryStateCache.updateCompareState(repository, () => ({
-      commitGraphAuthorFilterOptions: authors,
+      commitGraphFilterAuthors: authors,
     }))
 
     this.emitUpdate()
@@ -4829,10 +4829,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
 
     // Keep the author filter options fresh once they've been loaded
-    const authorFilterOptionsRefresh =
+    const filterAuthorsRefresh =
       this.repositoryStateCache.get(repository).compareState
-        .commitGraphAuthorFilterOptions !== null
-        ? this._commitGraph_loadAuthorFilterOptions(repository)
+        .commitGraphFilterAuthors !== null
+        ? this._commitGraph_loadFilterAuthors(repository)
         : Promise.resolve()
 
     await Promise.all([
@@ -4841,7 +4841,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       this._refreshAuthor(repository),
       this._refreshWorktrees(repository),
       refreshSectionPromise,
-      authorFilterOptionsRefresh,
+      filterAuthorsRefresh,
     ])
 
     await gitStore.refreshTags()

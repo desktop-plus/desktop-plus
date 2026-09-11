@@ -22,7 +22,7 @@ import {
   ICommitMessage,
   DefaultCommitMessage,
 } from '../../models/commit-message'
-import { ComparisonMode, TAuthorFilterOption } from '../app-state'
+import { ComparisonMode, TFilterAuthor } from '../app-state'
 
 import { IAppShell } from '../app-shell'
 import {
@@ -157,10 +157,9 @@ export class GitStore extends BaseStore {
 
   private _tagsToPush: ReadonlyArray<string> = []
 
-  private commitGraph_authorFilterOptions: ReadonlyArray<TAuthorFilterOption> =
-    []
+  private commitGraph_filterAuthors: ReadonlyArray<TFilterAuthor> = []
 
-  private commitGraph_authorFilterOptionsRefsKey: string | null = null
+  private commitGraph_filterAuthorsRefsKey: string | null = null
 
   private _remotes: ReadonlyArray<IRemote> = []
 
@@ -305,13 +304,13 @@ export class GitStore extends BaseStore {
    * options. The current branch tips are used as a signature so that the
    * query isn't repeated when nothing has changed.
    */
-  public async commitGraph_loadAuthorFilterOptions(): Promise<ReadonlyArray<TAuthorFilterOption> | null> {
+  public async commitGraph_loadFilterAuthors(): Promise<ReadonlyArray<TFilterAuthor> | null> {
     const refsKey = this._allBranches
       .map(branch => `${branch.ref}:${branch.tip.sha}`)
       .join('\0')
 
-    if (refsKey === this.commitGraph_authorFilterOptionsRefsKey) {
-      return this.commitGraph_authorFilterOptions
+    if (refsKey === this.commitGraph_filterAuthorsRefsKey) {
+      return this.commitGraph_filterAuthors
     }
 
     const requestKey = 'history/graph/authors'
@@ -331,8 +330,8 @@ export class GitStore extends BaseStore {
       return null
     }
 
-    this.commitGraph_authorFilterOptions = authors
-    this.commitGraph_authorFilterOptionsRefsKey = refsKey
+    this.commitGraph_filterAuthors = authors
+    this.commitGraph_filterAuthorsRefsKey = refsKey
 
     return authors
   }
