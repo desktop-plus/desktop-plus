@@ -41,9 +41,6 @@
       .checkbox-component:not(:last-child) {
         margin-bottom: var(--spacing-half);
       }
-      input[type='number'] {
-        margin-bottom: var(--spacing);
-      }
 
       .setting-hint-warning {
         margin-top: var(--spacing);

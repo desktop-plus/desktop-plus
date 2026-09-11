@@ -184,6 +184,7 @@ interface IPreferencesState {
   readonly availableShells: ReadonlyArray<Shell>
   readonly selectedShell: Shell
   readonly titleBarStyle: TitleBarStyle
+  readonly recentRepositoriesCount: number
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -284,6 +285,7 @@ export class Preferences extends React.Component<
       availableShells: [],
       selectedShell: this.props.selectedShell,
       titleBarStyle: this.props.titleBarStyle,
+      recentRepositoriesCount: this.props.recentRepositoriesCount,
       showWorktrees: this.props.showWorktrees,
       showWorktreesInRepoList: this.props.showWorktreesInRepoList,
       showCompareTab: this.props.showCompareTab,
@@ -755,7 +757,7 @@ export class Preferences extends React.Component<
             onSelectedThemeChanged={this.onSelectedThemeChanged}
             selectedTabSize={this.props.selectedTabSize}
             onSelectedTabSizeChanged={this.onSelectedTabSizeChanged}
-            recentRepositoriesCount={this.props.recentRepositoriesCount}
+            recentRepositoriesCount={this.state.recentRepositoriesCount}
             onRecentRepositoriesCountChanged={
               this.onRecentRepositoriesCountChanged
             }
@@ -1154,10 +1156,6 @@ export class Preferences extends React.Component<
     this.props.dispatcher.setSelectedTabSize(tabSize)
   }
 
-  private onRecentRepositoriesCountChanged = (count: number) => {
-    this.props.dispatcher.setRecentRepositoriesCount(count)
-  }
-
   private onSelectedDiffFontSizeChanged = (diffFontSize: number) => {
     this.props.dispatcher.setSelectedDiffFontSize(diffFontSize)
   }
@@ -1170,6 +1168,12 @@ export class Preferences extends React.Component<
 
   private onTitleBarStyleChanged = (titleBarStyle: TitleBarStyle) => {
     this.setState({ titleBarStyle })
+  }
+
+  private onRecentRepositoriesCountChanged = (
+    recentRepositoriesCount: number
+  ) => {
+    this.setState({ recentRepositoriesCount })
   }
 
   private onShowWorktreesChanged = (showWorktrees: boolean) => {
@@ -1260,6 +1264,15 @@ export class Preferences extends React.Component<
       ) {
         dispatcher.setRepositoryIndicatorsEnabled(
           this.state.repositoryIndicatorsEnabled
+        )
+      }
+
+      if (
+        this.state.recentRepositoriesCount !==
+        this.props.recentRepositoriesCount
+      ) {
+        dispatcher.setRecentRepositoriesCount(
+          this.state.recentRepositoriesCount
         )
       }
 

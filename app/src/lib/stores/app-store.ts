@@ -501,10 +501,20 @@ const MaxPullRequestLookups = 10
 
 const RecentRepositoriesKey = 'recently-selected-repositories'
 /**
- *  maximum number of repositories that can be set by the user to be shown
- *  in the recent repository switcher dropdown
+ *  maximum number of repositories shown in the "Recent" repositories group
+ *  in the repository switcher dropdown
  */
-export const MaxRecentRepositoriesLength = 50
+const RecentRepositoriesLength = 3
+
+/** Number of repositories shown in the "Recent" group by default. */
+export const defaultRecentRepositoriesCount = RecentRepositoriesLength
+
+/**
+ * Highest number of repositories the user can choose to show in the "Recent"
+ * group, and the number of entries retained so that raising the count can
+ * refill the group with previously visited repositories.
+ */
+const MaxRecentRepositoriesLength = 50
 
 const defaultSidebarWidth: number = 250
 const sidebarWidthConfigKey: string = 'sidebar-width'
@@ -581,7 +591,6 @@ const tabSizeKey: string = 'tab-size'
 const diffFontSizeKey = 'diff-font-size'
 const diffFontFamilyKey = 'diff-font-family'
 
-export const defaultRecentRepositoriesCount: number = 3
 const recentRepositoriesCountKey: string = 'recent-repositories-count'
 
 const shellKey = 'shell'
@@ -1483,7 +1492,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
       selectedDiffFontSize: this.selectedDiffFontSize,
       selectedDiffFontFamily: this.selectedDiffFontFamily,
       titleBarStyle: this.titleBarStyle,
-      showRecentRepositories: this.showRecentRepositories,
       showWorktrees: this.showWorktrees,
       showWorktreesInRepoList: this.showWorktreesInRepoList,
       showCompareTab: this.showCompareTab,
@@ -2722,22 +2730,27 @@ export class AppStore extends TypedBaseStore<IAppState> {
     if (previousRepositoryId !== null) {
       recentRepositories.unshift(previousRepositoryId)
     }
-    // Cache up to MaxRecentRepositoriesLength so that if the user later
-    // increases the configured count, recent entries are still available.
-    const cachedRecentRepositories = recentRepositories.slice(
+    const slicedRecentRepositories = recentRepositories.slice(
       0,
       MaxRecentRepositoriesLength
     )
-    const slicedRecentRepositories = cachedRecentRepositories.slice(
-      0,
-      Math.min(this.recentRepositoriesCount, cachedRecentRepositories.length)
+    setNumberArray(RecentRepositoriesKey, slicedRecentRepositories)
+    this.updateVisibleRecentRepositories(slicedRecentRepositories)
+    this.emitUpdate()
+  }
+
+  private updateVisibleRecentRepositories(
+    retainedRepositories: ReadonlyArray<number> = getNumberArray(
+      RecentRepositoriesKey
     )
-    setNumberArray(RecentRepositoriesKey, cachedRecentRepositories)
-    this.recentRepositories = slicedRecentRepositories
+  ) {
+    this.recentRepositories = retainedRepositories.slice(
+      0,
+      this.recentRepositoriesCount
+    )
     this.notificationsStore.setRecentRepositories(
       this.repositories.filter(r => this.recentRepositories.includes(r.id))
     )
-    this.emitUpdate()
   }
 
   // finish `_selectRepository`s refresh tasks
@@ -10239,23 +10252,16 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   /**
-   * Set the number of recent repositories shown in the repository list.
-   * Setting 0 hides the Recent group.
+   * Set the number of repositories shown in the "Recent" group of the
+   * repository list. Setting 0 hides the group.
    */
   public _setRecentRepositoriesCount(count: number) {
-    if (isNaN(count)) {
-      return Promise.resolve()
+    if (!isNaN(count)) {
+      this.recentRepositoriesCount = count
+      setNumber(recentRepositoriesCountKey, count)
+      this.updateVisibleRecentRepositories()
+      this.emitUpdate()
     }
-    const maxCount = Math.min(Math.max(count, 0), MaxRecentRepositoriesLength)
-    setNumber(recentRepositoriesCountKey, maxCount)
-    this.recentRepositoriesCount = maxCount
-    if (this.recentRepositories.length > maxCount) {
-      this.recentRepositories = this.recentRepositories.slice(0, maxCount)
-    }
-    this.notificationsStore.setRecentRepositories(
-      this.repositories.filter(r => this.recentRepositories.includes(r.id))
-    )
-    this.emitUpdate()
 
     return Promise.resolve()
   }

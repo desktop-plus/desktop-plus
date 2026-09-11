@@ -11,10 +11,9 @@ import { RadioGroup } from '../lib/radio-group'
 import { Select } from '../lib/select'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { encodePathAsUrl } from '../../lib/path'
-import { TextBox } from '../lib/text-box'
 import {
   tabSizeDefault,
-  MaxRecentRepositoriesLength,
+  defaultRecentRepositoriesCount,
 } from '../../lib/stores/app-store'
 import { ShowBranchNameInRepoListSetting } from '../../models/show-branch-name-in-repo-list'
 import { parseEnumValue } from '../../lib/enum'
@@ -86,6 +85,7 @@ interface IAppearanceState {
   readonly selectedDiffFontFamily: DiffFontFamily
   readonly availableDiffFontFamilies: ReadonlyArray<DiffFontFamily>
   readonly titleBarStyle: TitleBarStyle
+  readonly recentRepositoriesCount: number
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -124,6 +124,7 @@ export class Appearance extends React.Component<
           ? [defaultDiffFontFamily]
           : [props.selectedDiffFontFamily, defaultDiffFontFamily],
       titleBarStyle: props.titleBarStyle,
+      recentRepositoriesCount: props.recentRepositoriesCount,
       showWorktrees: props.showWorktrees,
       showWorktreesInRepoList: props.showWorktreesInRepoList,
       showCompareTab: props.showCompareTab,
@@ -199,10 +200,12 @@ export class Appearance extends React.Component<
     this.props.onSelectedThemeChanged(theme)
   }
 
-  private onRecentRepositoriesCountChanged = (countText: string) => {
-    const count = parseInt(countText, 10)
-    const coerced = isNaN(count) ? 0 : count
-    this.props.onRecentRepositoriesCountChanged(coerced)
+  private onRecentRepositoriesCountChanged = (
+    event: React.FormEvent<HTMLSelectElement>
+  ) => {
+    const count = parseInt(event.currentTarget.value, 10)
+    this.setState({ recentRepositoriesCount: count })
+    this.props.onRecentRepositoriesCountChanged(count)
   }
 
   private onShowWorktreesChanged = (
@@ -446,22 +449,29 @@ export class Appearance extends React.Component<
   }
 
   private renderRepositoryList() {
+    const availableRecentRepositoriesCounts: number[] = [
+      0, 1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40, 50,
+    ]
+
     return (
       <div className="advanced-section">
         <h2 id="repository-list-heading">{'Repository list'}</h2>
 
-        <TextBox
-          type="number"
-          min={0}
-          max={MaxRecentRepositoriesLength}
-          label="Recent repository count"
-          value={
-            this.props.recentRepositoriesCount === 0
-              ? ''
-              : this.props.recentRepositoriesCount.toString()
-          }
-          onValueChanged={this.onRecentRepositoriesCountChanged}
-        />
+        <Select
+          label="Number of recent repositories to show"
+          value={this.state.recentRepositoriesCount.toString()}
+          onChange={this.onRecentRepositoriesCountChanged}
+        >
+          {availableRecentRepositoriesCounts.map(n => (
+            <option key={n} value={n}>
+              {n === 0
+                ? '0 (hide section)'
+                : n === defaultRecentRepositoriesCount
+                ? `${n} (default)`
+                : n}
+            </option>
+          ))}
+        </Select>
         <Select
           label="Show current branch name next to repository name"
           value={this.props.showBranchNameInRepoList}

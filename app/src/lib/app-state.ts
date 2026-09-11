@@ -350,9 +350,6 @@ export interface IAppState {
   /** The selected title bar style for the application */
   readonly titleBarStyle: TitleBarStyle
 
-  /** Whether or not recent repositories should be shown in the repo list */
-  readonly showRecentRepositories: boolean
-
   /** Whether or not the worktrees dropdown should be shown in the toolbar */
   readonly showWorktrees: boolean
 
