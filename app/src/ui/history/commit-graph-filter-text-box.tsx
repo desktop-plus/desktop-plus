@@ -251,7 +251,6 @@ export class CommitGraphFilterTextBox extends React.Component<
             placeholder={this.props.placeholder}
             value={this.state.value}
             onValueChanged={this.onValueChanged}
-            onEnterPressed={this.onEnterPressed}
             onRef={this.onTextBoxRef}
           />
         </div>
@@ -341,25 +340,20 @@ export class CommitGraphFilterTextBox extends React.Component<
     )
   }
 
-  private onEnterPressed = () => {
-    this.submitSearch(this.filterTokens)
-  }
-
   private onInputKeyDown = (event: Event) => {
-    if (!(event instanceof KeyboardEvent) || event.isComposing) {
-      return
-    }
-
-    if (!this.isAutocompleteVisible) {
+    if (
+      !(event instanceof KeyboardEvent) ||
+      event.isComposing ||
+      !this.isAutocompleteVisible
+    ) {
       return
     }
 
     const { selectedAutocompleteRow } = this.state
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      // Prevent the input caret from being moved to the start/end of the
-      // text (which would hide the autocomplete) and make sure the TextBox
-      // never sees the key.
+      // Prevent the input caret from being moved twice by underlying textbox event
+      // and make sure the TextBox never sees the key.
       event.preventDefault()
       event.stopPropagation()
 
@@ -369,16 +363,11 @@ export class CommitGraphFilterTextBox extends React.Component<
       })
 
       this.setState({ selectedAutocompleteRow: nextRow })
-    } else if (event.key === 'Enter') {
-      if (selectedAutocompleteRow !== null) {
-        event.preventDefault()
-        event.stopPropagation()
+    } else if (event.key === 'Enter' && selectedAutocompleteRow !== null) {
+      event.preventDefault()
+      event.stopPropagation()
 
-        this.insertCompletion(selectedAutocompleteRow)
-      }
-
-      // With no keyboard-selected row the event is left untouched so that
-      // the TextBox can submit the search.
+      this.insertCompletion(selectedAutocompleteRow)
     } else if (event.key === 'Escape') {
       // Close the autocomplete without clearing the input text (the TextBox
       // would do so otherwise as it is a search input).
