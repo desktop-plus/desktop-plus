@@ -275,6 +275,7 @@ export class CommitGraphFilterTextBox extends React.Component<
               : [this.state.selectedAutocompleteRow]
           }
           scrollToRow={this.state.selectedAutocompleteRow ?? undefined}
+          onRowMouseDown={this.onAutocompleteRowMouseDown}
           onRowClick={this.onAutocompleteRowClicked}
           invalidationProps={editedAuthorToken?.value ?? undefined}
           shouldDisableTabFocus={true}
@@ -403,6 +404,14 @@ export class CommitGraphFilterTextBox extends React.Component<
       isAutocompleteDismissed: true,
       selectedAutocompleteRow: null,
     })
+  }
+
+  private onAutocompleteRowMouseDown = (row: number) => {
+    this.insertCompletion(row)
+
+    window.setTimeout(() => {
+      this.inputElement?.focus()
+    }, 0)
   }
 
   private onAutocompleteRowClicked = (row: number) => {
