@@ -14,6 +14,7 @@ import {
 } from '../../lib/stores/commit-graph-state'
 import { getUniqueCoauthorsAsAuthors } from '../../lib/unique-coauthors-as-authors'
 import { Account } from '../../models/account'
+import { getAvatarUserFromAuthor, IAvatarUser } from '../../models/avatar'
 import { Branch, BranchType } from '../../models/branch'
 import { Commit, CommitOneLine, ICommitContext } from '../../models/commit'
 import { DragType } from '../../models/drag-drop'
@@ -524,6 +525,21 @@ export class CommitGraphSidebar extends React.Component<
       commitGraph_buildRows(commits, refColors, primaryLaneSha)
   )
 
+  private readonly commitGraph_getAuthorFilterOptionsWithAvatar = memoizeOne(
+    (
+      authorFilterOptions: ICommitGraphSidebarProps['compareState']['commitGraphAuthorFilterOptions'],
+      gitHubRepository: ICommitGraphSidebarProps['repository']['gitHubRepository']
+    ): ReadonlyArray<IAvatarUser> | null => {
+      if (!authorFilterOptions) {
+        return null
+      }
+
+      return authorFilterOptions.map(option =>
+        getAvatarUserFromAuthor(option, gitHubRepository)
+      )
+    }
+  )
+
   private readonly onCommitQuery = debounce(
     async (text: string, filters: TFilters) => {
       if (this.state.commitGraphViewMode === CommitHistoryViewMode.Graph) {
@@ -586,6 +602,13 @@ export class CommitGraphSidebar extends React.Component<
     this.commitListRef.current?.focus()
   }
 
+  private get authorFilterOptions() {
+    return this.commitGraph_getAuthorFilterOptionsWithAvatar(
+      this.props.compareState.commitGraphAuthorFilterOptions,
+      this.props.repository.gitHubRepository
+    )
+  }
+
   public render() {
     return (
       <div id="compare-view" role="tabpanel" aria-labelledby="history-tab">
@@ -600,9 +623,8 @@ export class CommitGraphSidebar extends React.Component<
                 }
                 symbolClassName={this.state.isSearching ? 'spin' : undefined}
                 placeholder={__DARWIN__ ? 'Search Commits' : 'Search commits'}
-                authorFilterOptions={
-                  this.props.compareState.commitGraphAuthorFilterOptions
-                }
+                authorFilterOptions={this.authorFilterOptions}
+                accounts={this.props.accounts}
                 onSearchSubmitted={this.onCommitSearchSubmitted}
               />
             </div>

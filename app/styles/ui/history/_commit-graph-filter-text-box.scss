@@ -50,20 +50,31 @@
     display: flex;
     flex-grow: 1;
     align-items: center;
+    column-gap: var(--spacing);
 
     height: 100%;
     width: 100%;
 
-    .name {
-      @include ellipsis;
-      font-weight: var(--font-weight-semibold);
+    .avatar {
+      width: 24px;
+      height: 24px;
     }
 
-    .email {
-      @include ellipsis;
-      margin-left: auto;
-      padding-left: var(--spacing-half);
-      color: var(--text-secondary-color);
+    .author-filter-text {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      overflow: hidden;
+
+      .name {
+        @include ellipsis;
+        font-weight: var(--font-weight-semibold);
+      }
+
+      .email {
+        @include ellipsis;
+        color: var(--text-secondary-color);
+      }
     }
   }
 }

@@ -1,19 +1,22 @@
-import * as React from 'react'
-import { FancyTextBox, IFancyTextBoxProps } from '../lib/fancy-text-box'
-import { TextBox } from '../lib/text-box'
 import classNames from 'classnames'
 import memoizeOne from 'memoize-one'
-import { TAuthorFilterOption } from '../../lib/app-state'
+import * as React from 'react'
+import { Account } from '../../models/account'
+import { IAvatarUser } from '../../models/avatar'
+import { Avatar } from '../lib/avatar'
+import { FancyTextBox, IFancyTextBoxProps } from '../lib/fancy-text-box'
 import { findNextSelectableRow, List } from '../lib/list'
 import {
   Popover,
   PopoverAnchorPosition,
   PopoverDecoration,
 } from '../lib/popover'
+import { TextBox } from '../lib/text-box'
 
 interface ICommitGraphFilterTextBoxProps
   extends Omit<IFancyTextBoxProps, 'value' | 'onValueChanged'> {
-  readonly authorFilterOptions: ReadonlyArray<TAuthorFilterOption> | null
+  readonly accounts: ReadonlyArray<Account>
+  readonly authorFilterOptions: ReadonlyArray<IAvatarUser> | null
   readonly onSearchSubmitted: (text: string, emailSet: Set<string>) => void
 }
 
@@ -74,7 +77,7 @@ export class CommitGraphFilterTextBox extends React.Component<
     (
       options: ICommitGraphFilterTextBoxProps['authorFilterOptions'],
       partial: string
-    ): ReadonlyArray<TAuthorFilterOption> => {
+    ): ReadonlyArray<IAvatarUser> => {
       if (options === null) {
         return []
       }
@@ -306,8 +309,11 @@ export class CommitGraphFilterTextBox extends React.Component<
     return (
       <div className="autocompletion-item">
         <div className="author-filter">
-          <span className="name">{item.name}</span>
-          <span className="email">{item.email}</span>
+          <Avatar user={item} accounts={this.props.accounts} />
+          <div className="author-filter-text">
+            <span className="name">{item.name}</span>
+            <span className="email">{item.email}</span>
+          </div>
         </div>
       </div>
     )
@@ -491,9 +497,9 @@ export class CommitGraphFilterTextBox extends React.Component<
 
 const authorTokenRegExp = /(?:^|\s)author:(\S*)/
 
-const RowHeight = 29
+const RowHeight = 45
 
-const DefaultPopupHeight = 200
+const DefaultPopupHeight = 250
 
 const tokenValueClassNames: Record<TAuthorTokenState, string> = {
   valid: 'token-value',
