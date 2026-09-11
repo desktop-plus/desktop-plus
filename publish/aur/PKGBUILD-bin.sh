@@ -16,6 +16,7 @@ conflicts=(${_pkgname})
 depends=(
     'curl'
     'git'
+    'libnotify'
     'libsecret'
     'libxss'
     'nspr'

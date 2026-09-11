@@ -228,6 +228,9 @@ If you need to use the AppImage, follow these steps:
    xdg-mime default desktop-plus.desktop x-scheme-handler/x-github-desktop-auth
    ```
 
+- *Desktop notifications* require `libnotify` to be installed on your system. Some desktops already pull it in, but others (like KDE Plasma) don't include it by default.  
+  If you are on Debian, Ubuntu, or similar distributions, the package is called `libnotify4`. In other distros it's called `libnotify`.
+
 #### Option 1: Using ["AM"/"AppMan"](https://github.com/ivan-hc/AM)
 
 ```bash

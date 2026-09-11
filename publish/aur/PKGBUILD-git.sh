@@ -18,6 +18,7 @@ conflicts=(${_pkgname})
 depends=(curl
          git
          gtk3
+         libnotify
          libsecret
          libxss
          nspr
