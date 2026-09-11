@@ -338,6 +338,9 @@ export interface IAppState {
   /** The selected tab size preference */
   readonly selectedTabSize: number
 
+  /** The number of recent repositories to show in the repository list */
+  readonly recentRepositoriesCount: number
+
   /** The selected font size preference for text diffs */
   readonly selectedDiffFontSize: number
 
@@ -346,9 +349,6 @@ export interface IAppState {
 
   /** The selected title bar style for the application */
   readonly titleBarStyle: TitleBarStyle
-
-  /** Whether or not recent repositories should be shown in the repo list */
-  readonly showRecentRepositories: boolean
 
   /** Whether or not the worktrees dropdown should be shown in the toolbar */
   readonly showWorktrees: boolean

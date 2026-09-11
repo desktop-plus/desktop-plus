@@ -1966,6 +1966,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             selectedShell={this.state.selectedShell}
             selectedTheme={this.state.selectedTheme}
             selectedTabSize={this.state.selectedTabSize}
+            recentRepositoriesCount={this.state.recentRepositoriesCount}
             selectedDiffFontSize={this.state.selectedDiffFontSize}
             selectedDiffFontFamily={this.state.selectedDiffFontFamily}
             useCustomEditor={this.state.useCustomEditor}
@@ -1974,7 +1975,6 @@ export class App extends React.Component<IAppProps, IAppState> {
             customShell={this.state.customShell}
             branchPresetScript={this.state.branchPresetScript}
             titleBarStyle={this.state.titleBarStyle}
-            showRecentRepositories={this.state.showRecentRepositories}
             showWorktrees={this.state.showWorktrees}
             showWorktreesInRepoList={this.state.showWorktreesInRepoList}
             showCompareTab={this.state.showCompareTab}
@@ -3673,7 +3673,6 @@ export class App extends React.Component<IAppProps, IAppState> {
         onSelectionChanged={this.onSelectionChanged}
         repositories={repositories}
         recentRepositories={this.state.recentRepositories}
-        showRecentRepositories={this.state.showRecentRepositories}
         localRepositoryStateLookup={this.state.localRepositoryStateLookup}
         askForConfirmationOnRemoveRepository={
           this.state.askForConfirmationOnRepositoryRemoval

@@ -119,6 +119,7 @@ interface IPreferencesProps {
   readonly selectedShell: Shell
   readonly selectedTheme: ApplicationTheme
   readonly selectedTabSize: number
+  readonly recentRepositoriesCount: number
   readonly selectedDiffFontSize: number
   readonly selectedDiffFontFamily: DiffFontFamily
   readonly useCustomEditor: boolean
@@ -127,7 +128,6 @@ interface IPreferencesProps {
   readonly customShell: ICustomIntegration | null
   readonly branchPresetScript: ICustomIntegration | null
   readonly titleBarStyle: TitleBarStyle
-  readonly showRecentRepositories: boolean
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -184,7 +184,7 @@ interface IPreferencesState {
   readonly availableShells: ReadonlyArray<Shell>
   readonly selectedShell: Shell
   readonly titleBarStyle: TitleBarStyle
-  readonly showRecentRepositories: boolean
+  readonly recentRepositoriesCount: number
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -285,7 +285,7 @@ export class Preferences extends React.Component<
       availableShells: [],
       selectedShell: this.props.selectedShell,
       titleBarStyle: this.props.titleBarStyle,
-      showRecentRepositories: this.props.showRecentRepositories,
+      recentRepositoriesCount: this.props.recentRepositoriesCount,
       showWorktrees: this.props.showWorktrees,
       showWorktreesInRepoList: this.props.showWorktreesInRepoList,
       showCompareTab: this.props.showCompareTab,
@@ -757,6 +757,10 @@ export class Preferences extends React.Component<
             onSelectedThemeChanged={this.onSelectedThemeChanged}
             selectedTabSize={this.props.selectedTabSize}
             onSelectedTabSizeChanged={this.onSelectedTabSizeChanged}
+            recentRepositoriesCount={this.state.recentRepositoriesCount}
+            onRecentRepositoriesCountChanged={
+              this.onRecentRepositoriesCountChanged
+            }
             selectedDiffFontSize={this.props.selectedDiffFontSize}
             onSelectedDiffFontSizeChanged={this.onSelectedDiffFontSizeChanged}
             selectedDiffFontFamily={this.props.selectedDiffFontFamily}
@@ -765,10 +769,6 @@ export class Preferences extends React.Component<
             }
             titleBarStyle={this.props.titleBarStyle}
             onTitleBarStyleChanged={this.onTitleBarStyleChanged}
-            showRecentRepositories={this.props.showRecentRepositories}
-            onShowRecentRepositoriesChanged={
-              this.onShowRecentRepositoriesChanged
-            }
             showWorktrees={this.state.showWorktrees}
             onShowWorktreesChanged={this.onShowWorktreesChanged}
             showWorktreesInRepoList={this.state.showWorktreesInRepoList}
@@ -1170,10 +1170,10 @@ export class Preferences extends React.Component<
     this.setState({ titleBarStyle })
   }
 
-  private onShowRecentRepositoriesChanged = (
-    showRecentRepositories: boolean
+  private onRecentRepositoriesCountChanged = (
+    recentRepositoriesCount: number
   ) => {
-    this.setState({ showRecentRepositories })
+    this.setState({ recentRepositoriesCount })
   }
 
   private onShowWorktreesChanged = (showWorktrees: boolean) => {
@@ -1268,9 +1268,12 @@ export class Preferences extends React.Component<
       }
 
       if (
-        this.state.showRecentRepositories !== this.props.showRecentRepositories
+        this.state.recentRepositoriesCount !==
+        this.props.recentRepositoriesCount
       ) {
-        dispatcher.setShowRecentRepositories(this.state.showRecentRepositories)
+        dispatcher.setRecentRepositoriesCount(
+          this.state.recentRepositoriesCount
+        )
       }
 
       if (this.state.showWorktrees !== this.props.showWorktrees) {

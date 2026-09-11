@@ -52,7 +52,6 @@ const BlankSlateImage = encodePathAsUrl(__dirname, 'static/empty-no-repo.svg')
 interface IRepositoriesListProps {
   readonly selectedRepository: Repositoryish | null
   readonly repositories: ReadonlyArray<Repositoryish>
-  readonly showRecentRepositories: boolean
   readonly recentRepositories: ReadonlyArray<number>
 
   /** A cache of the latest repository state values, keyed by the repository id */
@@ -835,10 +834,6 @@ export class RepositoriesList extends React.Component<
       this.props.localRepositoryStateLookup,
       this.props.recentRepositories
     )
-
-    if (!this.props.showRecentRepositories) {
-      groups = groups.filter(group => group.identifier.kind !== 'recent')
-    }
 
     const { pinnedRepositoriesIds } = this.state
     if (pinnedRepositoriesIds.length > 0) {

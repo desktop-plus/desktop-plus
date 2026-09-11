@@ -3062,6 +3062,13 @@ export class Dispatcher {
   }
 
   /**
+   * Set the number of recent repositories to show in the repository list
+   */
+  public setRecentRepositoriesCount(count: number) {
+    return this.appStore._setRecentRepositoriesCount(count)
+  }
+
+  /**
    * Set the application-wide diff font size
    */
   public setSelectedDiffFontSize(diffFontSize: number) {
@@ -3329,10 +3336,6 @@ export class Dispatcher {
 
   public setRepositoryIndicatorsEnabled(repositoryIndicatorsEnabled: boolean) {
     this.appStore._setRepositoryIndicatorsEnabled(repositoryIndicatorsEnabled)
-  }
-
-  public setShowRecentRepositories(showRecentRepositories: boolean) {
-    this.appStore._setShowRecentRepositories(showRecentRepositories)
   }
 
   public setShowWorktrees(showWorktrees: boolean) {

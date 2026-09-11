@@ -11,7 +11,10 @@ import { RadioGroup } from '../lib/radio-group'
 import { Select } from '../lib/select'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { encodePathAsUrl } from '../../lib/path'
-import { tabSizeDefault } from '../../lib/stores/app-store'
+import {
+  tabSizeDefault,
+  defaultRecentRepositoriesCount,
+} from '../../lib/stores/app-store'
 import { ShowBranchNameInRepoListSetting } from '../../models/show-branch-name-in-repo-list'
 import { parseEnumValue } from '../../lib/enum'
 import { assertNever } from '../../lib/fatal-error'
@@ -41,6 +44,8 @@ interface IAppearanceProps {
   readonly onSelectedThemeChanged: (theme: ApplicationTheme) => void
   readonly selectedTabSize: number
   readonly onSelectedTabSizeChanged: (tabSize: number) => void
+  readonly recentRepositoriesCount: number
+  readonly onRecentRepositoriesCountChanged: (count: number) => void
   readonly selectedDiffFontSize: number
   readonly onSelectedDiffFontSizeChanged: (diffFontSize: number) => void
   readonly selectedDiffFontFamily: DiffFontFamily
@@ -49,8 +54,6 @@ interface IAppearanceProps {
   ) => void
   readonly titleBarStyle: TitleBarStyle
   readonly onTitleBarStyleChanged: (titleBarStyle: TitleBarStyle) => void
-  readonly showRecentRepositories: boolean
-  readonly onShowRecentRepositoriesChanged: (show: boolean) => void
   readonly showWorktrees: boolean
   readonly onShowWorktreesChanged: (show: boolean) => void
   readonly showWorktreesInRepoList: boolean
@@ -82,7 +85,7 @@ interface IAppearanceState {
   readonly selectedDiffFontFamily: DiffFontFamily
   readonly availableDiffFontFamilies: ReadonlyArray<DiffFontFamily>
   readonly titleBarStyle: TitleBarStyle
-  readonly showRecentRepositories: boolean
+  readonly recentRepositoriesCount: number
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
   readonly showCompareTab: boolean
@@ -121,7 +124,7 @@ export class Appearance extends React.Component<
           ? [defaultDiffFontFamily]
           : [props.selectedDiffFontFamily, defaultDiffFontFamily],
       titleBarStyle: props.titleBarStyle,
-      showRecentRepositories: props.showRecentRepositories,
+      recentRepositoriesCount: props.recentRepositoriesCount,
       showWorktrees: props.showWorktrees,
       showWorktreesInRepoList: props.showWorktreesInRepoList,
       showCompareTab: props.showCompareTab,
@@ -197,12 +200,12 @@ export class Appearance extends React.Component<
     this.props.onSelectedThemeChanged(theme)
   }
 
-  private onShowRecentRepositoriesChanged = (
-    event: React.FormEvent<HTMLInputElement>
+  private onRecentRepositoriesCountChanged = (
+    event: React.FormEvent<HTMLSelectElement>
   ) => {
-    const show = event.currentTarget.checked
-    this.setState({ showRecentRepositories: show })
-    this.props.onShowRecentRepositoriesChanged(show)
+    const count = parseInt(event.currentTarget.value, 10)
+    this.setState({ recentRepositoriesCount: count })
+    this.props.onRecentRepositoriesCountChanged(count)
   }
 
   private onShowWorktreesChanged = (
@@ -446,19 +449,29 @@ export class Appearance extends React.Component<
   }
 
   private renderRepositoryList() {
+    const availableRecentRepositoriesCounts: number[] = [
+      0, 1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40, 50,
+    ]
+
     return (
       <div className="advanced-section">
         <h2 id="repository-list-heading">{'Repository list'}</h2>
 
-        <Checkbox
-          label="Show recent repositories"
-          value={
-            this.state.showRecentRepositories
-              ? CheckboxValue.On
-              : CheckboxValue.Off
-          }
-          onChange={this.onShowRecentRepositoriesChanged}
-        />
+        <Select
+          label="Number of recent repositories to show"
+          value={this.state.recentRepositoriesCount.toString()}
+          onChange={this.onRecentRepositoriesCountChanged}
+        >
+          {availableRecentRepositoriesCounts.map(n => (
+            <option key={n} value={n}>
+              {n === 0
+                ? '0 (hide section)'
+                : n === defaultRecentRepositoriesCount
+                ? `${n} (default)`
+                : n}
+            </option>
+          ))}
+        </Select>
         <Select
           label="Show current branch name next to repository name"
           value={this.props.showBranchNameInRepoList}

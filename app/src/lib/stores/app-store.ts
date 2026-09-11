@@ -506,6 +506,16 @@ const RecentRepositoriesKey = 'recently-selected-repositories'
  */
 const RecentRepositoriesLength = 3
 
+/** Number of repositories shown in the "Recent" group by default. */
+export const defaultRecentRepositoriesCount = RecentRepositoriesLength
+
+/**
+ * Highest number of repositories the user can choose to show in the "Recent"
+ * group, and the number of entries retained so that raising the count can
+ * refill the group with previously visited repositories.
+ */
+const MaxRecentRepositoriesLength = 50
+
 const defaultSidebarWidth: number = 250
 const sidebarWidthConfigKey: string = 'sidebar-width'
 
@@ -580,6 +590,8 @@ export const tabSizeDefault: number = 4
 const tabSizeKey: string = 'tab-size'
 const diffFontSizeKey = 'diff-font-size'
 const diffFontFamilyKey = 'diff-font-family'
+
+const recentRepositoriesCountKey: string = 'recent-repositories-count'
 
 const shellKey = 'shell'
 
@@ -776,6 +788,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private currentTheme: ApplicableTheme = ApplicationTheme.Light
   private selectedTabSize = tabSizeDefault
   private selectedDiffFontSize = defaultDiffFontSize
+  private recentRepositoriesCount: number = defaultRecentRepositoriesCount
   private selectedDiffFontFamily = defaultDiffFontFamily
   private titleBarStyle: TitleBarStyle = __WIN32__ ? 'custom' : 'native'
   private showRecentRepositories: boolean = true
@@ -1475,10 +1488,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
       selectedTheme: this.selectedTheme,
       currentTheme: this.currentTheme,
       selectedTabSize: this.selectedTabSize,
+      recentRepositoriesCount: this.recentRepositoriesCount,
       selectedDiffFontSize: this.selectedDiffFontSize,
       selectedDiffFontFamily: this.selectedDiffFontFamily,
       titleBarStyle: this.titleBarStyle,
-      showRecentRepositories: this.showRecentRepositories,
       showWorktrees: this.showWorktrees,
       showWorktreesInRepoList: this.showWorktreesInRepoList,
       showCompareTab: this.showCompareTab,
@@ -2719,14 +2732,25 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
     const slicedRecentRepositories = recentRepositories.slice(
       0,
-      RecentRepositoriesLength
+      MaxRecentRepositoriesLength
     )
     setNumberArray(RecentRepositoriesKey, slicedRecentRepositories)
-    this.recentRepositories = slicedRecentRepositories
+    this.updateVisibleRecentRepositories(slicedRecentRepositories)
+    this.emitUpdate()
+  }
+
+  private updateVisibleRecentRepositories(
+    retainedRepositories: ReadonlyArray<number> = getNumberArray(
+      RecentRepositoriesKey
+    )
+  ) {
+    this.recentRepositories = retainedRepositories.slice(
+      0,
+      this.recentRepositoriesCount
+    )
     this.notificationsStore.setRecentRepositories(
       this.repositories.filter(r => this.recentRepositories.includes(r.id))
     )
-    this.emitUpdate()
   }
 
   // finish `_selectRepository`s refresh tasks
@@ -3117,6 +3141,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     this.selectedTabSize = getNumber(tabSizeKey, tabSizeDefault)
     this.selectedDiffFontSize = getNumber(diffFontSizeKey, defaultDiffFontSize)
+    // Backward-compat: users who disabled the recent group in the previous
+    // checkbox setting start with 0 so they don't suddenly see it again.
+    const recentCountDefault = this.showRecentRepositories
+      ? defaultRecentRepositoriesCount
+      : 0
+    this.recentRepositoriesCount = getNumber(
+      recentRepositoriesCountKey,
+      recentCountDefault
+    )
     this.selectedDiffFontFamily =
       localStorage.getItem(diffFontFamilyKey) || defaultDiffFontFamily
 
@@ -4957,15 +4990,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
       this.repositoryIndicatorUpdater.stop()
     }
 
-    this.emitUpdate()
-  }
-
-  public _setShowRecentRepositories(showRecentRepositories: boolean) {
-    if (this.showRecentRepositories === showRecentRepositories) {
-      return
-    }
-    setBoolean(showRecentRepositoriesKey, showRecentRepositories)
-    this.showRecentRepositories = showRecentRepositories
     this.emitUpdate()
   }
 
@@ -10221,6 +10245,21 @@ export class AppStore extends TypedBaseStore<IAppState> {
     if (!isNaN(tabSize)) {
       this.selectedTabSize = tabSize
       setNumber(tabSizeKey, tabSize)
+      this.emitUpdate()
+    }
+
+    return Promise.resolve()
+  }
+
+  /**
+   * Set the number of repositories shown in the "Recent" group of the
+   * repository list. Setting 0 hides the group.
+   */
+  public _setRecentRepositoriesCount(count: number) {
+    if (!isNaN(count)) {
+      this.recentRepositoriesCount = count
+      setNumber(recentRepositoriesCountKey, count)
+      this.updateVisibleRecentRepositories()
       this.emitUpdate()
     }
 
