@@ -296,15 +296,28 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private onValueChanged = (text: string) => {
+    const caretOffset = this.inputElement?.selectionEnd ?? null
+
+    // The same memoized call render() makes with the same arguments so
+    // this adds no extra parsing, the following render hits the cache.
+    const tokens = this.getFilterTokens(text, this.authorEmailSet, caretOffset)
+
     this.setState({
       value: text,
-      caretOffset: this.inputElement?.selectionEnd ?? null,
+      caretOffset,
       isAutocompleteDismissed: false,
       selectedAutocompleteRow: null,
     })
 
-    if (text === '') {
-      this.submitSearch()
+    // Hold off on submitting while the user is in the middle of typing an
+    // author email. Submitting a half-finished token would search
+    // for something the user hasn't finished writing.
+    const isTypingAuthorEmail = tokens.some(
+      token => token.kind === 'author' && token.isEdited
+    )
+
+    if (!isTypingAuthorEmail) {
+      this.submitSearch(tokens)
     }
   }
 
