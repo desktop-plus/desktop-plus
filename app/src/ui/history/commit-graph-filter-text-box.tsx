@@ -389,6 +389,8 @@ export class CommitGraphFilterTextBox extends React.Component<
         isAutocompleteDismissed: true,
         selectedAutocompleteRow: null,
       })
+
+      this.submitSearch(this.filterTokens)
     }
   }
 
@@ -462,6 +464,8 @@ export class CommitGraphFilterTextBox extends React.Component<
         isAutocompleteDismissed: true,
         selectedAutocompleteRow: null,
       })
+
+      this.submitSearch(this.filterTokens)
     }
   }
 
