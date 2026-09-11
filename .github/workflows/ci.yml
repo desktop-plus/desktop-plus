@@ -214,10 +214,6 @@ jobs:
           AZURE_TENANT_ID: ${{ secrets.AZURE_CODE_SIGNING_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CODE_SIGNING_CLIENT_ID }}
 
-      - name: Generate AppImage zsync
-        if: ${{ runner.os == 'Linux' }}
-        run:
-          script/generate-appimage-zsync.sh dist/*.AppImage ${{ matrix.arch }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:

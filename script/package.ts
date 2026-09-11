@@ -35,7 +35,7 @@ import { rename } from 'fs/promises'
 import { join } from 'path'
 import { assertNonNullable } from '../app/src/lib/fatal-error'
 
-import { packageElectronBuilder } from './package-electron-builder'
+import { packageAppImage } from './package-appimage'
 import { packageDebian, packageTransitionalDebian } from './package-debian'
 import { packageRedhat } from './package-redhat'
 
@@ -234,7 +234,7 @@ async function packageLinux() {
     await chmod(helperPath, 0o4755)
   }
   try {
-    const appImagePackage = await packageElectronBuilder()
+    const appImagePackage = await packageAppImage()
     const debianPackage = await packageDebian()
     const transitionalDebianPackage = await packageTransitionalDebian()
     const redhatPackage = await packageRedhat()
