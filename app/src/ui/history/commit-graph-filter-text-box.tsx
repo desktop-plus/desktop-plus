@@ -12,6 +12,7 @@ import {
   PopoverDecoration,
 } from '../lib/popover'
 import { TextBox } from '../lib/text-box'
+import { debounce } from 'lodash'
 
 interface ICommitGraphFilterTextBoxProps
   extends Omit<IFancyTextBoxProps, 'value' | 'onValueChanged'> {
@@ -143,6 +144,18 @@ export class CommitGraphFilterTextBox extends React.Component<
       this.autocompleteAuthors.length > 0
     )
   }
+
+  private submitSearch = debounce(
+    (tokens: ReadonlyArray<TFilterToken> = []) => {
+      const { query, validEmailSet } = buildSearchResult(
+        tokens,
+        this.authorEmailSet
+      )
+
+      this.props.onSearchSubmitted(query, validEmailSet)
+    },
+    250
+  )
 
   public constructor(props: ICommitGraphFilterTextBoxProps) {
     super(props)
@@ -320,15 +333,6 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private onEnterPressed = () => {
     this.submitSearch(this.filterTokens)
-  }
-
-  private submitSearch = (tokens: ReadonlyArray<TFilterToken> = []) => {
-    const { query, validEmailSet } = buildSearchResult(
-      tokens,
-      this.authorEmailSet
-    )
-
-    this.props.onSearchSubmitted(query, validEmailSet)
   }
 
   private onInputKeyDown = (event: Event) => {
