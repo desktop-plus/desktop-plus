@@ -422,6 +422,12 @@ export class CommitGraphFilterTextBox extends React.Component<
       isAutocompleteDismissed: true,
       selectedAutocompleteRow: null,
     })
+
+    // Programmatic value changes don't fire onValueChanged so picking an
+    // author has to submit explicitly.
+    this.submitSearch(
+      this.getFilterTokens(newValue, this.authorEmailSet, newCaretOffset)
+    )
   }
 
   private onAutocompleteRowMouseDown = (row: number) => {
