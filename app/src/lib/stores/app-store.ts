@@ -2247,7 +2247,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     if (newFilteredCommits.length > 0) {
       this.emitUpdate()
     }
-    if (numFilteredCommits < MinimumFilteredCommitsToLoad) {
+    if (
+      (filterAuthorsLowercase && filterAuthorsLowercase.length > 0) ||
+      numFilteredCommits < MinimumFilteredCommitsToLoad
+    ) {
       return this._loadNextCommitBatch(
         repository,
         numFilteredCommits,
