@@ -489,7 +489,7 @@ const authorTokenRegExp = /(?:^|\s)author:(\S*)/
 
 const RowHeight = 29
 
-const DefaultPopupHeight = 100
+const DefaultPopupHeight = 200
 
 const tokenValueClassNames: Record<TAuthorTokenState, string> = {
   valid: 'token-value',
