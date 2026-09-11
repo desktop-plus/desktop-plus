@@ -85,6 +85,8 @@ const options: DebianOptions = {
   categories: ['Development', 'GitHub'],
   section: 'GNOME;GTK;Development',
   priority: 'extra',
+  // The AUR -bin package unpacks 'data.tar.zst' ensure zstd is used instead of the host default.
+  compression: 'zstd',
   homepage: 'https://desktop-plus.org',
   depends: [
     // dugite-native dependencies
