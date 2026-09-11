@@ -147,12 +147,9 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private submitSearch = debounce(
     (tokens: ReadonlyArray<TFilterToken> = []) => {
-      const { query, validEmailSet } = buildSearchResult(
-        tokens,
-        this.authorEmailSet
-      )
+      const { query, authorEmails } = buildSearchResult(tokens)
 
-      this.props.onSearchSubmitted(query, validEmailSet)
+      this.props.onSearchSubmitted(query, authorEmails)
     },
     250
   )
@@ -577,11 +574,8 @@ function parseFilterTokens(
   return tokens
 }
 
-function buildSearchResult(
-  tokens: ReadonlyArray<TFilterToken>,
-  emailSet: ReadonlySet<string>
-) {
-  const validEmailSet = new Set<string>()
+function buildSearchResult(tokens: ReadonlyArray<TFilterToken>) {
+  const authorEmails = new Set<string>()
 
   const queryParts: Array<string> = []
 
@@ -593,12 +587,12 @@ function buildSearchResult(
       // remains part of the search query, just like it did before the
       // token-based submit.
       queryParts.push(token.name + token.delimiter)
-    } else if (emailSet.has(token.value.toLowerCase())) {
-      validEmailSet.add(token.value.toLowerCase())
+    } else {
+      authorEmails.add(token.value.toLowerCase())
     }
   }
 
   const query = queryParts.join(' ').replace(/\s+/g, ' ').trim()
 
-  return { query, validEmailSet }
+  return { query, authorEmails }
 }
