@@ -3,11 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import debounce from 'lodash/debounce'
 import memoizeOne from 'memoize-one'
-import {
-  ICompareState,
-  IConstrainedValue,
-  TAuthorFilterOption,
-} from '../../lib/app-state'
+import { ICompareState, IConstrainedValue } from '../../lib/app-state'
 import { Emoji } from '../../lib/emoji'
 import { doMergeCommitsExistAfterCommit } from '../../lib/git'
 import { getSquashedCommitDescription } from '../../lib/squash/squashed-commit-description'
@@ -33,7 +29,6 @@ import { Octicon, syncClockwise } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
 import { Resizable } from '../resizable'
 import { CommitGraphCommitListItem } from './commit-graph-commit-list-item'
-import { CommitGraphFilterButton } from './commit-graph-filter-button'
 import { CommitGraphFilterTextBox } from './commit-graph-filter-text-box'
 import {
   commitGraph_buildRows,
@@ -99,8 +94,6 @@ interface ICommitGraphSidebarState {
   readonly isSearching: boolean
   readonly commitGraphViewMode: CommitHistoryViewMode
   readonly commitGraphSelectedBranchRef: string | null
-  readonly filters: TFilters
-  readonly searchQuery: string
 }
 
 interface ICommitGraphBranches {
@@ -570,10 +563,6 @@ export class CommitGraphSidebar extends React.Component<
       isSearching: false,
       commitGraphViewMode: commitGraph_getStoredViewMode(),
       commitGraphSelectedBranchRef: null,
-      filters: {
-        author: new Set(),
-      },
-      searchQuery: '',
     }
   }
 
@@ -597,61 +586,12 @@ export class CommitGraphSidebar extends React.Component<
     this.commitListRef.current?.focus()
   }
 
-  private onActiveAuthorEmailsChange = async (
-    email: TAuthorFilterOption['email']
-  ) => {
-    if (!email) {
-      return
-    }
-
-    const authorEmailsSet = this.state.filters['author']
-
-    if (authorEmailsSet.has(email)) {
-      authorEmailsSet.delete(email)
-    } else {
-      authorEmailsSet.add(email)
-    }
-
-    const newFilters = {
-      ...this.state.filters,
-      author: new Set(authorEmailsSet),
-    }
-
-    this.setState({
-      filters: newFilters,
-    })
-
-    await this.onCommitSearchFiltersChanged(newFilters)
-  }
-
-  private onActiveAuthorEmailsClear = async () => {
-    const newFilters = {
-      ...this.state.filters,
-      author: new Set<string>(),
-    }
-    this.setState({
-      filters: newFilters,
-    })
-
-    await this.onCommitSearchFiltersChanged(newFilters)
-  }
-
   public render() {
     return (
       <div id="compare-view" role="tabpanel" aria-labelledby="history-tab">
         <div className="commitGraph-view-toolbar">
           <div className="commit-search-form">
             <div className="filter-box-container">
-              <span>
-                <CommitGraphFilterButton
-                  authorOptions={
-                    this.props.compareState.commitGraphAuthorFilterOptions ?? []
-                  }
-                  activeAuthorEmails={this.state.filters.author}
-                  onActiveAuthorEmailsClear={this.onActiveAuthorEmailsClear}
-                  onActiveAuthorEmailsChange={this.onActiveAuthorEmailsChange}
-                />
-              </span>
               <CommitGraphFilterTextBox
                 ariaLabel="Commit filter"
                 type="search"
@@ -1431,20 +1371,11 @@ export class CommitGraphSidebar extends React.Component<
     text: string,
     emailSet: Set<string>
   ) => {
-    this.setState({
-      searchQuery: text,
-    })
-
     const newFilters = {
-      ...this.state.filters,
       author: emailSet,
     }
 
     await this.onCommitQuery(text, newFilters)
-  }
-
-  private onCommitSearchFiltersChanged = async (filters: TFilters) => {
-    await this.onCommitQuery(this.state.searchQuery, filters)
   }
 
   private onCreateTag = (targetCommitSha: string) => {
