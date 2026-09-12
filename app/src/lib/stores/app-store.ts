@@ -2582,6 +2582,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       : false
     this.repositoryStateCache.updateCompareState(repository, () => ({
       commitSearchQuery: query,
+      commitGraphSelectedFilters: filters ?? null,
     }))
 
     if (this.currentCommitFilterPromise) {

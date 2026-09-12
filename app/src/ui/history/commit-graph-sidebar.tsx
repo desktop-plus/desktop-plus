@@ -1209,11 +1209,6 @@ export class CommitGraphSidebar extends React.Component<
       author: new Set<string>(),
     }
 
-    console.log(
-      { filters, commitSearchQuery },
-      ' { filters, commitSearchQuery } from commitGraph_onListModeClicked'
-    )
-
     this.setState({ commitGraphViewMode: CommitHistoryViewMode.List }, () => {
       void this.onSearchList(commitSearchQuery, filters)
     })
@@ -1226,11 +1221,6 @@ export class CommitGraphSidebar extends React.Component<
     const filters: TSelectedFilters = commitGraphSelectedFilters ?? {
       author: new Set<string>(),
     }
-
-    console.log(
-      { filters, commitSearchQuery },
-      ' { filters, commitSearchQuery } from commitGraph_onTreeModeClicked'
-    )
 
     this.setState({ commitGraphViewMode: CommitHistoryViewMode.Graph }, () => {
       this.commitGraph_ensureLoaded()
