@@ -22,7 +22,7 @@ import {
   ICommitMessage,
   DefaultCommitMessage,
 } from '../../models/commit-message'
-import { ComparisonMode } from '../app-state'
+import { ComparisonMode, TFilterAuthorListItem } from '../app-state'
 
 import { IAppShell } from '../app-shell'
 import {
@@ -76,6 +76,7 @@ import {
   memoizedGetRemotesFromPath,
   MergeOptions,
   listWorktrees,
+  getUniqueAuthorsNameAndEmail,
 } from '../git'
 import { GitError as DugiteError } from '../../lib/git'
 import { GitError } from 'dugite'
@@ -155,6 +156,11 @@ export class GitStore extends BaseStore {
   private _aheadBehind: IAheadBehind | null = null
 
   private _tagsToPush: ReadonlyArray<string> = []
+
+  private commitGraph_filterAuthorsList: ReadonlyArray<TFilterAuthorListItem> =
+    []
+
+  private commitGraph_filterAuthorsListRefsKey: string | null = null
 
   private _remotes: ReadonlyArray<IRemote> = []
 
@@ -292,6 +298,43 @@ export class GitStore extends BaseStore {
 
     this.storeCommits(commits)
     return commits.map(c => c.sha)
+  }
+
+  /**
+   * Load the unique commit authors across the repository for use as filter
+   * options. The current branch tips are used as a signature so that the
+   * query isn't repeated when nothing has changed.
+   */
+  public async commitGraph_loadFilterAuthors(): Promise<ReadonlyArray<TFilterAuthorListItem> | null> {
+    const refsKey = this._allBranches
+      .map(branch => `${branch.ref}:${branch.tip.sha}`)
+      .join('\0')
+
+    if (refsKey === this.commitGraph_filterAuthorsListRefsKey) {
+      return this.commitGraph_filterAuthorsList
+    }
+
+    const requestKey = 'history/graph/authors'
+    if (this.requestsInFight.has(requestKey)) {
+      return null
+    }
+
+    this.requestsInFight.add(requestKey)
+
+    const authors = await this.performFailableOperation(() =>
+      getUniqueAuthorsNameAndEmail(this.repository)
+    )
+
+    this.requestsInFight.delete(requestKey)
+
+    if (authors === undefined) {
+      return null
+    }
+
+    this.commitGraph_filterAuthorsList = authors
+    this.commitGraph_filterAuthorsListRefsKey = refsKey
+
+    return authors
   }
 
   public async refreshTags() {

@@ -23,6 +23,7 @@ import {
   MultiCommitOperationConflictState,
   IMultiCommitOperationState,
   CommitOptions,
+  TSelectedFilters,
 } from '../../lib/app-state'
 import { assertNever, fatalError } from '../../lib/fatal-error'
 import {
@@ -297,12 +298,17 @@ export class Dispatcher {
     return this.appStore._commitGraph_loadNextCommitBatch(repository)
   }
 
+  public commitGraph_loadFilterAuthors(repository: Repository): Promise<void> {
+    return this.appStore._commitGraph_loadFilterAuthors(repository)
+  }
+
   /** Update the commit search filter text. */
   public setCommitSearchQuery(
     repository: Repository,
-    text: string
+    text: string,
+    filters?: TSelectedFilters
   ): Promise<void> {
-    return this.appStore._updateCommitSearchQuery(repository, text)
+    return this.appStore._updateCommitSearchQuery(repository, text, filters)
   }
 
   /** Load the changed files for the current history selection. */

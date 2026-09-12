@@ -3,7 +3,7 @@ import { Octicon, OcticonSymbol } from '../octicons'
 import { TextBox, ITextBoxProps } from './text-box'
 import classNames from 'classnames'
 
-interface IFancyTextBoxProps extends ITextBoxProps {
+export interface IFancyTextBoxProps extends ITextBoxProps {
   /** Icon to render */
   readonly symbol: OcticonSymbol
 
@@ -54,6 +54,7 @@ export class FancyTextBox extends React.Component<
           placeholder={this.props.placeholder}
           displayClearButton={this.props.displayClearButton}
           onKeyDown={this.props.onKeyDown}
+          onEnterPressed={this.props.onEnterPressed}
           onValueChanged={this.props.onValueChanged}
           onSearchCleared={this.props.onSearchCleared}
           tabIndex={this.props.tabIndex}

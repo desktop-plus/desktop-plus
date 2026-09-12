@@ -204,6 +204,62 @@ export async function getCommits(
   })
 }
 
+/**
+ * Get the unique commit authors (name and email) across all refs in the
+ * repository, deduplicated by email and sorted by name.
+ */
+export async function getUniqueAuthorsNameAndEmail(
+  repository: Repository
+): Promise<ReadonlyArray<{ name: string; email: string }>> {
+  const { formatArgs, parse } = createLogParser({
+    name: '%an', // author name
+    email: '%ae', // author email
+  })
+
+  const args = [
+    'log',
+    '--date=raw',
+    '--all',
+    '--format=%an%x1f%ae',
+    ...formatArgs,
+    '--no-show-signature',
+    '--no-color',
+    '--',
+  ]
+
+  const result = await git(
+    args,
+    repository.path,
+    'getUniqueAuthorsNameAndEmail',
+    {
+      successExitCodes: new Set([0, 128]),
+    }
+  )
+
+  const authors = new Array<{ name: string; email: string }>()
+
+  // if the repository has an unborn HEAD, there are no commits and thus no authors
+  if (result.exitCode === 128) {
+    return authors
+  }
+
+  const seenEmails = new Set<string>()
+
+  const parsed = parse(result.stdout)
+
+  for (const { name, email } of parsed) {
+    if (!email || seenEmails.has(email)) {
+      continue
+    }
+
+    seenEmails.add(email)
+
+    authors.push({ name: name.length > 0 ? name : email, email })
+  }
+
+  return authors.sort((a, b) => a.name.localeCompare(b.name))
+}
+
 /** This interface contains information of a changeset. */
 export interface IChangesetData {
   /** Files changed in the changeset. */

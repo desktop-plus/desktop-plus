@@ -1,0 +1,80 @@
+@import '../../mixins';
+
+.commitGraph-filter-text-box {
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+
+  .commitGraph-filter-text-box-backdrop {
+    position: absolute;
+    top: 1px;
+    bottom: 0;
+    left: calc(18px + var(--spacing-half) + 1px);
+    right: var(--spacing-half);
+    font-size: var(--font-size);
+    font-family: var(--font-family-sans-serif);
+    line-height: var(--text-field-height);
+    white-space: pre;
+    overflow: hidden;
+    pointer-events: none;
+
+    .token-value {
+      color: var(--md-accent-fg-color);
+      background-color: var(--co-author-tag-background-color);
+      border-radius: var(--outlined-border-radius);
+    }
+    .token-value-invalid {
+      color: var(--file-warning-color);
+      background-color: var(--file-warning-background-color);
+      border-radius: var(--outlined-border-radius);
+    }
+  }
+
+  &.with-clear-button .commitGraph-filter-text-box-backdrop {
+    right: calc(16px + var(--spacing-half) + 1px);
+  }
+
+  .text-box-component input {
+    position: relative;
+    z-index: 1;
+    color: transparent;
+    caret-color: var(--text-color);
+    background: transparent;
+  }
+}
+
+.autocompletion-popup.filter {
+  width: 300px;
+
+  .author-filter {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    column-gap: var(--spacing);
+
+    height: 100%;
+    width: 100%;
+
+    .avatar {
+      width: 24px;
+      height: 24px;
+    }
+
+    .author-filter-text {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      overflow: hidden;
+
+      .name {
+        @include ellipsis;
+        font-weight: var(--font-weight-semibold);
+      }
+
+      .email {
+        @include ellipsis;
+        color: var(--text-secondary-color);
+      }
+    }
+  }
+}

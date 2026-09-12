@@ -1,10 +1,20 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import { Repository } from '../../../src/models/repository'
-import { getChangedFiles, getCommits } from '../../../src/lib/git'
-import { setupFixtureRepository } from '../../helpers/repositories'
+import {
+  getChangedFiles,
+  getCommits,
+  getUniqueAuthorsNameAndEmail,
+} from '../../../src/lib/git'
+import {
+  setupEmptyRepository,
+  setupFixtureRepository,
+} from '../../helpers/repositories'
 import { AppFileStatusKind } from '../../../src/models/status'
 import { setupLocalConfig } from '../../helpers/local-config'
+import { exec } from 'dugite'
+import { writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
 describe('git/log', () => {
   describe('getCommits', () => {
@@ -60,6 +70,48 @@ describe('git/log', () => {
       assert.deepStrictEqual(commits[0].tags, ['important'])
       assert.deepStrictEqual(commits[1].tags, ['tentative', 'less-important'])
       assert.equal(commits[2].tags.length, 0)
+    })
+  })
+
+  describe('getUniqueAuthorsNameAndEmail', () => {
+    it('returns no authors for an empty repository', async t => {
+      const repository = await setupEmptyRepository(t)
+
+      const authors = await getUniqueAuthorsNameAndEmail(repository)
+
+      assert.deepStrictEqual(authors, [])
+    })
+
+    it('returns unique authors sorted by name', async t => {
+      const repository = await setupEmptyRepository(t)
+
+      const commit = async (name: string, email: string, file: string) => {
+        await writeFile(join(repository.path, file), 'contents')
+        await exec(['add', file], repository.path)
+        await exec(
+          [
+            'commit',
+            '-m',
+            `commit by ${name}`,
+            '--author',
+            `${name} <${email}>`,
+          ],
+          repository.path
+        )
+      }
+
+      // oldest first: git log emits newest-first, and dedup keeps the first
+      // name seen per email, so the name we want to keep must be committed last
+      await commit('Alice Two', 'alice@example.com', 'c.txt')
+      await commit('Charlie', 'charlie@example.com', 'a.txt')
+      await commit('Alice', 'alice@example.com', 'b.txt')
+
+      const authors = await getUniqueAuthorsNameAndEmail(repository)
+
+      assert.deepStrictEqual(authors, [
+        { name: 'Alice', email: 'alice@example.com' },
+        { name: 'Charlie', email: 'charlie@example.com' },
+      ])
     })
   })
 
