@@ -157,9 +157,9 @@ export class GitStore extends BaseStore {
 
   private _tagsToPush: ReadonlyArray<string> = []
 
-  private commitGraph_filterAuthors: ReadonlyArray<TFilterAuthor> = []
+  private commitGraph_filterAuthorsList: ReadonlyArray<TFilterAuthor> = []
 
-  private commitGraph_filterAuthorsRefsKey: string | null = null
+  private commitGraph_filterAuthorsListRefsKey: string | null = null
 
   private _remotes: ReadonlyArray<IRemote> = []
 
@@ -309,8 +309,8 @@ export class GitStore extends BaseStore {
       .map(branch => `${branch.ref}:${branch.tip.sha}`)
       .join('\0')
 
-    if (refsKey === this.commitGraph_filterAuthorsRefsKey) {
-      return this.commitGraph_filterAuthors
+    if (refsKey === this.commitGraph_filterAuthorsListRefsKey) {
+      return this.commitGraph_filterAuthorsList
     }
 
     const requestKey = 'history/graph/authors'
@@ -330,8 +330,8 @@ export class GitStore extends BaseStore {
       return null
     }
 
-    this.commitGraph_filterAuthors = authors
-    this.commitGraph_filterAuthorsRefsKey = refsKey
+    this.commitGraph_filterAuthorsList = authors
+    this.commitGraph_filterAuthorsListRefsKey = refsKey
 
     return authors
   }

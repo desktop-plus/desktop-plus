@@ -526,14 +526,14 @@ export class CommitGraphSidebar extends React.Component<
 
   private readonly commitGraph_getFilterAuthorsWithAvatar = memoizeOne(
     (
-      filterAuthors: ICommitGraphSidebarProps['compareState']['commitGraphFilterAuthors'],
+      filterAuthorsList: ICommitGraphSidebarProps['compareState']['commitGraphFilterAuthorsList'],
       gitHubRepository: ICommitGraphSidebarProps['repository']['gitHubRepository']
     ): ReadonlyArray<IAvatarUser> | null => {
-      if (!filterAuthors) {
+      if (!filterAuthorsList) {
         return null
       }
 
-      return filterAuthors.map(author =>
+      return filterAuthorsList.map(author =>
         getAvatarUserFromAuthor(author, gitHubRepository)
       )
     }
@@ -569,9 +569,9 @@ export class CommitGraphSidebar extends React.Component<
     this.commitListRef.current?.focus()
   }
 
-  private get filterAuthors() {
+  private get filterAuthorsList() {
     return this.commitGraph_getFilterAuthorsWithAvatar(
-      this.props.compareState.commitGraphFilterAuthors,
+      this.props.compareState.commitGraphFilterAuthorsList,
       this.props.repository.gitHubRepository
     )
   }
@@ -590,7 +590,7 @@ export class CommitGraphSidebar extends React.Component<
                 }
                 symbolClassName={this.state.isSearching ? 'spin' : undefined}
                 placeholder={__DARWIN__ ? 'Search Commits' : 'Search commits'}
-                filterAuthors={this.filterAuthors}
+                filterAuthorsList={this.filterAuthorsList}
                 accounts={this.props.accounts}
                 onSearchSubmitted={this.onCommitSearchSubmitted}
               />

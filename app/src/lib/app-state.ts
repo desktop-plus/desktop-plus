@@ -1057,7 +1057,7 @@ export interface ICompareState {
    * The unique commit authors across the repository, for use as filter
    * options in the history view, or null before they have been loaded.
    */
-  readonly commitGraphFilterAuthors: ReadonlyArray<TFilterAuthor> | null
+  readonly commitGraphFilterAuthorsList: ReadonlyArray<TFilterAuthor> | null
 
   readonly compareCommitSHAs: ReadonlyArray<string>
 

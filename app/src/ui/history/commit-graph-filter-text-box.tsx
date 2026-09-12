@@ -17,7 +17,7 @@ import { debounce } from 'lodash'
 interface ICommitGraphFilterTextBoxProps
   extends Omit<IFancyTextBoxProps, 'value' | 'onValueChanged'> {
   readonly accounts: ReadonlyArray<Account>
-  readonly filterAuthors: ReadonlyArray<IAvatarUser> | null
+  readonly filterAuthorsList: ReadonlyArray<IAvatarUser> | null
   readonly onSearchSubmitted: (text: string, emailSet: Set<string>) => void
 }
 
@@ -76,7 +76,7 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private readonly getAutocompleteAuthors = memoizeOne(
     (
-      authors: ICommitGraphFilterTextBoxProps['filterAuthors'],
+      authors: ICommitGraphFilterTextBoxProps['filterAuthorsList'],
       partial: string
     ): ReadonlyArray<IAvatarUser> => {
       if (authors === null) {
@@ -93,7 +93,7 @@ export class CommitGraphFilterTextBox extends React.Component<
 
   private readonly getEmailSet = memoizeOne(
     (
-      authors: ICommitGraphFilterTextBoxProps['filterAuthors']
+      authors: ICommitGraphFilterTextBoxProps['filterAuthorsList']
     ): ReadonlySet<string> => {
       const emails = (authors ?? []).map(o => o.email.trim().toLowerCase())
       return new Set(emails)
@@ -108,7 +108,7 @@ export class CommitGraphFilterTextBox extends React.Component<
   }
 
   private get authorEmailSet() {
-    return this.getEmailSet(this.props.filterAuthors)
+    return this.getEmailSet(this.props.filterAuthorsList)
   }
 
   private get filterTokens() {
@@ -132,7 +132,7 @@ export class CommitGraphFilterTextBox extends React.Component<
     return editedAuthorToken === undefined
       ? []
       : this.getAutocompleteAuthors(
-          this.props.filterAuthors,
+          this.props.filterAuthorsList,
           editedAuthorToken.value
         )
   }

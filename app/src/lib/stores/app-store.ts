@@ -2180,7 +2180,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     repository: Repository,
     alreadyFiltered: number,
     queryTextLowercase?: string,
-    filterAuthorsLowercase?: string[]
+    selectedFilterAuthorsLowercase?: string[]
   ): Promise<void> {
     const gitStore = this.gitStoreCache.get(repository)
 
@@ -2191,7 +2191,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
     const isSearching = Boolean(
       queryTextLowercase ||
-        (filterAuthorsLowercase && filterAuthorsLowercase.length > 0)
+        (selectedFilterAuthorsLowercase && selectedFilterAuthorsLowercase.length > 0)
     )
 
     const tip = state.branchesState.tip
@@ -2224,10 +2224,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     )
 
     const newFilteredCommits =
-      filterAuthorsLowercase && filterAuthorsLowercase.length > 0
+      selectedFilterAuthorsLowercase && selectedFilterAuthorsLowercase.length > 0
         ? baseFilteredCommits.filter(sha => {
             const commit = gitStore.commitLookup.get(sha)
-            return filterAuthorsLowercase.some(filter =>
+            return selectedFilterAuthorsLowercase.some(filter =>
               this.commitIsIncludedByAuthorFilter(commit, filter)
             )
           })
@@ -2248,14 +2248,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
       this.emitUpdate()
     }
     if (
-      (filterAuthorsLowercase && filterAuthorsLowercase.length > 0) ||
+      (selectedFilterAuthorsLowercase && selectedFilterAuthorsLowercase.length > 0) ||
       numFilteredCommits < MinimumFilteredCommitsToLoad
     ) {
       return this._loadNextCommitBatch(
         repository,
         numFilteredCommits,
         queryTextLowercase,
-        filterAuthorsLowercase
+        selectedFilterAuthorsLowercase
       )
     }
     return
@@ -2478,12 +2478,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const state = this.repositoryStateCache.get(repository)
 
-    if (state.compareState.commitGraphFilterAuthors === authors) {
+    if (state.compareState.commitGraphFilterAuthorsList === authors) {
       return
     }
 
     this.repositoryStateCache.updateCompareState(repository, () => ({
-      commitGraphFilterAuthors: authors,
+      commitGraphFilterAuthorsList: authors,
     }))
 
     this.emitUpdate()
@@ -2527,9 +2527,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
   ): Promise<void> {
     const state = this.repositoryStateCache.get(repository)
     const compareState = state.compareState
-    const activeAuthorEmailsSet = filters?.author
-    const activeAuthorEmailsLowercase = activeAuthorEmailsSet
-      ? Array.from(activeAuthorEmailsSet).map(item => item.toLowerCase())
+    const selectedAuthorEmailsSet = filters?.author
+    const selectedAuthorEmailsLowercase = selectedAuthorEmailsSet
+      ? Array.from(selectedAuthorEmailsSet).map(item => item.toLowerCase())
       : []
 
     const isIncrementalSearch = query
@@ -2556,10 +2556,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
       : candidateCommitSHAs
 
     const newFilteredCommitSHAs =
-      activeAuthorEmailsLowercase.length > 0
+      selectedAuthorEmailsLowercase.length > 0
         ? baseFilteredCommitSHAs.filter(sha => {
             const commit = state.commitLookup.get(sha)
-            return activeAuthorEmailsLowercase.some(filter =>
+            return selectedAuthorEmailsLowercase.some(filter =>
               this.commitIsIncludedByAuthorFilter(commit, filter)
             )
           })
@@ -2575,7 +2575,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
         repository,
         newFilteredCommitSHAs.length,
         queryTextLowercase,
-        activeAuthorEmailsLowercase
+        selectedAuthorEmailsLowercase
       )
       await this.currentCommitFilterPromise
       this.currentCommitFilterPromise = null
@@ -4834,7 +4834,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     // Keep the author filter options fresh once they've been loaded
     const filterAuthorsRefresh =
       this.repositoryStateCache.get(repository).compareState
-        .commitGraphFilterAuthors !== null
+        .commitGraphFilterAuthorsList !== null
         ? this._commitGraph_loadFilterAuthors(repository)
         : Promise.resolve()
 
