@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import memoizeOne from 'memoize-one'
-import { ICompareState, IConstrainedValue } from '../../lib/app-state'
+import { ICompareState, IConstrainedValue, TSelectedFilters } from '../../lib/app-state'
 import { Emoji } from '../../lib/emoji'
 import { doMergeCommitsExistAfterCommit } from '../../lib/git'
 import { getSquashedCommitDescription } from '../../lib/squash/squashed-commit-description'
@@ -348,17 +348,25 @@ export class CommitGraphSidebar extends React.Component<
     (
       commitSHAs: ReadonlyArray<string>,
       commitSearchQuery: string,
-      commitLookup: Map<string, Commit>
+      commitLookup: Map<string, Commit>,
+      selectedFilters: TSelectedFilters | null
     ): ReadonlyArray<string> => {
       const query = commitSearchQuery.toLowerCase()
+      const authorEmails = selectedFilters?.author
 
-      if (!query) {
+      if (!query && (!authorEmails || authorEmails.size === 0)) {
         return commitSHAs
       }
 
-      return commitSHAs.filter(sha =>
-        this.commitIsIncluded(commitLookup.get(sha), query)
-      )
+      return commitSHAs.filter(sha => {
+        const commit = commitLookup.get(sha)
+        const matchesText = !query || this.commitIsIncluded(commit, query)
+        const matchesAuthor =
+          !authorEmails ||
+          authorEmails.size === 0 ||
+          authorEmails.has(commit?.author.email.toLowerCase() ?? '')
+        return matchesText && matchesAuthor
+      })
     }
   )
 
@@ -929,7 +937,8 @@ export class CommitGraphSidebar extends React.Component<
     const commitSHAs = this.commitGraph_getFilteredCommitSHAsForState(
       this.props.compareState.commitGraphCommitSHAs,
       this.props.compareState.commitSearchQuery,
-      this.props.commitLookup
+      this.props.commitLookup,
+      this.props.compareState.commitGraphSelectedFilters
     )
 
     return this.commitGraph_getPrioritizedCommitSHAsForState(
