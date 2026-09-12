@@ -203,6 +203,7 @@ import {
   ICompareState,
   CommitOptions,
   IChangesState,
+  TSelectedFilters,
 } from '../app-state'
 import {
   findEditorOrDefault,
@@ -488,7 +489,6 @@ import {
 import { resolveWithin } from '../path'
 import { WorktreeEntry } from '../../models/worktree'
 import type { Model } from '@github/copilot-sdk/dist/generated/rpc'
-import { TFilters } from '../../ui/history/commit-graph-sidebar'
 
 const LastSelectedRepositoryIDKey = 'last-selected-repository-id'
 
@@ -2191,7 +2191,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
     const isSearching = Boolean(
       queryTextLowercase ||
-        (selectedFilterAuthorsLowercase && selectedFilterAuthorsLowercase.length > 0)
+        (selectedFilterAuthorsLowercase &&
+          selectedFilterAuthorsLowercase.length > 0)
     )
 
     const tip = state.branchesState.tip
@@ -2224,7 +2225,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
     )
 
     const newFilteredCommits =
-      selectedFilterAuthorsLowercase && selectedFilterAuthorsLowercase.length > 0
+      selectedFilterAuthorsLowercase &&
+      selectedFilterAuthorsLowercase.length > 0
         ? baseFilteredCommits.filter(sha => {
             const commit = gitStore.commitLookup.get(sha)
             return selectedFilterAuthorsLowercase.some(filter =>
@@ -2248,7 +2250,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
       this.emitUpdate()
     }
     if (
-      (selectedFilterAuthorsLowercase && selectedFilterAuthorsLowercase.length > 0) ||
+      (selectedFilterAuthorsLowercase &&
+        selectedFilterAuthorsLowercase.length > 0) ||
       numFilteredCommits < MinimumFilteredCommitsToLoad
     ) {
       return this._loadNextCommitBatch(
@@ -2523,7 +2526,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   public async _updateCommitSearchQuery(
     repository: Repository,
     query: string,
-    filters?: TFilters
+    filters?: TSelectedFilters
   ): Promise<void> {
     const state = this.repositoryStateCache.get(repository)
     const compareState = state.compareState

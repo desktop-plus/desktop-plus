@@ -22,7 +22,7 @@ import {
   ICommitMessage,
   DefaultCommitMessage,
 } from '../../models/commit-message'
-import { ComparisonMode, TFilterAuthor } from '../app-state'
+import { ComparisonMode, TFilterAuthorListItem } from '../app-state'
 
 import { IAppShell } from '../app-shell'
 import {
@@ -157,7 +157,8 @@ export class GitStore extends BaseStore {
 
   private _tagsToPush: ReadonlyArray<string> = []
 
-  private commitGraph_filterAuthorsList: ReadonlyArray<TFilterAuthor> = []
+  private commitGraph_filterAuthorsList: ReadonlyArray<TFilterAuthorListItem> =
+    []
 
   private commitGraph_filterAuthorsListRefsKey: string | null = null
 
@@ -304,7 +305,7 @@ export class GitStore extends BaseStore {
    * options. The current branch tips are used as a signature so that the
    * query isn't repeated when nothing has changed.
    */
-  public async commitGraph_loadFilterAuthors(): Promise<ReadonlyArray<TFilterAuthor> | null> {
+  public async commitGraph_loadFilterAuthors(): Promise<ReadonlyArray<TFilterAuthorListItem> | null> {
     const refsKey = this._allBranches
       .map(branch => `${branch.ref}:${branch.tip.sha}`)
       .join('\0')

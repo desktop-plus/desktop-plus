@@ -24,6 +24,7 @@ import {
   MultiCommitOperationConflictState,
   IMultiCommitOperationState,
   CommitOptions,
+  TSelectedFilters,
 } from '../../lib/app-state'
 import { assertNever, fatalError } from '../../lib/fatal-error'
 import {
@@ -150,7 +151,6 @@ import {
   ICopilotResolutionSummary,
 } from '../../lib/copilot-conflict-resolution'
 import { WorktreeEntry } from '../../models/worktree'
-import { TFilters } from '../history/commit-graph-sidebar'
 
 /**
  * An error handler function.
@@ -306,7 +306,7 @@ export class Dispatcher {
   public setCommitSearchQuery(
     repository: Repository,
     text: string,
-    filters?: TFilters
+    filters?: TSelectedFilters
   ): Promise<void> {
     return this.appStore._updateCommitSearchQuery(repository, text, filters)
   }

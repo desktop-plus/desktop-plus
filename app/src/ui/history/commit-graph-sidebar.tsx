@@ -79,16 +79,6 @@ interface ICommitGraphSidebarProps {
   readonly showConventionalCommitBadges: boolean
 }
 
-// Author filter types and constants
-export const FILTER_KEYS = {
-  author: 'author',
-} as const
-
-export type TFilterKeys = keyof typeof FILTER_KEYS
-export type TFilters = {
-  author: Set<string>
-}
-
 interface ICommitGraphSidebarState {
   readonly keyboardReorderData?: KeyboardInsertionData
   readonly isSearching: boolean
