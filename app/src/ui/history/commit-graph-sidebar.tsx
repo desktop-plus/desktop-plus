@@ -1357,9 +1357,10 @@ export class CommitGraphSidebar extends React.Component<
     if (this.state.commitGraphViewMode === CommitHistoryViewMode.Graph) {
       this.props.dispatcher.updateCompareForm(this.props.repository, {
         commitSearchQuery: text,
+        commitGraphSelectedFilters: filters,
       })
 
-      if (text.length > 0) {
+      if (text.length > 0 || emailSet.size > 0) {
         void this.props.dispatcher.commitGraph_loadNextCommitBatch(
           this.props.repository
         )
