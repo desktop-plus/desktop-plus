@@ -182,6 +182,10 @@ export class CommitGraphFilterTextBox extends React.Component<
         this.pendingCaretOffset
       )
 
+      // setSelectionRange doesn't scroll single-line inputs to show the caret.
+      // Force scroll so the newly inserted autocomplete text is visible.
+      this.inputElement.scrollLeft = this.inputElement.scrollWidth
+
       // Make sure the TextBox won't restore the stale position on a
       // subsequent re-render (e.g. when the filter authors arrive
       // asynchronously).
