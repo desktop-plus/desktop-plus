@@ -356,6 +356,8 @@ export interface IAppState {
   /** Whether or not linked worktrees should be shown in the repository list */
   readonly showWorktreesInRepoList: boolean
 
+  readonly showSubmodulesInRepoList: boolean
+
   /** Whether or not the Compare tab should be shown in the repository view */
   readonly showCompareTab: boolean
 

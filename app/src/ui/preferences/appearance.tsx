@@ -58,6 +58,8 @@ interface IAppearanceProps {
   readonly onShowWorktreesChanged: (show: boolean) => void
   readonly showWorktreesInRepoList: boolean
   readonly onShowWorktreesInRepoListChanged: (show: boolean) => void
+  readonly showSubmodulesInRepoList: boolean
+  readonly onShowSubmodulesInRepoListChanged: (show: boolean) => void
   readonly showCompareTab: boolean
   readonly onShowCompareTabChanged: (show: boolean) => void
   readonly showConventionalCommitBadges: boolean
@@ -88,6 +90,7 @@ interface IAppearanceState {
   readonly recentRepositoriesCount: number
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
+  readonly showSubmodulesInRepoList: boolean
   readonly showCompareTab: boolean
   readonly showConventionalCommitBadges: boolean
 }
@@ -127,6 +130,7 @@ export class Appearance extends React.Component<
       recentRepositoriesCount: props.recentRepositoriesCount,
       showWorktrees: props.showWorktrees,
       showWorktreesInRepoList: props.showWorktreesInRepoList,
+      showSubmodulesInRepoList: props.showSubmodulesInRepoList,
       showCompareTab: props.showCompareTab,
       showConventionalCommitBadges: props.showConventionalCommitBadges,
     }
@@ -164,6 +168,7 @@ export class Appearance extends React.Component<
       selectedDiffFontFamily,
       showWorktrees: this.props.showWorktrees,
       showWorktreesInRepoList: this.props.showWorktreesInRepoList,
+      showSubmodulesInRepoList: this.props.showSubmodulesInRepoList,
       showCompareTab: this.props.showCompareTab,
       showConventionalCommitBadges: this.props.showConventionalCommitBadges,
     })
@@ -222,6 +227,14 @@ export class Appearance extends React.Component<
     const show = event.currentTarget.checked
     this.setState({ showWorktreesInRepoList: show })
     this.props.onShowWorktreesInRepoListChanged(show)
+  }
+
+  private onShowSubmodulesInRepoListChanged = (
+    event: React.FormEvent<HTMLInputElement>
+  ) => {
+    const show = event.currentTarget.checked
+    this.setState({ showSubmodulesInRepoList: show })
+    this.props.onShowSubmodulesInRepoListChanged(show)
   }
 
   private onShowCompareTabChanged = (
@@ -509,6 +522,19 @@ export class Appearance extends React.Component<
                 : CheckboxValue.Off
             }
             onChange={this.onShowWorktreesInRepoListChanged}
+          />
+        </div>
+        <div className="advanced-section">
+          <h2 id="submodule-heading">{'Submodules'}</h2>
+
+          <Checkbox
+            label="Show submodules in repository list"
+            value={
+              this.state.showSubmodulesInRepoList
+                ? CheckboxValue.On
+                : CheckboxValue.Off
+            }
+            onChange={this.onShowSubmodulesInRepoListChanged}
           />
         </div>
         <div className="advanced-section">

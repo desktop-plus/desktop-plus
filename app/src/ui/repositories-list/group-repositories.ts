@@ -12,9 +12,11 @@ import { caseInsensitiveCompare, compare } from '../../lib/compare'
 import { IFilterListGroup, IFilterListItem } from '../lib/filter-list'
 import { IAheadBehind } from '../../models/branch'
 import { WorktreeEntry } from '../../models/worktree'
+import { SubmoduleEntry } from '../../models/submodule'
 import { assertNever } from '../../lib/fatal-error'
 import { isGHE, isGHES } from '../../lib/endpoint-capabilities'
 import { Owner } from '../../models/owner'
+import { normalizePath } from '../../lib/helpers/path'
 
 export type RepositoryListGroup = (
   | {
@@ -76,6 +78,12 @@ export interface IRepositoryListItem extends IFilterListItem {
    * loaded), in which case the row is a plain repository row.
    */
   readonly worktree: WorktreeEntry | null
+
+  readonly submodule: SubmoduleEntry | null
+  readonly submoduleDepth: number
+  readonly linkedRepository: Repository | null
+  readonly hasChildren: boolean
+  readonly parentExpandableRowId: string | null
 }
 
 const recentRepositoriesThreshold = 7
@@ -109,12 +117,67 @@ export const getGroupForRepository = (
 
 type RepoGroupItem = { group: RepositoryListGroup; repos: Repositoryish[] }
 
+function findRepositoryAtPath(
+  repositories: ReadonlyArray<Repositoryish>,
+  path: string
+): Repository | null {
+  const normalized = normalizePath(path)
+  return (
+    repositories.find(
+      (r): r is Repository =>
+        r instanceof Repository && normalizePath(r.path) === normalized
+    ) ?? null
+  )
+}
+
+function getNestedRepositoryIds(
+  repositories: ReadonlyArray<Repositoryish>,
+  localRepositoryStateLookup: ReadonlyMap<number, ILocalRepositoryState>,
+  showSubmodulesInRepoList: boolean
+): ReadonlySet<number> {
+  const nestedIds = new Set<number>()
+
+  if (!showSubmodulesInRepoList) {
+    return nestedIds
+  }
+
+  for (const repo of repositories) {
+    if (!(repo instanceof Repository)) {
+      continue
+    }
+
+    for (const submodule of localRepositoryStateLookup.get(repo.id)
+      ?.submodules ?? []) {
+      const linkedRepository = findRepositoryAtPath(
+        repositories,
+        Path.join(repo.path, submodule.path)
+      )
+      if (linkedRepository !== null) {
+        nestedIds.add(linkedRepository.id)
+      }
+    }
+  }
+
+  return nestedIds
+}
+
 export function groupRepositories(
   repositories: ReadonlyArray<Repositoryish>,
   localRepositoryStateLookup: ReadonlyMap<number, ILocalRepositoryState>,
-  recentRepositories: ReadonlyArray<number>
+  recentRepositories: ReadonlyArray<number>,
+  showSubmodulesInRepoList: boolean
 ): ReadonlyArray<IFilterListGroup<IRepositoryListItem, RepositoryListGroup>> {
-  const includeRecentGroup = repositories.length > recentRepositoriesThreshold
+  const nestedRepositoryIds = getNestedRepositoryIds(
+    repositories,
+    localRepositoryStateLookup,
+    showSubmodulesInRepoList
+  )
+  const topLevelRepositories = repositories.filter(
+    r => !nestedRepositoryIds.has(r.id)
+  )
+
+  const includeRecentGroup =
+    topLevelRepositories.length > recentRepositoriesThreshold
   const recentSet = includeRecentGroup ? new Set(recentRepositories) : undefined
   const groups = new Map<string, RepoGroupItem>()
 
@@ -129,7 +192,7 @@ export function groupRepositories(
     rg.repos.push(repo)
   }
 
-  for (const repo of repositories) {
+  for (const repo of topLevelRepositories) {
     if (recentSet?.has(repo.id) && repo instanceof Repository) {
       addToGroup({ kind: 'recent', displayName: repo.groupName }, repo)
     }
@@ -145,7 +208,9 @@ export function groupRepositories(
         group,
         repos,
         localRepositoryStateLookup,
-        groups
+        groups,
+        repositories,
+        showSubmodulesInRepoList
       ),
     }))
 }
@@ -159,7 +224,9 @@ const toSortedListItems = (
   group: RepositoryListGroup,
   repositories: ReadonlyArray<Repositoryish>,
   localRepositoryStateLookup: ReadonlyMap<number, ILocalRepositoryState>,
-  groups: Map<string, RepoGroupItem>
+  groups: Map<string, RepoGroupItem>,
+  allRepositories: ReadonlyArray<Repositoryish>,
+  showSubmodulesInRepoList: boolean
 ): IRepositoryListItem[] => {
   const groupNames = new Map<string, number>()
   const allNames = new Map<string, number>()
@@ -211,6 +278,13 @@ const toSortedListItems = (
           : repoState?.branchName ?? null,
         defaultBranchName: repoState?.defaultBranchName ?? null,
         worktree: mainWorktree,
+        submodule: null,
+        submoduleDepth: 0,
+        linkedRepository: null,
+        hasChildren:
+          showSubmodulesInRepoList &&
+          (repoState?.submodules.length ?? 0) > 0,
+        parentExpandableRowId: null,
       }
     })
     .sort(({ repository: x }, { repository: y }) =>
@@ -219,6 +293,9 @@ const toSortedListItems = (
     .flatMap(item => [
       item,
       ...buildLinkedWorktreeRows(item, localRepositoryStateLookup),
+      ...(showSubmodulesInRepoList
+        ? buildSubmoduleRows(item, localRepositoryStateLookup, allRepositories)
+        : []),
     ])
 }
 
@@ -260,8 +337,116 @@ function buildLinkedWorktreeRows(
         branchName: shortBranchName(wt.branch),
         defaultBranchName: repoState?.defaultBranchName ?? null,
         worktree: wt,
+        submodule: null,
+        submoduleDepth: 0,
+        linkedRepository: null,
+        hasChildren: false,
+        parentExpandableRowId: null,
       }
     })
+}
+
+function groupSubmodulesByParent(
+  submodules: ReadonlyArray<SubmoduleEntry>
+): ReadonlyMap<string | null, ReadonlyArray<SubmoduleEntry>> {
+  const submodulePaths = submodules.map(s => s.path)
+  const findParentPath = (path: string): string | null =>
+    submodulePaths
+      .filter(p => p !== path && (path + '/').startsWith(p + '/'))
+      .sort((x, y) => y.length - x.length)[0] ?? null
+
+  const childrenByParentPath = new Map<string | null, SubmoduleEntry[]>()
+  for (const submodule of submodules) {
+    const parentPath = findParentPath(submodule.path)
+    const children = childrenByParentPath.get(parentPath) ?? []
+    children.push(submodule)
+    childrenByParentPath.set(parentPath, children)
+  }
+  for (const children of childrenByParentPath.values()) {
+    children.sort((x, y) => caseInsensitiveCompare(x.path, y.path))
+  }
+
+  return childrenByParentPath
+}
+
+function buildSubmoduleRows(
+  item: IRepositoryListItem,
+  localRepositoryStateLookup: ReadonlyMap<number, ILocalRepositoryState>,
+  allRepositories: ReadonlyArray<Repositoryish>,
+  ancestorRepositoryIds: ReadonlySet<number> = new Set(),
+  startingDepth: number = 1
+): IRepositoryListItem[] {
+  const r = item.repository
+  if (!(r instanceof Repository) || ancestorRepositoryIds.has(r.id)) {
+    return []
+  }
+
+  const submodules = localRepositoryStateLookup.get(r.id)?.submodules ?? []
+  if (submodules.length === 0) {
+    return []
+  }
+
+  const ancestorIdsWithSelf = new Set(ancestorRepositoryIds).add(r.id)
+
+  const childrenByParentPath = groupSubmodulesByParent(submodules)
+  const rows: IRepositoryListItem[] = []
+
+  const addRowsForParent = (
+    parentPath: string | null,
+    depth: number,
+    parentExpandableRowId: string | null
+  ) => {
+    for (const submodule of childrenByParentPath.get(parentPath) ?? []) {
+      const linkedRepository = findRepositoryAtPath(
+        allRepositories,
+        Path.join(r.path, submodule.path)
+      )
+      const linkedState = linkedRepository
+        ? localRepositoryStateLookup.get(linkedRepository.id)
+        : undefined
+      const hasChildren =
+        linkedRepository !== null
+          ? (linkedState?.submodules.length ?? 0) > 0
+          : (childrenByParentPath.get(submodule.path)?.length ?? 0) > 0
+
+      const row: IRepositoryListItem = {
+        text: [Path.basename(submodule.path)],
+        id: `${r.id}:submodule:${submodule.path}`,
+        repository: linkedRepository ?? r,
+        needsDisambiguation: false,
+        aheadBehind: linkedState?.aheadBehind ?? null,
+        changedFilesCount: linkedState?.changedFilesCount ?? 0,
+        branchName: linkedState?.branchName ?? null,
+        defaultBranchName: linkedState?.defaultBranchName ?? null,
+        worktree: null,
+        submodule,
+        submoduleDepth: depth,
+        linkedRepository,
+        hasChildren,
+        parentExpandableRowId,
+      }
+      rows.push(row)
+
+      if (linkedRepository !== null) {
+        rows.push(
+          ...buildLinkedWorktreeRows(row, localRepositoryStateLookup),
+          ...buildSubmoduleRows(
+            row,
+            localRepositoryStateLookup,
+            allRepositories,
+            ancestorIdsWithSelf,
+            depth + 1
+          )
+        )
+      } else {
+        addRowsForParent(submodule.path, depth + 1, row.id)
+      }
+    }
+  }
+
+  addRowsForParent(null, startingDepth, item.id)
+
+  return rows
 }
 
 /**

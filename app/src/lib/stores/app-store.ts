@@ -270,6 +270,7 @@ import {
   resolveMainWorktreePath,
   removeWorktree,
   moveWorktree,
+  listSubmodules,
   getCommitRangeDiff,
   getCommitRangeChangedFiles,
   updateRemoteHEAD,
@@ -495,6 +496,7 @@ import {
 } from '../pull-request-refs'
 import { resolveWithin } from '../path'
 import { WorktreeEntry } from '../../models/worktree'
+import { SubmoduleEntry } from '../../models/submodule'
 import type { Model } from '@github/copilot-sdk/dist/generated/rpc'
 
 const LastSelectedRepositoryIDKey = 'last-selected-repository-id'
@@ -605,6 +607,7 @@ const shellKey = 'shell'
 const showRecentRepositoriesKey = 'show-recent-repositories'
 const showWorktreesKey = 'show-worktrees-foldout'
 const showWorktreesInRepoListKey = 'show-worktrees-in-repo-list'
+const showSubmodulesInRepoListKey = 'show-submodules-in-repo-list'
 const showCompareTabKey = 'show-compare-tab'
 const showCompareTabDefault = true
 const showConventionalCommitBadgesKey = 'show-conventional-commit-badges'
@@ -801,6 +804,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private showRecentRepositories: boolean = true
   private showWorktrees: boolean = false
   private showWorktreesInRepoList: boolean = false
+  private showSubmodulesInRepoList: boolean = false
   private showCompareTab: boolean = showCompareTabDefault
   private showConventionalCommitBadges: boolean =
     showConventionalCommitBadgesDefault
@@ -940,6 +944,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.showWorktrees = getBoolean(showWorktreesKey) ?? true
     this.showWorktreesInRepoList =
       getBoolean(showWorktreesInRepoListKey) ?? false
+    this.showSubmodulesInRepoList =
+      getBoolean(showSubmodulesInRepoListKey) ?? false
     this.showCompareTab = getBoolean(showCompareTabKey, showCompareTabDefault)
     this.showConventionalCommitBadges = getBoolean(
       showConventionalCommitBadgesKey,
@@ -1501,6 +1507,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       titleBarStyle: this.titleBarStyle,
       showWorktrees: this.showWorktrees,
       showWorktreesInRepoList: this.showWorktreesInRepoList,
+      showSubmodulesInRepoList: this.showSubmodulesInRepoList,
       showCompareTab: this.showCompareTab,
       showConventionalCommitBadges: this.showConventionalCommitBadges,
       apiRepositories: this.apiRepositoriesStore.getState(),
@@ -4915,6 +4922,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       branchName: status.currentBranch || null,
       defaultBranchName: repository.defaultBranch,
       worktrees: await this.loadWorktreesForRepoList(repository),
+      submodules: await this.loadSubmodulesForRepoList(repository),
     })
   }
 
@@ -4929,6 +4937,21 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return await listWorktrees(repository)
     } catch (e) {
       log.error('Failed to load worktrees for repository list', e)
+      return []
+    }
+  }
+
+  private async loadSubmodulesForRepoList(
+    repository: Repository
+  ): Promise<ReadonlyArray<SubmoduleEntry>> {
+    if (!this.showSubmodulesInRepoList) {
+      return []
+    }
+
+    try {
+      return await listSubmodules(repository, true)
+    } catch (e) {
+      log.error('Failed to load submodules for repository list', e)
       return []
     }
   }
@@ -4985,6 +5008,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
         branchName: existing?.branchName ?? null,
         defaultBranchName: existing?.defaultBranchName ?? null,
         worktrees: existing?.worktrees ?? [],
+        submodules: existing?.submodules ?? [],
       })
       this.emitUpdate()
     }
@@ -5062,13 +5086,34 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.showWorktreesInRepoList = showWorktreesInRepoList
     this.emitUpdate()
 
-    if (showWorktreesInRepoList) {
-      // Eagerly populate worktrees for all repositories without waiting for the next periodic indicator refresh
-      this.refreshAllWorktreesForRepoList()
-    }
+    this.refreshAllForRepoList(async (repo, existing) => ({
+      worktrees: await this.loadWorktreesForRepoList(repo),
+      submodules: existing?.submodules ?? [],
+    }))
   }
 
-  private async refreshAllWorktreesForRepoList(): Promise<void> {
+  public _setShowSubmodulesInRepoList(showSubmodulesInRepoList: boolean) {
+    if (this.showSubmodulesInRepoList === showSubmodulesInRepoList) {
+      return
+    }
+    setBoolean(showSubmodulesInRepoListKey, showSubmodulesInRepoList)
+    this.showSubmodulesInRepoList = showSubmodulesInRepoList
+    this.emitUpdate()
+
+    this.refreshAllForRepoList(async (repo, existing) => ({
+      worktrees: existing?.worktrees ?? [],
+      submodules: await this.loadSubmodulesForRepoList(repo),
+    }))
+  }
+
+  private async refreshAllForRepoList(
+    load: (
+      repository: Repository,
+      existing: ILocalRepositoryState | undefined
+    ) => Promise<
+      Pick<ILocalRepositoryState, 'worktrees' | 'submodules'>
+    >
+  ): Promise<void> {
     const lookup = this.localRepositoryStateLookup
 
     for (const repository of this.repositories) {
@@ -5076,14 +5121,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
         continue
       }
 
-      const worktrees = await this.loadWorktreesForRepoList(repository)
       const existing = lookup.get(repository.id)
+      const { worktrees, submodules } = await load(repository, existing)
       lookup.set(repository.id, {
         aheadBehind: existing?.aheadBehind ?? null,
         changedFilesCount: existing?.changedFilesCount ?? 0,
         branchName: existing?.branchName ?? null,
         defaultBranchName: existing?.defaultBranchName ?? null,
         worktrees,
+        submodules,
       })
     }
 

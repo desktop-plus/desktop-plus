@@ -125,7 +125,8 @@ export async function updateSubmodulesAfterOperation<T extends Progress>(
 }
 
 export async function listSubmodules(
-  repository: Repository
+  repository: Repository,
+  recursive: boolean = false
 ): Promise<ReadonlyArray<SubmoduleEntry>> {
   const [submodulesFile, submodulesDir] = await Promise.all([
     pathExists(join(repository.path, '.gitmodules')),
@@ -152,11 +153,8 @@ export async function listSubmodules(
     }
   }
 
-  // We don't recurse when listing submodules here because we don't have a good
-  // story about managing these currently. So for now we're only listing
-  // changes to the top-level submodules to be consistent with `git status`
   const { stdout, exitCode } = await git(
-    ['submodule', 'status', '--'],
+    ['submodule', 'status', ...(recursive ? ['--recursive'] : []), '--'],
     repository.path,
     'listSubmodules',
     { successExitCodes: new Set([0, 128]) }

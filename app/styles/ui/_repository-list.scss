@@ -46,6 +46,35 @@
       padding-left: calc(16px + var(--spacing) + var(--spacing-half));
     }
 
+    &.repository-submodule-item {
+      padding-left: calc(
+        var(--spacing) + var(--submodule-depth, 1) * var(--spacing-double)
+      );
+    }
+
+    .repository-list-item-disclosure,
+    .repository-list-item-disclosure-spacer {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      margin-right: var(--spacing-third);
+    }
+
+    .repository-list-item-disclosure {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary-color);
+      cursor: pointer;
+
+      &:focus-visible {
+        outline-offset: -2px;
+      }
+    }
+
     .icon-for-repository {
       // Some room between the icon and repository name
       margin-left: var(--spacing-third);

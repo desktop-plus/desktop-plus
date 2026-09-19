@@ -6,6 +6,8 @@ import { Octicon, iconForRepository } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
 import { Repositoryish } from './group-repositories'
 import { WorktreeEntry } from '../../models/worktree'
+import { SubmoduleEntry } from '../../models/submodule'
+import { shortenSHA } from '../../models/commit'
 import { HighlightText } from '../lib/highlight-text'
 import { IMatches } from '../../lib/fuzzy-find'
 import { IAheadBehind } from '../../models/branch'
@@ -16,6 +18,7 @@ import { enableAccessibleListToolTips } from '../../lib/feature-flag'
 import { TooltippedContent } from '../lib/tooltipped-content'
 
 interface IRepositoryListItemProps {
+  readonly id: string
   readonly repository: Repositoryish
 
   /** Does the repository need to be disambiguated in the list? */
@@ -38,6 +41,14 @@ interface IRepositoryListItemProps {
    * its repository instead of as the repository itself.
    */
   readonly worktree: WorktreeEntry | null
+
+  readonly submodule: SubmoduleEntry | null
+  readonly submoduleDepth: number
+  readonly linkedRepository: Repository | null
+  readonly hasChildren: boolean
+  readonly isExpanded: boolean
+
+  readonly onToggleExpanded: (id: string) => void
 }
 
 /** Renders the branch name badge shown next to a repository or worktree. */
@@ -62,7 +73,10 @@ export class RepositoryListItem extends React.Component<
   private readonly listItemRef = createObservableRef<HTMLDivElement>()
 
   public render() {
-    const { worktree } = this.props
+    const { worktree, submodule, submoduleDepth } = this.props
+    if (submodule !== null) {
+      return this.renderSubmodule(submodule, submoduleDepth)
+    }
     return worktree !== null && worktree.type === 'linked'
       ? this.renderWorktree(worktree)
       : this.renderRepository()
@@ -94,6 +108,8 @@ export class RepositoryListItem extends React.Component<
         >
           {this.renderTooltip()}
         </Tooltip>
+
+        {this.renderDisclosure()}
 
         <Octicon
           className="icon-for-repository"
@@ -154,6 +170,85 @@ export class RepositoryListItem extends React.Component<
     )
   }
 
+  private onToggleExpandedClick = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    this.props.onToggleExpanded(this.props.id)
+  }
+
+  private onToggleExpandedKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.stopPropagation()
+    }
+  }
+
+  private renderDisclosure() {
+    if (!this.props.hasChildren) {
+      return <span className="repository-list-item-disclosure-spacer" />
+    }
+
+    return (
+      <button
+        type="button"
+        className="repository-list-item-disclosure"
+        aria-expanded={this.props.isExpanded}
+        aria-label={this.props.isExpanded ? 'Collapse' : 'Expand'}
+        onClick={this.onToggleExpandedClick}
+        onKeyDown={this.onToggleExpandedKeyDown}
+      >
+        <Octicon
+          symbol={
+            this.props.isExpanded
+              ? octicons.triangleDown
+              : octicons.triangleRight
+          }
+        />
+      </button>
+    )
+  }
+
+  private renderSubmodule(submodule: SubmoduleEntry, depth: number) {
+    const { linkedRepository, branchName, changedFilesCount } = this.props
+    const hasChanges = changedFilesCount > 0
+
+    return (
+      <div
+        className="repository-list-item repository-submodule-item"
+        style={{ '--submodule-depth': depth } as React.CSSProperties}
+        ref={this.listItemRef}
+      >
+        <Tooltip
+          target={this.listItemRef}
+          disabled={enableAccessibleListToolTips()}
+        >
+          {this.renderSubmoduleTooltip(submodule)}
+        </Tooltip>
+
+        {this.renderDisclosure()}
+
+        <Octicon className="icon-for-repository" symbol={octicons.repo} />
+
+        <div className="name">
+          <HighlightText
+            text={Path.basename(submodule.path)}
+            highlight={this.props.matches.title}
+          />
+        </div>
+
+        {linkedRepository !== null ? (
+          <>
+            {renderBranchNameBadge(branchName)}
+            {renderRepoIndicators({
+              aheadBehind: this.props.aheadBehind,
+              hasChanges,
+            })}
+          </>
+        ) : (
+          <span className="branch-name">{shortenSHA(submodule.sha)}</span>
+        )}
+      </div>
+    )
+  }
+
   private renderTooltip() {
     const repo = this.props.repository
     const gitHubRepo = repo instanceof Repository ? repo.gitHubRepository : null
@@ -181,6 +276,20 @@ export class RepositoryListItem extends React.Component<
     )
   }
 
+  private renderSubmoduleTooltip(submodule: SubmoduleEntry) {
+    const { linkedRepository, branchName } = this.props
+    return (
+      <>
+        <div>{linkedRepository?.path ?? submodule.path}</div>
+        {linkedRepository !== null && branchName ? (
+          <div>Branch: {branchName}</div>
+        ) : (
+          <div>{submodule.describe}</div>
+        )}
+      </>
+    )
+  }
+
   public shouldComponentUpdate(nextProps: IRepositoryListItemProps): boolean {
     if (
       nextProps.repository instanceof Repository &&
@@ -194,7 +303,12 @@ export class RepositoryListItem extends React.Component<
         nextProps.needsDisambiguation !== this.props.needsDisambiguation ||
         nextProps.aheadBehind !== this.props.aheadBehind ||
         nextProps.changedFilesCount !== this.props.changedFilesCount ||
-        nextProps.worktree !== this.props.worktree
+        nextProps.worktree !== this.props.worktree ||
+        nextProps.submodule !== this.props.submodule ||
+        nextProps.submoduleDepth !== this.props.submoduleDepth ||
+        nextProps.linkedRepository !== this.props.linkedRepository ||
+        nextProps.hasChildren !== this.props.hasChildren ||
+        nextProps.isExpanded !== this.props.isExpanded
       )
     } else {
       return true

@@ -1977,6 +1977,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             titleBarStyle={this.state.titleBarStyle}
             showWorktrees={this.state.showWorktrees}
             showWorktreesInRepoList={this.state.showWorktreesInRepoList}
+            showSubmodulesInRepoList={this.state.showSubmodulesInRepoList}
             showCompareTab={this.state.showCompareTab}
             showConventionalCommitBadges={
               this.state.showConventionalCommitBadges
@@ -3689,6 +3690,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         showBranchNameInRepoList={this.state.showBranchNameInRepoList}
         showWorktrees={this.state.showWorktrees}
         showWorktreesInRepoList={this.state.showWorktreesInRepoList}
+        showSubmodulesInRepoList={this.state.showSubmodulesInRepoList}
       />
     )
   }

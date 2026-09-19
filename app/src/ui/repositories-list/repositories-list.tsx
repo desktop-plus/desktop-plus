@@ -1,4 +1,5 @@
 import * as React from 'react'
+import * as Path from 'path'
 
 import { commitGrammar, RepositoryListItem } from './repository-list-item'
 import {
@@ -20,6 +21,10 @@ import {
   getCollapsedRepositoryGroups,
   setRepositoryGroupsCollapsed,
 } from '../../lib/stores/repository-group-collapse'
+import {
+  getExpandedRepositoryListRows,
+  setRepositoryListRowsExpanded,
+} from '../../lib/stores/repository-list-expanded-rows'
 import { IFilterListGroup } from '../lib/filter-list'
 import { IMatch, IMatches } from '../../lib/fuzzy-find'
 import { ILocalRepositoryState, Repository } from '../../models/repository'
@@ -109,6 +114,37 @@ interface IRepositoriesListProps {
 
   /** Whether or not linked worktrees should be shown in the repository list */
   readonly showWorktreesInRepoList: boolean
+
+  readonly showSubmodulesInRepoList: boolean
+}
+
+function getSubmoduleFullPath(item: IRepositoryListItem): string | null {
+  return item.submodule === null
+    ? null
+    : Path.join(item.repository.path, item.submodule.path)
+}
+
+function filterCollapsedSubmoduleRows(
+  items: ReadonlyArray<IRepositoryListItem>,
+  expandedRowIds: ReadonlySet<string>
+): ReadonlyArray<IRepositoryListItem> {
+  const hiddenIds = new Set<string>()
+
+  return items.filter(item => {
+    const { parentExpandableRowId } = item
+    const parentIsHidden =
+      parentExpandableRowId !== null && hiddenIds.has(parentExpandableRowId)
+    const parentIsCollapsed =
+      parentExpandableRowId !== null &&
+      !expandedRowIds.has(parentExpandableRowId)
+
+    if (parentIsHidden || parentIsCollapsed) {
+      hiddenIds.add(item.id)
+      return false
+    }
+
+    return true
+  })
 }
 
 interface IRepositoriesListState {
@@ -122,6 +158,8 @@ interface IRepositoriesListState {
 
   /** The keys of the groups the user has collapsed */
   readonly collapsedGroups: ReadonlySet<string>
+
+  readonly expandedRowIds: ReadonlySet<string>
 }
 
 const RowHeight = 29
@@ -334,21 +372,23 @@ export class RepositoriesList extends React.Component<
   /**
    * A memoized function for grouping repositories for display
    * in the FilterList. The group will not be recomputed as long
-   * as the provided list of repositories is equal to the last
-   * time the method was called (reference equality).
+   * as the provided arguments are equal to the last time the
+   * method was called (reference equality).
    */
   private getRepositoryGroups = memoizeOne(
     (
       repositories: ReadonlyArray<Repositoryish> | null,
       localRepositoryStateLookup: ReadonlyMap<number, ILocalRepositoryState>,
-      recentRepositories: ReadonlyArray<number>
+      recentRepositories: ReadonlyArray<number>,
+      showSubmodulesInRepoList: boolean
     ) =>
       repositories === null
         ? []
         : groupRepositories(
             repositories,
             localRepositoryStateLookup,
-            recentRepositories
+            recentRepositories,
+            showSubmodulesInRepoList
           )
   )
 
@@ -370,6 +410,8 @@ export class RepositoriesList extends React.Component<
    */
   private renderedGroupKeys: ReadonlySet<string> = new Set()
 
+  private renderedExpandableRowIds: ReadonlySet<string> = new Set()
+
   /**
    * The repositories of each group rendered the last time the list was
    * rendered, keyed by group key.
@@ -389,6 +431,7 @@ export class RepositoriesList extends React.Component<
       pinnedRepositoriesIds: getPinnedRepositories(),
       pullingGroupKeys: new Set<string>(),
       collapsedGroups: getCollapsedRepositoryGroups(),
+      expandedRowIds: getExpandedRepositoryListRows(),
     }
   }
 
@@ -414,6 +457,7 @@ export class RepositoriesList extends React.Component<
     return (
       <RepositoryListItem
         key={item.id}
+        id={item.id}
         repository={repository}
         needsDisambiguation={item.needsDisambiguation}
         matches={matches}
@@ -421,6 +465,12 @@ export class RepositoriesList extends React.Component<
         changedFilesCount={item.changedFilesCount}
         branchName={this.shouldShowBranchName(item) ? item.branchName : null}
         worktree={item.worktree}
+        submodule={item.submodule}
+        submoduleDepth={item.submoduleDepth}
+        linkedRepository={item.linkedRepository}
+        hasChildren={item.hasChildren}
+        isExpanded={this.state.expandedRowIds.has(item.id)}
+        onToggleExpanded={this.onToggleRowExpanded}
       />
     )
   }
@@ -579,6 +629,16 @@ export class RepositoriesList extends React.Component<
     this.setGroupsCollapsed([getGroupKey(group)], !this.isGroupCollapsed(group))
   }
 
+  private onToggleRowExpanded = (id: string) => {
+    this.setState({
+      expandedRowIds: setRepositoryListRowsExpanded(
+        [id],
+        !this.state.expandedRowIds.has(id),
+        this.renderedExpandableRowIds
+      ),
+    })
+  }
+
   private onCollapseAllGroups = () => {
     this.setGroupsCollapsed(this.renderedGroupKeys, true)
   }
@@ -722,6 +782,15 @@ export class RepositoriesList extends React.Component<
   }
 
   private onItemClick = (item: IRepositoryListItem) => {
+    if (item.submodule !== null && item.linkedRepository === null) {
+      const submoduleFullPath = getSubmoduleFullPath(item)
+      if (submoduleFullPath !== null) {
+        this.props.dispatcher.closeFoldout(FoldoutType.Repository)
+        this.props.dispatcher.openOrAddRepository(submoduleFullPath)
+        return
+      }
+    }
+
     const hasIndicator =
       item.changedFilesCount > 0 ||
       (item.aheadBehind !== null
@@ -750,6 +819,20 @@ export class RepositoriesList extends React.Component<
     event: React.MouseEvent<HTMLDivElement>
   ) => {
     event.preventDefault()
+
+    if (item.submodule !== null && item.linkedRepository === null) {
+      const submoduleFullPath = getSubmoduleFullPath(item)
+      if (submoduleFullPath !== null) {
+        showContextualMenu([
+          {
+            label: __DARWIN__ ? 'Open Repository' : 'Open repository',
+            action: () =>
+              this.props.dispatcher.openOrAddRepository(submoduleFullPath),
+          },
+        ])
+        return
+      }
+    }
 
     if (
       item.worktree !== null &&
@@ -818,7 +901,10 @@ export class RepositoriesList extends React.Component<
     showContextualMenu(items)
   }
 
-  private getItemAriaLabel = (item: IRepositoryListItem) => item.repository.name
+  private getItemAriaLabel = (item: IRepositoryListItem) =>
+    item.submodule !== null && item.linkedRepository === null
+      ? Path.basename(item.submodule.path)
+      : item.repository.name
   private getGroupAriaLabelGetter =
     (
       groups: ReadonlyArray<
@@ -832,10 +918,22 @@ export class RepositoriesList extends React.Component<
     let groups = this.getRepositoryGroups(
       this.props.repositories,
       this.props.localRepositoryStateLookup,
-      this.props.recentRepositories
+      this.props.recentRepositories,
+      this.props.showSubmodulesInRepoList
     )
 
-    const { pinnedRepositoriesIds } = this.state
+    const { pinnedRepositoriesIds, expandedRowIds } = this.state
+
+    this.renderedExpandableRowIds = new Set(
+      groups.flatMap(group =>
+        group.items.filter(item => item.hasChildren).map(item => item.id)
+      )
+    )
+
+    groups = groups.map(group => ({
+      ...group,
+      items: filterCollapsedSubmoduleRows(group.items, expandedRowIds),
+    }))
     if (pinnedRepositoriesIds.length > 0) {
       const pinsGroup = buildPinnedGroup(pinnedRepositoriesIds, groups)
       if (pinsGroup !== null) {
@@ -879,7 +977,9 @@ export class RepositoriesList extends React.Component<
             filterText: this.props.filterText,
             localRepositoryStateLookup: this.props.localRepositoryStateLookup,
             showWorktreesInRepoList: this.props.showWorktreesInRepoList,
+            showSubmodulesInRepoList: this.props.showSubmodulesInRepoList,
             collapsedGroups: this.state.collapsedGroups,
+            expandedRowIds: this.state.expandedRowIds,
           }}
           onItemContextMenu={this.onItemContextMenu}
           getGroupAriaLabel={this.getGroupAriaLabelGetter(groups)}

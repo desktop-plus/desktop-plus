@@ -3370,6 +3370,10 @@ export class Dispatcher {
     this.appStore._setShowWorktreesInRepoList(showWorktreesInRepoList)
   }
 
+  public setShowSubmodulesInRepoList(showSubmodulesInRepoList: boolean) {
+    this.appStore._setShowSubmodulesInRepoList(showSubmodulesInRepoList)
+  }
+
   public setShowCompareTab(showCompareTab: boolean) {
     this.appStore._setShowCompareTab(showCompareTab)
   }

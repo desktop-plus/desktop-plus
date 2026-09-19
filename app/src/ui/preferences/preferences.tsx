@@ -130,6 +130,7 @@ interface IPreferencesProps {
   readonly titleBarStyle: TitleBarStyle
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
+  readonly showSubmodulesInRepoList: boolean
   readonly showCompareTab: boolean
   readonly showConventionalCommitBadges: boolean
   readonly repositoryIndicatorsEnabled: boolean
@@ -187,6 +188,7 @@ interface IPreferencesState {
   readonly recentRepositoriesCount: number
   readonly showWorktrees: boolean
   readonly showWorktreesInRepoList: boolean
+  readonly showSubmodulesInRepoList: boolean
   readonly showCompareTab: boolean
   readonly showConventionalCommitBadges: boolean
   /**
@@ -288,6 +290,7 @@ export class Preferences extends React.Component<
       recentRepositoriesCount: this.props.recentRepositoriesCount,
       showWorktrees: this.props.showWorktrees,
       showWorktreesInRepoList: this.props.showWorktreesInRepoList,
+      showSubmodulesInRepoList: this.props.showSubmodulesInRepoList,
       showCompareTab: this.props.showCompareTab,
       showConventionalCommitBadges: this.props.showConventionalCommitBadges,
       repositoryIndicatorsEnabled: this.props.repositoryIndicatorsEnabled,
@@ -775,6 +778,10 @@ export class Preferences extends React.Component<
             onShowWorktreesInRepoListChanged={
               this.onShowWorktreesInRepoListChanged
             }
+            showSubmodulesInRepoList={this.state.showSubmodulesInRepoList}
+            onShowSubmodulesInRepoListChanged={
+              this.onShowSubmodulesInRepoListChanged
+            }
             showCompareTab={this.state.showCompareTab}
             onShowCompareTabChanged={this.onShowCompareTabChanged}
             showConventionalCommitBadges={
@@ -1186,6 +1193,12 @@ export class Preferences extends React.Component<
     this.setState({ showWorktreesInRepoList })
   }
 
+  private onShowSubmodulesInRepoListChanged = (
+    showSubmodulesInRepoList: boolean
+  ) => {
+    this.setState({ showSubmodulesInRepoList })
+  }
+
   private onShowCompareTabChanged = (showCompareTab: boolean) => {
     this.setState({ showCompareTab })
   }
@@ -1286,6 +1299,15 @@ export class Preferences extends React.Component<
       ) {
         dispatcher.setShowWorktreesInRepoList(
           this.state.showWorktreesInRepoList
+        )
+      }
+
+      if (
+        this.state.showSubmodulesInRepoList !==
+        this.props.showSubmodulesInRepoList
+      ) {
+        dispatcher.setShowSubmodulesInRepoList(
+          this.state.showSubmodulesInRepoList
         )
       }
 

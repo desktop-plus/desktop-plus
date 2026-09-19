@@ -3,6 +3,7 @@ import * as Path from 'path'
 import { GitHubRepository, ForkedGitHubRepository } from './github-repository'
 import { IAheadBehind } from './branch'
 import { WorktreeEntry } from './worktree'
+import { SubmoduleEntry } from './submodule'
 import {
   WorkflowPreferences,
   ForkContributionTarget,
@@ -233,6 +234,7 @@ export interface ILocalRepositoryState {
    * worktree), or an empty array when not loaded / the feature is disabled.
    */
   readonly worktrees: ReadonlyArray<WorktreeEntry>
+  readonly submodules: ReadonlyArray<SubmoduleEntry>
 }
 
 /**

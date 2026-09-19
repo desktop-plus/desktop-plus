@@ -49,6 +49,7 @@ describe('RepositoryListItem', () => {
     const repository = createRepository()
     const view = render(
       <RepositoryListItem
+        id="123"
         repository={repository}
         needsDisambiguation={false}
         matches={noMatches}
@@ -56,6 +57,12 @@ describe('RepositoryListItem', () => {
         changedFilesCount={3}
         branchName={'main'}
         worktree={null}
+        submodule={null}
+        submoduleDepth={0}
+        linkedRepository={null}
+        hasChildren={false}
+        isExpanded={false}
+        onToggleExpanded={() => {}}
       />
     )
 
@@ -75,6 +82,7 @@ describe('RepositoryListItem', () => {
     const repository = createRepository('desktop-app')
     const view = render(
       <RepositoryListItem
+        id="123"
         repository={repository}
         needsDisambiguation={true}
         matches={noMatches}
@@ -82,6 +90,12 @@ describe('RepositoryListItem', () => {
         changedFilesCount={0}
         branchName={'main'}
         worktree={null}
+        submodule={null}
+        submoduleDepth={0}
+        linkedRepository={null}
+        hasChildren={false}
+        isExpanded={false}
+        onToggleExpanded={() => {}}
       />
     )
 
@@ -96,6 +110,7 @@ describe('RepositoryListItem', () => {
     const repository = createRepository('desktop-app')
     const view = render(
       <RepositoryListItem
+        id="123"
         repository={repository}
         needsDisambiguation={true}
         matches={noMatches}
@@ -103,6 +118,12 @@ describe('RepositoryListItem', () => {
         changedFilesCount={0}
         branchName={'main'}
         worktree={null}
+        submodule={null}
+        submoduleDepth={0}
+        linkedRepository={null}
+        hasChildren={false}
+        isExpanded={false}
+        onToggleExpanded={() => {}}
       />
     )
 
