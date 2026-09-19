@@ -87,7 +87,8 @@ interface ICommitGraphSidebarProps {
 
 interface ICommitGraphSidebarState {
   readonly keyboardReorderData?: KeyboardInsertionData
-  readonly isSearching: boolean
+  readonly isSearchingList: boolean
+  readonly isSearchingGraph: boolean
   readonly commitGraphViewMode: CommitHistoryViewMode
   readonly commitGraphSelectedBranchRef: string | null
 }
@@ -245,7 +246,8 @@ export class CommitGraphSidebar extends React.Component<
   private loadingMoreCommitsPromise: Promise<void> | null = null
   private commitGraph_loadingMoreCommitsPromise: Promise<void> | null = null
   private commitGraph_loadingRefsKey: string | null = null
-  private activeSearchKeys: Set<symbol> = new Set()
+  private activeSearchKeysList: Set<symbol> = new Set()
+  private activeSearchKeysGraph: Set<symbol> = new Set()
 
   private readonly commitGraph_getAllBranchesForState = memoizeOne(
     (
@@ -540,20 +542,37 @@ export class CommitGraphSidebar extends React.Component<
     super(props)
 
     this.state = {
-      isSearching: false,
+      isSearchingList: false,
+      isSearchingGraph: false,
       commitGraphViewMode: commitGraph_getStoredViewMode(),
       commitGraphSelectedBranchRef: null,
     }
   }
 
-  private startedSearching = () => {
+  private startedSearching = (): (() => void) => {
     const key = Symbol()
-    this.activeSearchKeys.add(key)
-    this.setState({ isSearching: true })
-    return () => {
-      this.activeSearchKeys.delete(key)
-      if (this.activeSearchKeys.size === 0) {
-        this.setState({ isSearching: false })
+    const commitGraphIsTreeMode =
+      this.state.commitGraphViewMode === CommitHistoryViewMode.Graph
+
+    if (commitGraphIsTreeMode) {
+      this.activeSearchKeysGraph.add(key)
+      this.setState({ isSearchingGraph: true })
+
+      return () => {
+        this.activeSearchKeysGraph.delete(key)
+        if (this.activeSearchKeysGraph.size === 0) {
+          this.setState({ isSearchingGraph: false })
+        }
+      }
+    } else {
+      this.activeSearchKeysList.add(key)
+      this.setState({ isSearchingList: true })
+
+      return () => {
+        this.activeSearchKeysList.delete(key)
+        if (this.activeSearchKeysList.size === 0) {
+          this.setState({ isSearchingList: false })
+        }
       }
     }
   }
@@ -597,6 +616,17 @@ export class CommitGraphSidebar extends React.Component<
   }
 
   public render() {
+    const commitGraphIsTreeMode =
+      this.state.commitGraphViewMode === CommitHistoryViewMode.Graph
+    let symbolIcon: octicons.OcticonSymbol = octicons.search
+    let symbolClassName: string | undefined = undefined
+    if (
+      (commitGraphIsTreeMode && this.state.isSearchingGraph) ||
+      (!commitGraphIsTreeMode && this.state.isSearchingList)
+    ) {
+      symbolIcon = syncClockwise
+      symbolClassName = 'spin'
+    }
     return (
       <div id="compare-view" role="tabpanel" aria-labelledby="history-tab">
         <div className="commitGraph-view-toolbar">
@@ -604,8 +634,8 @@ export class CommitGraphSidebar extends React.Component<
             <CommitGraphFilterTextBox
               ariaLabel="Commit filter"
               type="search"
-              symbol={this.state.isSearching ? syncClockwise : octicons.search}
-              symbolClassName={this.state.isSearching ? 'spin' : undefined}
+              symbol={symbolIcon}
+              symbolClassName={symbolClassName}
               placeholder={__DARWIN__ ? 'Search Commits' : 'Search commits'}
               currentQuery={this.props.compareState.commitSearchQuery}
               filterAuthorsList={this.filterAuthorsList}
