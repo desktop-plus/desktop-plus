@@ -5,6 +5,7 @@ on:
     branches:
       - development
       - main
+      - trigger-signing-request
     tags:
       - 'v*.*.*'
   pull_request:
@@ -370,14 +371,11 @@ jobs:
     # Skip on PRs. Non-release runs only sign when the TEST_CODE_SIGNING
     # repository variable is set to 'true'
     if: |
-      github.event_name == 'push' &&
-      (startsWith(github.ref, 'refs/tags/') || vars.TEST_CODE_SIGNING == 'true')
+      github.event_name == 'push'
     continue-on-error: ${{ !startsWith(github.ref, 'refs/tags/') }}
     timeout-minutes: 360
     env:
-      SIGNING_POLICY:
-        ${{ startsWith(github.ref, 'refs/tags/') && 'release-signing' ||
-        'test-signing' }}
+      SIGNING_POLICY: release-signing
     permissions:
       contents: read
     steps:
