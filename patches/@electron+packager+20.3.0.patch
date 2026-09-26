@@ -1,0 +1,12 @@
+diff --git a/node_modules/@electron/packager/dist/platform.js b/node_modules/@electron/packager/dist/platform.js
+index 0000000..0000000 100644
+--- a/node_modules/@electron/packager/dist/platform.js
++++ b/node_modules/@electron/packager/dist/platform.js
+@@ -176,6 +176,7 @@ export class App {
+             recursive: true,
+             filter,
+             dereference: typeof this.opts.derefSymlinks === 'boolean' ? this.opts.derefSymlinks : true,
++            verbatimSymlinks: this.opts.derefSymlinks === false,
+         };
+         const src = path.resolve(this.opts.dir);
+         const dest = path.resolve(this.originalResourcesAppDir);

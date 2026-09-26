@@ -216,7 +216,7 @@ async function packageApp() {
     dir: outRoot,
     overwrite: true,
     tmpdir: false,
-    derefSymlinks: true,
+    derefSymlinks: false,
     prune: false, // We'll prune them ourselves below.
     // @electron/get re-downloads SHASUMS256.txt on every run, even when the
     // Electron zip is already in its cache, so validating it would defeat the
