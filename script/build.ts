@@ -2,8 +2,8 @@
 /// <reference path="./globals.d.ts" />
 
 import * as cp from 'child_process'
-import packager, { Options } from '@electron/packager'
 import frontMatter from 'front-matter'
+import * as os from 'os'
 import * as path from 'path'
 import { getPrintenvzPath } from 'printenvz'
 import { getProxyCommandPath } from 'process-proxy'
@@ -21,6 +21,19 @@ export interface ILicense {
   readonly featured: boolean
   readonly body: string
   readonly hidden: boolean
+}
+
+type DesktopPackageArch = 'arm64' | 'x64'
+type DesktopPackagePlatform = 'darwin' | 'linux' | 'win32'
+
+interface IDesktopPackagerModule {
+  readonly packager: (options: object) => Promise<ReadonlyArray<string>>
+}
+
+interface IOSXNotarizeOptions {
+  readonly appleId: string
+  readonly appleIdPassword: string
+  readonly teamId: string
 }
 
 import {
@@ -137,10 +150,15 @@ verifyInjectedSassVariables(outRoot)
     console.log(`Built to ${appPaths}`)
   })
 
-function packageApp() {
+async function packageApp() {
+  const packagerModuleName = '@electron/packager'
+  const { packager }: IDesktopPackagerModule = await import(packagerModuleName)
+
   // not sure if this is needed anywhere, so I'm just going to inline it here
   // for now and see what the future brings...
-  const toPackagePlatform = (platform: NodeJS.Platform) => {
+  const toPackagePlatform = (
+    platform: NodeJS.Platform
+  ): DesktopPackagePlatform => {
     if (platform === 'win32' || platform === 'darwin' || platform === 'linux') {
       return platform
     }
@@ -149,15 +167,19 @@ function packageApp() {
     )
   }
 
-  const getPackageArch = (): 'arm64' | 'x64' => {
-    const arch = process.env.npm_config_arch || process.arch
+  const toPackageArch = (
+    targetArch: string | undefined
+  ): DesktopPackageArch => {
+    if (targetArch === undefined) {
+      targetArch = os.arch()
+    }
 
-    if (arch === 'arm64' || arch === 'x64') {
-      return arch
+    if (targetArch === 'arm64' || targetArch === 'x64') {
+      return targetArch
     }
 
     throw new Error(
-      `Building Desktop for architecture '${arch}' is not supported. Currently these architectures are supported: arm64, x64`
+      `Building Desktop for architecture '${targetArch}' is not supported`
     )
   }
 
@@ -186,7 +208,7 @@ function packageApp() {
   return packager({
     name: getExecutableName(),
     platform: toPackagePlatform(process.platform),
-    arch: getPackageArch(),
+    arch: toPackageArch(process.env.npm_config_arch),
     asar: false, // TODO: Probably wanna enable this down the road.
     out: getDistRoot(),
     icon: getIcon(),
@@ -194,7 +216,7 @@ function packageApp() {
     dir: outRoot,
     overwrite: true,
     tmpdir: false,
-    derefSymlinks: false,
+    derefSymlinks: true,
     prune: false, // We'll prune them ourselves below.
     // @electron/get re-downloads SHASUMS256.txt on every run, even when the
     // Electron zip is already in its cache, so validating it would defeat the
@@ -520,7 +542,7 @@ ${licenseText}`
   rmSync(chooseALicense, { recursive: true, force: true })
 }
 
-function getNotarizationOptions(): Options['osxNotarize'] {
+function getNotarizationOptions(): IOSXNotarizeOptions | undefined {
   const {
     APPLE_ID: appleId,
     APPLE_ID_PASSWORD: appleIdPassword,
