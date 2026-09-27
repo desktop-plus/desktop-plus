@@ -732,6 +732,10 @@ app.on('ready', () => {
     getAppWindowFromWebContents(event.sender)?.closeWindow()
   )
 
+  ipcMain.on('set-title-bar-overlay-height', (event, height: number) =>
+    getAppWindowFromWebContents(event.sender)?.setTitleBarOverlayHeight(height)
+  )
+
   ipcMain.handle(
     'is-window-maximized',
     async event =>

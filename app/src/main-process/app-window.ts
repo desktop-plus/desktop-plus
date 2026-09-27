@@ -53,6 +53,9 @@ export class AppWindow {
   private quitting = false
   private quittingEvenIfUpdating = false
 
+  /** Whether the window was created with a Window Controls Overlay */
+  private hasTitleBarOverlay = false
+
   public constructor() {
     const savedWindowState = windowStateKeeper({
       defaultWidth: this.minWidth,
@@ -89,7 +92,12 @@ export class AppWindow {
     } else if (__LINUX__) {
       const config = readMainProcessConfig()
       if (config.titleBarStyle === 'custom') {
-        windowOptions.frame = false
+        windowOptions.titleBarStyle = 'hidden'
+        windowOptions.titleBarOverlay = {
+          color: '#24292e',
+          height: 27,
+        }
+        this.hasTitleBarOverlay = true
       }
       windowOptions.icon = path.join(
         __dirname,
@@ -575,6 +583,12 @@ export class AppWindow {
 
   public closeWindow() {
     this.window.close()
+  }
+
+  public setTitleBarOverlayHeight(height: number) {
+    if (this.hasTitleBarOverlay && !this.window.isDestroyed()) {
+      this.window.setTitleBarOverlay({ height })
+    }
   }
 
   public isMaximized() {

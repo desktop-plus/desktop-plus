@@ -11,6 +11,7 @@ import {
   maximizeWindow,
   minimizeWindow,
   restoreWindow,
+  setTitleBarOverlayHeight,
 } from '../main-process-proxy'
 
 /** Get the height (in pixels) of the title bar depending on the platform */
@@ -64,6 +65,25 @@ export class TitleBar extends React.Component<ITitleBarProps> {
     return style
   })
 
+  public componentDidMount() {
+    this.updateTitleBarOverlayHeight()
+  }
+
+  public componentDidUpdate(prevProps: ITitleBarProps) {
+    if (prevProps.windowZoomFactor !== this.props.windowZoomFactor) {
+      this.updateTitleBarOverlayHeight()
+    }
+  }
+
+  private updateTitleBarOverlayHeight() {
+    if (__LINUX__) {
+      // Leave the title bar's 1px bottom border uncovered by the overlay
+      const height = getTitleBarHeight() - 1
+      const zoomFactor = this.props.windowZoomFactor ?? 1
+      setTitleBarOverlayHeight(Math.round(height * zoomFactor))
+    }
+  }
+
   private onTitlebarDoubleClickDarwin = async () => {
     const actionOnDoubleClick = await getAppleActionOnDoubleClick()
 
@@ -91,7 +111,7 @@ export class TitleBar extends React.Component<ITitleBarProps> {
     const isMaximized = this.props.windowState === 'maximized'
 
     // No Windows controls when we're in full-screen mode.
-    const winControls = !__DARWIN__ && !inFullScreen ? <WindowControls /> : null
+    const winControls = __WIN32__ && !inFullScreen ? <WindowControls /> : null
 
     // On Windows it's not possible to resize a frameless window if the
     // element that sits flush along the window edge has -webkit-app-region: drag.

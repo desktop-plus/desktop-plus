@@ -78,6 +78,7 @@ export type RequestChannels = {
   'maximize-window': () => void
   'unmaximize-window': () => void
   'close-window': () => void
+  'set-title-bar-overlay-height': (height: number) => void
   'auto-updater-error': (error: Error) => void
   'auto-updater-checking-for-update': () => void
   'auto-updater-update-available': () => void

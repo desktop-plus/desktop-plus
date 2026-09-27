@@ -330,6 +330,12 @@ export const restoreWindow = sendProxy('unmaximize-window', 0)
 /** Tell the main process to close the window */
 export const closeWindow = sendProxy('close-window', 0)
 
+/** Tell the main process to resize the native window controls overlay */
+export const setTitleBarOverlayHeight = sendProxy(
+  'set-title-bar-overlay-height',
+  1
+)
+
 /** Tell the main process to get whether the window is maximized */
 export const isWindowMaximized = invokeProxy('is-window-maximized', 0)
 

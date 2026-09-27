@@ -33,6 +33,11 @@
 
   @include linux {
     @include custom-title-bar;
+
+    // Reserve space for the native Window Controls Overlay buttons, which can
+    // be on either side depending on the desktop's button layout.
+    padding-left: env(titlebar-area-x, 0px);
+    padding-right: calc(100% - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100%));
   }
 
   .resize-handle {

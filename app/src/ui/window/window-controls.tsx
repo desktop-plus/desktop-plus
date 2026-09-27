@@ -114,6 +114,10 @@ export class WindowControls extends React.Component<{}, IWindowControlState> {
   }
 
   public render() {
+    if (!__WIN32__) {
+      return <span />
+    }
+
     const min = this.renderButton('minimize', this.onMinimize, minimizePath)
     const maximizeOrRestore =
       this.state.windowState === 'maximized'
