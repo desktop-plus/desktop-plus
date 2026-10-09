@@ -14,6 +14,7 @@ import { createObservableRef } from '../lib/observable-ref'
 import { Tooltip } from '../lib/tooltip'
 import { enableAccessibleListToolTips } from '../../lib/feature-flag'
 import { TooltippedContent } from '../lib/tooltipped-content'
+import { FilesChangedBadge } from '../changes/files-changed-badge'
 
 interface IRepositoryListItemProps {
   readonly repository: Repositoryish
@@ -72,7 +73,6 @@ export class RepositoryListItem extends React.Component<
     const repository = this.props.repository
     const gitHubRepo =
       repository instanceof Repository ? repository.gitHubRepository : null
-    const hasChanges = this.props.changedFilesCount > 0
 
     const alias: string | null =
       repository instanceof Repository ? repository.alias : null
@@ -113,7 +113,7 @@ export class RepositoryListItem extends React.Component<
         {repository instanceof Repository &&
           renderRepoIndicators({
             aheadBehind: this.props.aheadBehind,
-            hasChanges: hasChanges,
+            changedFilesCount: this.props.changedFilesCount,
           })}
       </div>
     )
@@ -148,7 +148,7 @@ export class RepositoryListItem extends React.Component<
 
         {renderRepoIndicators({
           aheadBehind: this.props.aheadBehind,
-          hasChanges: this.props.changedFilesCount > 0,
+          changedFilesCount: this.props.changedFilesCount,
         })}
       </div>
     )
@@ -204,12 +204,13 @@ export class RepositoryListItem extends React.Component<
 
 const renderRepoIndicators: React.FunctionComponent<{
   aheadBehind: IAheadBehind | null
-  hasChanges: boolean
+  changedFilesCount: number
 }> = props => {
   return (
     <div className="repo-indicators">
       {props.aheadBehind && renderAheadBehindIndicator(props.aheadBehind)}
-      {props.hasChanges && renderChangesIndicator()}
+      {props.changedFilesCount > 0 &&
+        renderChangesIndicator(props.changedFilesCount)}
     </div>
   )
 }
@@ -240,14 +241,14 @@ const renderAheadBehindIndicator = (aheadBehind: IAheadBehind) => {
   )
 }
 
-const renderChangesIndicator = () => {
+const renderChangesIndicator = (changedFilesCount: number) => {
   return (
     <TooltippedContent
       className="change-indicator-wrapper"
       tooltip="There are uncommitted changes in this repository"
       disabled={enableAccessibleListToolTips()}
     >
-      <Octicon symbol={octicons.dotFill} />
+      <FilesChangedBadge filesChangedCount={changedFilesCount} />
     </TooltippedContent>
   )
 }
