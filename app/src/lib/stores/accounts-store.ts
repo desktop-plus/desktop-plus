@@ -66,6 +66,14 @@ function isKeyChainError(e: any) {
   )
 }
 
+function isMissingSecretServiceError(e: unknown) {
+  return (
+    e instanceof Error &&
+    (e.message.includes('org.freedesktop.secrets') ||
+      e.message.includes('The name is not activatable'))
+  )
+}
+
 /** The data-only interface for storage. */
 interface IAccount {
   readonly token: string
@@ -269,6 +277,12 @@ export class AccountsStore extends TypedBaseStore<ReadonlyArray<Account>> {
         this.emitError(
           new Error(
             `Desktop Plus was unable to store the account token in the keychain. Please check you have unlocked access to the 'login' keychain.`
+          )
+        )
+      } else if (__LINUX__ && isMissingSecretServiceError(e)) {
+        this.emitError(
+          new Error(
+            `Desktop Plus was unable to store the account token because no keyring service is running. Please install and start a Secret Service provider (such as gnome-keyring) and try again.`
           )
         )
       } else {
