@@ -127,10 +127,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, windows-2022, ubuntu-latest]
+        os: [macos-15, windows-2022, ubuntu-latest]
         arch: [x64, arm64]
         include:
-          - os: macos-14
+          - os: macos-15
             friendlyName: macOS
           - os: windows-2022
             friendlyName: Windows
@@ -279,7 +279,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
+          - os: macos-15
             friendlyName: macOS
             arch: arm64
           - os: windows-2022
