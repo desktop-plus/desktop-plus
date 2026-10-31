@@ -395,7 +395,7 @@ export class Tooltip<T extends TooltipTarget> extends React.Component<
 
     const { ancestorFocused } = this.props
     if (ancestorFocused === true) {
-      if (!this.isFocusAllowedToShow(document.activeElement)) {
+      if (!this.isFocusAllowedToShow()) {
         return
       }
       this.beginShowTooltip()
@@ -405,6 +405,15 @@ export class Tooltip<T extends TooltipTarget> extends React.Component<
   }
 
   private onKeyDown = (event: KeyboardEvent) => {
+    if (this.isFocusToggleKey(event)) {
+      if (this.state.show) {
+        this.hideTooltip()
+      } else {
+        this.showTooltip()
+      }
+      return
+    }
+
     if (
       event.key === 'Escape' &&
       this.state.show &&
@@ -498,12 +507,21 @@ export class Tooltip<T extends TooltipTarget> extends React.Component<
     }
   }
 
-  private isFocusAllowedToShow(focused: EventTarget | null) {
-    if (this.props.hoverTargetSelector === undefined) {
-      return true
-    }
+  private isFocusAllowedToShow() {
+    return this.props.hoverTargetSelector === undefined
+  }
 
-    return focused instanceof Element && focused.matches(':focus-visible')
+  private isFocusToggleKey(event: KeyboardEvent) {
+    return (
+      this.props.hoverTargetSelector !== undefined &&
+      event.key === ' ' &&
+      !event.repeat &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      event.target === this.state.target
+    )
   }
 
   private onTargetMouseDown = (event: MouseEvent) => {
@@ -513,6 +531,10 @@ export class Tooltip<T extends TooltipTarget> extends React.Component<
   }
 
   private onTargetFocus = (event: FocusEvent) => {
+    if (!this.isFocusAllowedToShow()) {
+      return
+    }
+
     // We only want to show the tooltip if the target was focused as a result of
     // keyboard navigation, see
     // https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible
@@ -540,7 +562,7 @@ export class Tooltip<T extends TooltipTarget> extends React.Component<
    * focus does not.
    */
   private onTargetFocusIn = (event: FocusEvent) => {
-    if (!this.isFocusAllowedToShow(event.target)) {
+    if (!this.isFocusAllowedToShow()) {
       return
     }
 
