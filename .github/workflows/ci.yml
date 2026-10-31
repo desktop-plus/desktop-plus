@@ -567,7 +567,9 @@ jobs:
     name: Create GitHub release
     needs: [build, compute_version]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: |
+      startsWith(github.ref, 'refs/tags/') &&
+      (vars.SKIP_RELEASE != 'true')
     permissions:
       contents: write
     env:
