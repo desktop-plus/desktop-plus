@@ -206,7 +206,8 @@ export class Advanced extends React.Component<
         <div className="settings-description mb">
           <p>
             When the window is closed, the app will continue running in the
-            background. Use {this.quitKeyCombination()} to completely quit the app.
+            background. Use {this.quitKeyCombination()} to completely quit the
+            app.
           </p>
         </div>
         {__WIN32__ && this.renderAutoInstallUpdates()}
@@ -241,8 +242,8 @@ export class Advanced extends React.Component<
         >
           <p>
             Updates are downloaded in the background and installed the next time
-            the app restarts. You can check for updates manually from the
-            About dialog.
+            the app restarts. You can check for updates manually from the About
+            dialog.
           </p>
         </div>
       </>
