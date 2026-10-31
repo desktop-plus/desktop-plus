@@ -1,5 +1,6 @@
 import * as React from 'react'
 import * as Path from 'path'
+import memoizeOne from 'memoize-one'
 
 import { Repository } from '../../models/repository'
 import { CommittedFileChange } from '../../models/status'
@@ -47,6 +48,7 @@ import {
   DiffPresentationStateComponent,
   IDiffPresentationState,
 } from '../diff/diff-presentation-state'
+import { ChangedFilesHeader } from './changed-files-header'
 
 interface ISelectedCommitsProps {
   readonly repository: Repository
@@ -114,6 +116,7 @@ interface ISelectedCommitsProps {
 interface ISelectedCommitsState extends IDiffPresentationState {
   readonly isExpanded: boolean
   readonly selectedFiles: ReadonlyArray<CommittedFileChange>
+  readonly fileFilterText: string
 }
 
 /** The History component. Contains the commit list, commit summary, and diff. */
@@ -123,12 +126,22 @@ export class SelectedCommits extends DiffPresentationStateComponent<
 > {
   private readonly loadChangedFilesScheduler = new ThrottledScheduler(200)
 
+  private readonly getFilteredFiles = memoizeOne(
+    (files: ReadonlyArray<CommittedFileChange>, filterText: string) => {
+      const query = filterText.trim().toLowerCase()
+      return query === ''
+        ? files
+        : files.filter(f => f.path.toLowerCase().includes(query))
+    }
+  )
+
   public constructor(props: ISelectedCommitsProps) {
     super(props)
 
     this.state = {
       isExpanded: false,
       selectedFiles: [],
+      fileFilterText: '',
       ...this.createDiffPresentationState(),
     }
   }
@@ -142,8 +155,19 @@ export class SelectedCommits extends DiffPresentationStateComponent<
     }
   }
 
+  private get filteredFiles() {
+    return this.getFilteredFiles(
+      this.props.changesetData.files,
+      this.state.fileFilterText
+    )
+  }
+
+  private onFileFilterTextChanged = (fileFilterText: string) => {
+    this.setState({ fileFilterText })
+  }
+
   private onRowDoubleClick = (row: number) => {
-    const files = this.props.changesetData.files
+    const files = this.filteredFiles
     const file = files[row]
 
     this.props.onOpenInExternalEditor(file.path)
@@ -160,6 +184,9 @@ export class SelectedCommits extends DiffPresentationStateComponent<
       }
       if (this.state.selectedFiles.length > 0) {
         this.setState({ selectedFiles: [] })
+      }
+      if (this.state.fileFilterText !== '') {
+        this.setState({ fileFilterText: '' })
       }
     }
   }
@@ -320,11 +347,16 @@ export class SelectedCommits extends DiffPresentationStateComponent<
     // -1 for right hand side border
     const availableWidth = clamp(this.props.commitSummaryWidth) - 1
 
+    const filteredFiles = this.filteredFiles
+
     return (
       <>
         {this.renderFileHeader()}
+        {filteredFiles.length === 0 && (
+          <div className="file-list-no-results">No matching files</div>
+        )}
         <FileList
-          files={files}
+          files={filteredFiles}
           onSelectionChanged={this.onFileSelectionChanged}
           selectedFiles={this.state.selectedFiles}
           availableWidth={availableWidth}
@@ -338,12 +370,12 @@ export class SelectedCommits extends DiffPresentationStateComponent<
   }
 
   private renderFileHeader() {
-    const fileCount = this.props.changesetData.files.length
-    const filesPlural = fileCount === 1 ? 'file' : 'files'
     return (
-      <div className="file-list-header">
-        {fileCount} changed {filesPlural}
-      </div>
+      <ChangedFilesHeader
+        fileCount={this.props.changesetData.files.length}
+        filterText={this.state.fileFilterText}
+        onFilterTextChanged={this.onFileFilterTextChanged}
+      />
     )
   }
 
@@ -468,7 +500,10 @@ export class SelectedCommits extends DiffPresentationStateComponent<
       ? `Open in ${externalEditorLabel}`
       : DefaultEditorLabel
 
-    const { selectedFiles } = this.state
+    const visibleFiles = this.filteredFiles
+    const selectedFiles = this.state.selectedFiles.filter(sf =>
+      visibleFiles.some(f => f.path === sf.path)
+    )
     const isMultiSelect =
       selectedFiles.length > 1 && selectedFiles.some(f => f.path === file.path)
     const filesToCopy = isMultiSelect ? selectedFiles : [file]

@@ -22,5 +22,66 @@
     flex: 0 0 auto;
     padding: 0 var(--spacing);
     text-align: center;
+    position: relative;
+
+    .file-list-header-label {
+      display: block;
+      // Keep the label centred while leaving room for the filter button
+      padding: 0 var(--spacing-double);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-list-filter-button {
+      position: absolute;
+      top: 50%;
+      right: var(--spacing-half);
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 0;
+      border-radius: var(--border-radius);
+      background: transparent;
+      color: var(--text-secondary-color);
+      opacity: 0.5;
+
+      &:hover {
+        background: var(--box-selected-background-color);
+        color: var(--text-color);
+      }
+
+      &:focus-visible {
+        opacity: 1;
+      }
+    }
+
+    &:hover .file-list-filter-button {
+      opacity: 1;
+    }
+
+    &.searching {
+      display: flex;
+      align-items: center;
+      padding: 0 var(--spacing-half);
+      line-height: normal;
+      text-align: left;
+    }
+
+    .file-list-filter input {
+      width: 100%;
+    }
+  }
+
+  .file-list-no-results {
+    flex: 0 0 auto;
+    padding: var(--spacing);
+    border-right: var(--base-border);
+    color: var(--text-secondary-color);
+    text-align: center;
   }
 }
