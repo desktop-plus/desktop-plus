@@ -2,6 +2,13 @@ import assert from 'node:assert'
 import { after, before, describe, it, mock } from 'node:test'
 import type { AppStore } from '../../../src/lib/stores/app-store'
 import type { TestStatsDatabase } from '../../helpers/databases/test-stats-database'
+import {
+  AppFileStatusKind,
+  WorkingDirectoryFileChange,
+  WorkingDirectoryStatus,
+} from '../../../src/models/status'
+import { DiffSelection, DiffSelectionType } from '../../../src/models/diff'
+import type { WorktreeEntry } from '../../../src/models/worktree'
 
 describe('AppStore repository indicators', () => {
   let appStore: AppStore
@@ -9,6 +16,8 @@ describe('AppStore repository indicators', () => {
   // Loaded after mocking because Repository transitively imports main-process-proxy
   let Repository: typeof import('../../../src/models/repository').Repository
   let CloningRepository: typeof import('../../../src/models/cloning-repository').CloningRepository
+  let RepositorySectionTab: typeof import('../../../src/lib/app-state').RepositorySectionTab
+  let createStatus: typeof import('../../helpers/changes-state-helper').createStatus
 
   after(() => {
     statsDb?.close()
@@ -27,6 +36,8 @@ describe('AppStore repository indicators', () => {
     ;({ CloningRepository } = await import(
       '../../../src/models/cloning-repository'
     ))
+    ;({ RepositorySectionTab } = await import('../../../src/lib/app-state'))
+    ;({ createStatus } = await import('../../helpers/changes-state-helper'))
     const { AppStore } = await import('../../../src/lib/stores/app-store')
     const { AliveStore } = await import('../../../src/lib/stores/alive-store')
     const { CopilotStore } = await import(
@@ -135,6 +146,166 @@ describe('AppStore repository indicators', () => {
 
     assert.deepStrictEqual(result, repositories)
     assert.notStrictEqual(result, repositories)
+  })
+
+  it('keeps the changes view and repository indicator in sync when switching to Changes', async t => {
+    const repository = new Repository('/repositories/changed', 3, null, false)
+    const gitStore = appStore['gitStoreCache'].get(repository)
+    const cache = appStore['repositoryStateCache']
+    appStore['selectedRepository'] = repository
+    const file = new WorkingDirectoryFileChange(
+      'changed.txt',
+      { kind: AppFileStatusKind.Modified },
+      DiffSelection.fromInitialSelection(DiffSelectionType.All)
+    )
+    const status = createStatus({
+      branchAheadBehind: { ahead: 2, behind: 1 },
+      workingDirectory: WorkingDirectoryStatus.fromFiles([file]),
+    })
+    const updateDiff = appStore['updateChangesWorkingDirectoryDiff']
+    const emitUpdate = appStore['emitUpdate']
+    appStore['updateChangesWorkingDirectoryDiff'] = async () => {}
+    const emittedCounts: Array<number | undefined> = []
+    appStore['emitUpdate'] = () => {
+      emittedCounts.push(
+        appStore['localRepositoryStateLookup'].get(repository.id)
+          ?.changedFilesCount
+      )
+    }
+    t.after(() => {
+      appStore['updateChangesWorkingDirectoryDiff'] = updateDiff
+      appStore['emitUpdate'] = emitUpdate
+    })
+    t.mock.method(gitStore, 'loadLocalCommits', async () => {})
+    const loadStatus = t.mock.method(gitStore, 'loadStatus', async () => status)
+
+    cache.update(repository, () => ({
+      selectedSection: RepositorySectionTab.History,
+    }))
+    await appStore._changeRepositorySection(
+      repository,
+      RepositorySectionTab.Changes
+    )
+
+    assert.strictEqual(
+      cache.get(repository).changesState.workingDirectory.files.length,
+      1
+    )
+    assert.deepStrictEqual(
+      appStore['localRepositoryStateLookup'].get(repository.id),
+      {
+        changedFilesCount: 1,
+        aheadBehind: { ahead: 2, behind: 1 },
+        branchName: null,
+        defaultBranchName: null,
+        worktrees: [],
+      }
+    )
+    assert.strictEqual(emittedCounts.at(-1), 1)
+
+    loadStatus.mock.mockImplementation(async () => createStatus({}))
+    await appStore._changeRepositorySection(
+      repository,
+      RepositorySectionTab.Changes
+    )
+
+    assert.strictEqual(
+      cache.get(repository).changesState.workingDirectory.files.length,
+      0
+    )
+    assert.deepStrictEqual(
+      appStore['localRepositoryStateLookup'].get(repository.id),
+      {
+        changedFilesCount: 0,
+        aheadBehind: null,
+        branchName: null,
+        defaultBranchName: null,
+        worktrees: [],
+      }
+    )
+    assert.strictEqual(emittedCounts.at(-1), 0)
+  })
+
+  it('clears and publishes the indicator when loading status fails', async t => {
+    const repository = new Repository(
+      '/repositories/unavailable',
+      4,
+      null,
+      false
+    )
+    const gitStore = appStore['gitStoreCache'].get(repository)
+    appStore['localRepositoryStateLookup'].set(repository.id, {
+      changedFilesCount: 1,
+      aheadBehind: { ahead: 1, behind: 0 },
+      branchName: 'main',
+      defaultBranchName: 'main',
+      worktrees: [],
+    })
+    t.mock.method(gitStore, 'loadStatus', async () => null)
+    const emitUpdate = appStore['emitUpdate']
+    const emittedPresence: boolean[] = []
+    appStore['emitUpdate'] = () => {
+      emittedPresence.push(
+        appStore['localRepositoryStateLookup'].has(repository.id)
+      )
+    }
+    t.after(() => {
+      appStore['emitUpdate'] = emitUpdate
+    })
+
+    assert.strictEqual(await appStore._loadStatus(repository), null)
+    assert.strictEqual(
+      appStore['localRepositoryStateLookup'].has(repository.id),
+      false
+    )
+    assert.deepStrictEqual(emittedPresence, [false])
+  })
+
+  it('keeps the repository list worktrees when loading status', async t => {
+    const repository = new Repository('/repositories/worktrees', 5, null, false)
+    const gitStore = appStore['gitStoreCache'].get(repository)
+    const worktrees: ReadonlyArray<WorktreeEntry> = [
+      {
+        path: '/repositories/worktrees-linked',
+        head: 'abc123',
+        branch: 'refs/heads/feature',
+        isDetached: false,
+        type: 'linked',
+        isLocked: false,
+        isPrunable: false,
+      },
+    ]
+    appStore['localRepositoryStateLookup'].set(repository.id, {
+      changedFilesCount: 0,
+      aheadBehind: null,
+      branchName: null,
+      defaultBranchName: null,
+      worktrees,
+    })
+    const updateDiff = appStore['updateChangesWorkingDirectoryDiff']
+    const emitUpdate = appStore['emitUpdate']
+    appStore['updateChangesWorkingDirectoryDiff'] = async () => {}
+    appStore['emitUpdate'] = () => {}
+    t.after(() => {
+      appStore['updateChangesWorkingDirectoryDiff'] = updateDiff
+      appStore['emitUpdate'] = emitUpdate
+    })
+    t.mock.method(gitStore, 'loadStatus', async () => createStatus({}))
+
+    await appStore._loadStatus(repository)
+
+    assert.strictEqual(
+      appStore['localRepositoryStateLookup'].get(repository.id)?.worktrees,
+      worktrees
+    )
+
+    appStore['showWorktreesInRepoList'] = true
+    appStore._setShowWorktreesInRepoList(false)
+
+    assert.deepStrictEqual(
+      appStore['localRepositoryStateLookup'].get(repository.id)?.worktrees,
+      []
+    )
   })
 
   it('keeps local repositories when a cloning repository is selected', () => {

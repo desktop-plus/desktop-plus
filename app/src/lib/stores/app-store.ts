@@ -3702,8 +3702,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
   ): Promise<IStatusResult | null> {
     const gitStore = this.gitStoreCache.get(repository)
     const status = await gitStore.loadStatus()
+    this.updateSidebarIndicator(repository, status)
 
     if (status === null) {
+      this.emitUpdate()
       return null
     }
 
@@ -4850,7 +4852,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
     // is in a bad state - let's mark it as missing here and give up on the
     // further work
     const status = await this._loadStatus(repository)
-    await this.updateSidebarIndicator(repository, status)
 
     if (status === null) {
       await this._updateRepositoryMissing(repository, true)
@@ -4946,10 +4947,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
   /**
    * Update the repository sidebar indicator for the repository
    */
-  private async updateSidebarIndicator(
+  private updateSidebarIndicator(
     repository: Repository,
     status: IStatusResult | null
-  ): Promise<void> {
+  ): void {
     const lookup = this.localRepositoryStateLookup
 
     if (repository.missing) {
@@ -4967,8 +4968,22 @@ export class AppStore extends TypedBaseStore<IAppState> {
       changedFilesCount: status.workingDirectory.files.length,
       branchName: status.currentBranch || null,
       defaultBranchName: repository.defaultBranch,
-      worktrees: await this.loadWorktreesForRepoList(repository),
+      // Loaded separately to avoid listing worktrees on every status load
+      worktrees: lookup.get(repository.id)?.worktrees ?? [],
     })
+  }
+
+  private async refreshWorktreesForRepoList(
+    repository: Repository
+  ): Promise<void> {
+    const worktrees = await this.loadWorktreesForRepoList(repository)
+    const existing = this.localRepositoryStateLookup.get(repository.id)
+    if (existing) {
+      this.localRepositoryStateLookup.set(repository.id, {
+        ...existing,
+        worktrees,
+      })
+    }
   }
 
   private async loadWorktreesForRepoList(
@@ -5012,7 +5027,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return
     }
 
-    await this.updateSidebarIndicator(repository, status)
+    this.updateSidebarIndicator(repository, status)
+    await this.refreshWorktreesForRepoList(repository)
     this.emitUpdate()
 
     if (offline) {
@@ -5123,6 +5139,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
     setBoolean(showWorktreesInRepoListKey, showWorktreesInRepoList)
     this.showWorktreesInRepoList = showWorktreesInRepoList
+
+    if (!showWorktreesInRepoList) {
+      // Status loads keep the existing worktrees, so they must be cleared here
+      for (const [id, state] of this.localRepositoryStateLookup) {
+        this.localRepositoryStateLookup.set(id, { ...state, worktrees: [] })
+      }
+    }
+
     this.emitUpdate()
 
     if (showWorktreesInRepoList) {
