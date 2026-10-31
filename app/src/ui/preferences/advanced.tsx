@@ -12,11 +12,13 @@ interface IAdvancedPreferencesProps {
   readonly useExternalCredentialHelper: boolean
   readonly repositoryIndicatorsEnabled: boolean
   readonly hideWindowOnQuit: boolean
+  readonly autoInstallUpdates: boolean
   readonly onUseWindowsOpenSSHChanged: (checked: boolean) => void
   readonly onOptOutofReportingChanged: (checked: boolean) => void
   readonly onUseExternalCredentialHelperChanged: (checked: boolean) => void
   readonly onRepositoryIndicatorsEnabledChanged: (enabled: boolean) => void
   readonly onHideWindowOnQuitChanged: (enabled: boolean) => void
+  readonly onAutoInstallUpdatesChanged: (enabled: boolean) => void
 }
 
 interface IAdvancedPreferencesState {
@@ -81,6 +83,12 @@ export class Advanced extends React.Component<
     event: React.FormEvent<HTMLInputElement>
   ) => {
     this.props.onHideWindowOnQuitChanged(event.currentTarget.checked)
+  }
+
+  private onAutoInstallUpdatesChanged = (
+    event: React.FormEvent<HTMLInputElement>
+  ) => {
+    this.props.onAutoInstallUpdatesChanged(event.currentTarget.checked)
   }
 
   private reportDesktopUsageLabel() {
@@ -201,7 +209,33 @@ export class Advanced extends React.Component<
             background. Use Ctrl+Q to completely quit the app.
           </p>
         </div>
+        {__WIN32__ && this.renderAutoInstallUpdates()}
       </div>
+    )
+  }
+
+  private renderAutoInstallUpdates() {
+    return (
+      <>
+        <Checkbox
+          label="Automatically download and install updates"
+          value={
+            this.props.autoInstallUpdates ? CheckboxValue.On : CheckboxValue.Off
+          }
+          onChange={this.onAutoInstallUpdatesChanged}
+          ariaDescribedBy="auto-install-updates-description"
+        />
+        <div
+          id="auto-install-updates-description"
+          className="git-settings-description"
+        >
+          <p>
+            Updates are downloaded in the background and installed the next time
+            the app restarts. You can still check for updates manually from the
+            About dialog.
+          </p>
+        </div>
+      </>
     )
   }
 }

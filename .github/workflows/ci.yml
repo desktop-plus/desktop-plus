@@ -260,6 +260,7 @@ jobs:
             dist/*.exe
             dist/*.msi
             dist/*.nupkg
+            dist/RELEASES
             dist/*.AppImage
             dist/*.AppImage.zsync
             dist/*.deb
@@ -608,6 +609,7 @@ jobs:
             artifacts/**/DesktopPlus-*.rpm
             artifacts/**/DesktopPlus-*.exe
             artifacts/**/DesktopPlus-*.msi
+            artifacts/**/DesktopPlus-*-full.nupkg
             artifacts/**/DesktopPlus-*.zip
           draft: false
           fail_on_unmatched_files: true
@@ -755,6 +757,69 @@ jobs:
           commit_message:
             'Update AUR package to version v${{ env.APP_VERSION }}'
           ssh_keyscan_types: rsa,ecdsa,ed25519
+
+  release_update_feed:
+    name: Publish Windows update feed
+    needs: [release_github, compute_version]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+    env:
+      APP_VERSION: ${{ needs.compute_version.outputs.APP_VERSION }}
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: './artifacts'
+          pattern: 'Windows-*'
+
+      - name: Validate RELEASES files
+        run: |
+          for arch in x64 arm64; do
+            releases="artifacts/Windows-$arch/RELEASES"
+            cat "$releases"
+            prefix="https://github.com/desktop-plus/desktop-plus/releases/download/v${APP_VERSION}/DesktopPlus-$arch-"
+            if [[ $(grep -c -- '-full\.nupkg' "$releases") -ne 1 ]]; then
+              echo "::error::$releases must list exactly one full package"
+              exit 1
+            fi
+            if ! grep -qF " $prefix" "$releases"; then
+              echo "::error::$releases doesn't point at the $arch package of v${APP_VERSION}"
+              exit 1
+            fi
+          done
+
+      - name: Install s3cmd
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y s3cmd
+
+      - name: Configure s3cmd for Cloudflare R2
+        run: |
+          cat > ~/.s3cfg <<EOF
+          [default]
+          access_key = ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret_key = ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          host_base = ${{ secrets.R2_ENDPOINT }}
+          host_bucket = ${{ secrets.R2_ENDPOINT }}
+          use_https = True
+          signature_v2 = False
+          EOF
+
+      - name: Upload RELEASES files to Cloudflare R2
+        run: |
+          if [[ -z "${{ secrets.R2_BUCKET_UPDATES }}" ]]; then
+            echo "::error::The R2_BUCKET_UPDATES secret is not set"
+            exit 1
+          fi
+          for arch in x64 arm64; do
+            s3cmd put \
+              --mime-type="text/plain" \
+              --add-header="Cache-Control: max-age=300" \
+              "artifacts/Windows-$arch/RELEASES" \
+              "s3://${{ secrets.R2_BUCKET_UPDATES }}/win/$arch/RELEASES"
+          done
 
   release_rpm:
     name: Publish RPM package

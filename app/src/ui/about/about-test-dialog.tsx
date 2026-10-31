@@ -41,6 +41,15 @@ export class AboutTestDialog extends React.Component<
     }
   }
 
+  private delay = (ms: number) => {
+    return new Promise(resolve => {
+      if (this.delayTimeoutId !== null) {
+        clearTimeout(this.delayTimeoutId)
+      }
+      this.delayTimeoutId = window.setTimeout(resolve, ms)
+    })
+  }
+
   public render() {
     const version = __DEV__ ? __SHA__.substring(0, 10) : getVersion()
 
@@ -51,12 +60,35 @@ export class AboutTestDialog extends React.Component<
         applicationName={getName()}
         applicationVersion={version}
         applicationArchitecture={process.arch}
+        onCheckForNonStaggeredUpdates={this.onCheckForNonStaggeredUpdates}
         onShowAcknowledgements={this.props.onShowAcknowledgements}
         onShowTermsAndConditions={this.props.onShowTermsAndConditions}
         updateState={this.state.updateState}
+        onQuitAndInstall={this.props.onDismissed}
         allowDevelopment={true}
       />
     )
+  }
+
+  private setUpdateState(updateState: Partial<IUpdateState>) {
+    this.setState({
+      updateState: {
+        ...this.state.updateState,
+        ...updateState,
+      },
+    })
+  }
+
+  private onCheckForNonStaggeredUpdates = async () => {
+    this.setUpdateState({ status: UpdateStatus.CheckingForUpdates })
+    await this.delay(5000)
+    this.setUpdateState({ status: UpdateStatus.UpdateAvailable })
+    await this.delay(10000)
+
+    this.setUpdateState({
+      status: UpdateStatus.UpdateReady,
+      lastSuccessfulCheck: new Date(),
+    })
   }
 
   public componentWillUnmount(): void {

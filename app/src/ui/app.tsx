@@ -12,6 +12,7 @@ import {
 } from '../lib/app-state'
 import { Dispatcher } from './dispatcher'
 import { AppStore, GitHubUserStore, IssuesStore } from '../lib/stores'
+import { getAutoInstallUpdates } from '../lib/auto-install-updates'
 import { DisabledCopilotModel } from '../lib/stores/copilot-store'
 import { assertNever } from '../lib/fatal-error'
 import { shell } from '../lib/app-shell'
@@ -21,7 +22,12 @@ import { FetchType } from '../models/fetch'
 import { shouldRenderApplicationMenu } from './lib/features'
 import { matchExistingRepository } from '../lib/repository-matching'
 import { getVersion, getName } from './lib/app-proxy'
-import { getOS, isOSNoLongerSupportedByElectron } from '../lib/get-os'
+import {
+  getOS,
+  isOSNoLongerSupportedByElectron,
+  isMacOSAndNoLongerSupportedByElectron,
+  isWindowsAndNoLongerSupportedByElectron,
+} from '../lib/get-os'
 import { MenuEvent, isTestMenuEvent } from '../main-process/menu'
 import {
   Repository,
@@ -703,7 +709,34 @@ export class App extends React.Component<IAppProps, IAppState> {
     inBackground: boolean,
     skipGuidCheck: boolean = false
   ) {
-    // Disable autoupdates so that the app doesn't revert to the desktop/desktop upstream whenever there is an update.
+    if (__LINUX__ || __RELEASE_CHANNEL__ === 'development') {
+      return
+    }
+
+    // macOS builds are ad-hoc signed, so Squirrel.Mac can't apply updates
+    if (!__WIN32__) {
+      return
+    }
+
+    if (inBackground && !getAutoInstallUpdates()) {
+      return
+    }
+
+    if (isWindowsAndNoLongerSupportedByElectron()) {
+      log.error(
+        `Can't check for updates on Windows 8.1 or older. Next available update only supports Windows 10 and later`
+      )
+      return
+    }
+
+    if (isMacOSAndNoLongerSupportedByElectron()) {
+      log.error(
+        `Can't check for updates on macOS 12 or older. Next available update only supports macOS 13 and later`
+      )
+      return
+    }
+
+    updateStore.checkForUpdates(inBackground, skipGuidCheck)
   }
 
   private async updateBranchWithContributionTargetBranch() {
@@ -2009,6 +2042,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             }
             repositoryIndicatorsEnabled={this.state.repositoryIndicatorsEnabled}
             hideWindowOnQuit={this.state.hideWindowOnQuit}
+            autoInstallUpdates={getAutoInstallUpdates()}
             onEditGlobalGitConfig={this.editGlobalGitConfig}
             underlineLinks={this.state.underlineLinks}
             showDiffCheckMarks={this.state.showDiffCheckMarks}
@@ -2220,9 +2254,11 @@ export class App extends React.Component<IAppProps, IAppState> {
             applicationName={getName()}
             applicationVersion={version}
             applicationArchitecture={process.arch}
+            onCheckForNonStaggeredUpdates={this.onCheckForNonStaggeredUpdates}
             onShowAcknowledgements={this.showAcknowledgements}
             onShowTermsAndConditions={this.showTermsAndConditions}
             updateState={this.state.updateState}
+            onQuitAndInstall={this.onQuitAndInstall}
           />
         )
       case PopupType.PublishRepository:
@@ -3629,6 +3665,9 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.openShell(path, true)
   }
 
+  private onCheckForNonStaggeredUpdates = () =>
+    this.checkForUpdates(false, true)
+
   private onSaveCopilotBYOKProvider = (
     provider: IBYOKProvider,
     secret: string | null | undefined
@@ -3651,6 +3690,8 @@ export class App extends React.Component<IAppProps, IAppState> {
   private showTermsAndConditions = () => {
     this.props.dispatcher.showPopup({ type: PopupType.TermsAndConditions })
   }
+
+  private onQuitAndInstall = () => updateStore.quitAndInstallUpdate()
 
   private renderPopups() {
     const popupContent = this.allPopupContent()

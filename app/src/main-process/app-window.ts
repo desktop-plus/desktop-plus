@@ -134,8 +134,11 @@ export class AppWindow {
       // On macOS, closing the window doesn't mean the app is quitting. If the
       // app is updating, we will prevent the window from closing only when the
       // app is also quitting.
+      // Closing a window other than the last one doesn't quit the app, so it
+      // can't interrupt the update.
       if (
         !hideInsteadOfClose &&
+        BrowserWindow.getAllWindows().length === 1 &&
         !this.quittingEvenIfUpdating &&
         this.isDownloadingUpdate
       ) {

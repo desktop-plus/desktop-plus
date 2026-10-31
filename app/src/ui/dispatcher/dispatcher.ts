@@ -3468,6 +3468,10 @@ export class Dispatcher {
     this.appStore._setHideWindowOnQuit(hideWindowOnQuit)
   }
 
+  public setAutoInstallUpdates(autoInstallUpdates: boolean) {
+    this.appStore._setAutoInstallUpdates(autoInstallUpdates)
+  }
+
   public setCommitSpellcheckEnabled(commitSpellcheckEnabled: boolean) {
     this.appStore._setCommitSpellcheckEnabled(commitSpellcheckEnabled)
   }

@@ -17,7 +17,7 @@ import { ErrorWithMetadata } from '../../lib/error-with-metadata'
 import { parseError } from '../../lib/squirrel-error-parser'
 
 import { ReleaseSummary } from '../../models/release-notes'
-import { generateReleaseSummary } from '../../lib/release-notes'
+import { generateReleaseSummary } from './releases'
 import { setNumber, getNumber } from '../../lib/local-storage'
 import { enableUpdateFromEmulatedX64ToARM64 } from '../../lib/feature-flag'
 import { offsetFromNow } from '../../lib/offset-from'

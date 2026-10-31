@@ -2,6 +2,7 @@ import * as Path from 'path'
 import * as Fs from 'fs'
 
 import { getProductName, getVersion } from '../app/package-info'
+import { getSemverCompatibleVersion } from '../app/package-info'
 import { join } from 'path'
 
 const productName = getProductName()
@@ -94,6 +95,15 @@ export function getWindowsDeltaNugetPackagePath() {
   )
 }
 
+/**
+ * Name under which a Windows nupkg is published in the GitHub release. It must
+ * end in `<semver>-<kind>.nupkg` so that Squirrel.Windows can parse its version
+ * from the update feed, so the architecture goes before the version.
+ */
+export function getWindowsReleaseNugetPackageName(arch: string, kind: string) {
+  return `${getWindowsIdentifierName()}-${arch}-${getSemverCompatibleVersion()}-${kind}.nupkg`
+}
+
 export function getWindowsIdentifierName() {
   return 'DesktopPlus'
 }
@@ -141,8 +151,12 @@ export function getArchitectureForFileName(): 'arm64' | 'x86_64' {
 }
 
 export function getUpdatesURL() {
-  // Disable auto-updates so that the app doesn't revert to the desktop/desktop upstream whenever there is an update
-  return ''
+  // Only Windows auto-updates, from the Desktop Plus feed (never upstream's).
+  // macOS builds are ad-hoc signed, so Squirrel.Mac can't apply updates.
+  if (process.platform !== 'win32') {
+    return ''
+  }
+  return `https://updates.desktop-plus.org/win/${getDistArchitecture()}/`
 }
 
 export function shouldMakeDelta() {

@@ -346,6 +346,7 @@ import {
   setObject,
   getFloatNumber,
 } from '../local-storage'
+import { setAutoInstallUpdates } from '../auto-install-updates'
 import { ExternalEditorError, suggestedExternalEditor } from '../editors/shared'
 import {
   CopilotAppError,
@@ -10773,6 +10774,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.hideWindowOnQuit = hideWindowOnQuit
     this.emitUpdate()
     return updateMainProcessConfig({ hideWindowOnQuit })
+  }
+
+  public _setAutoInstallUpdates(autoInstallUpdates: boolean) {
+    setAutoInstallUpdates(autoInstallUpdates)
   }
 
   public async _resolveCurrentEditor() {

@@ -2,7 +2,7 @@
 
 import * as cp from 'child_process'
 import { createReadStream } from 'fs'
-import { writeFile, chmod } from 'fs/promises'
+import { writeFile, chmod, readFile } from 'fs/promises'
 import * as path from 'path'
 import * as electronInstaller from 'electron-winstaller'
 import * as crypto from 'crypto'
@@ -25,7 +25,9 @@ import {
   getDistRoot,
   getDistArchitecture,
   getIconDirectory,
+  getWindowsReleaseNugetPackageName,
 } from './dist-info'
+import { rewriteWindowsReleasesFile } from './windows-releases'
 import { isGitHubActions } from './build-platforms'
 import { existsSync, rmSync, writeFileSync } from 'fs'
 import { getVersion } from '../app/package-info'
@@ -160,20 +162,27 @@ function packageWindows() {
       // the architecture similar to how the setup exe and msi do so we'll just
       // have to rename them here after the fact.
       const arch = getDistArchitecture()
+      const releasesFileNames = new Map<string, string>()
 
       for (const kind of shouldMakeDelta() ? ['full', 'delta'] : ['full']) {
-        const from = join(
-          outputDir,
-          `${getWindowsIdentifierName()}-${getSemverCompatibleVersion()}-${kind}.nupkg`
-        )
-        const to = join(
-          outputDir,
-          `${getWindowsIdentifierName()}-v${getVersion()}-${arch}-${kind}.nupkg`
-        )
+        const fromName = `${getWindowsIdentifierName()}-${getSemverCompatibleVersion()}-${kind}.nupkg`
+        const toName = getWindowsReleaseNugetPackageName(arch, kind)
+        const from = join(outputDir, fromName)
+        const to = join(outputDir, toName)
 
         console.log(`Renaming ${from} to ${to}`)
         await rename(from, to)
+        releasesFileNames.set(fromName, getGitHubReleaseAssetURL(toName))
       }
+
+      // The update feed only hosts RELEASES, so its entries must point at the
+      // packages attached to the GitHub release.
+      const releasesPath = join(outputDir, 'RELEASES')
+      const releases = await readFile(releasesPath, 'utf8')
+      await writeFile(
+        releasesPath,
+        rewriteWindowsReleasesFile(releases, releasesFileNames)
+      )
     })
     .catch(e => {
       console.error(`Error packaging: ${e}`)
@@ -256,4 +265,9 @@ async function packageLinux() {
     console.error('A problem occurred with the packaging step', err)
     process.exit(1)
   }
+}
+
+/** URL from which a file attached to this version's GitHub release is downloaded. */
+function getGitHubReleaseAssetURL(fileName: string) {
+  return `https://github.com/desktop-plus/desktop-plus/releases/download/v${getVersion()}/${fileName}`
 }

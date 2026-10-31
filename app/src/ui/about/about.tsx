@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import { Row } from '../lib/row'
+import { Button } from '../lib/button'
 import {
   Dialog,
   DialogError,
@@ -20,6 +21,7 @@ import { encodePathAsUrl } from '../../lib/path'
 import { isOSNoLongerSupportedByElectron } from '../../lib/get-os'
 import { AriaLiveContainer } from '../accessibility/aria-live-container'
 import { formatDate } from '../../lib/format-date'
+import { getAutoInstallUpdates } from '../../lib/auto-install-updates'
 
 const logoPath = 'static/logo.png'
 const DesktopLogo = encodePathAsUrl(__dirname, logoPath)
@@ -46,10 +48,14 @@ interface IAboutProps {
    */
   readonly applicationArchitecture: string
 
+  /** A function to call to kick off a non-staggered update check. */
+  readonly onCheckForNonStaggeredUpdates: () => void
+
   readonly onShowAcknowledgements: () => void
 
   /** A function to call when the user wants to see Terms and Conditions. */
   readonly onShowTermsAndConditions: () => void
+  readonly onQuitAndInstall: () => void
 
   readonly updateState: IUpdateState
 
@@ -85,6 +91,10 @@ class UpdateInfo extends React.Component<IUpdateInfoProps> {
  */
 export class About extends React.Component<IAboutProps> {
   private get canCheckForUpdates() {
+    if (!__WIN32__) {
+      return false
+    }
+
     return (
       __RELEASE_CHANNEL__ !== 'development' ||
       this.props.allowDevelopment === true
@@ -92,19 +102,49 @@ export class About extends React.Component<IAboutProps> {
   }
 
   private renderUpdateButton() {
-    return (
-      <Row>
-        <p className="no-padding">
-          <LinkButton uri={DesktopPlusReleaseNotesUri}>
-            Desktop Plus Releases
-          </LinkButton>
-          <span className="separator">|</span>
-          <LinkButton uri={UpstreamReleaseNotesUri}>
-            Upstream Releases
-          </LinkButton>
-        </p>
-      </Row>
-    )
+    if (!this.canCheckForUpdates) {
+      return null
+    }
+
+    const updateStatus = this.props.updateState.status
+
+    switch (updateStatus) {
+      case UpdateStatus.UpdateReady:
+        return (
+          <Row>
+            <Button onClick={this.props.onQuitAndInstall}>
+              Quit and Install Update
+            </Button>
+          </Row>
+        )
+      case UpdateStatus.UpdateNotAvailable:
+      case UpdateStatus.CheckingForUpdates:
+      case UpdateStatus.UpdateAvailable:
+      case UpdateStatus.UpdateNotChecked:
+        const disabled =
+          ![
+            UpdateStatus.UpdateNotChecked,
+            UpdateStatus.UpdateNotAvailable,
+          ].includes(updateStatus) || isOSNoLongerSupportedByElectron()
+
+        const buttonTitle = 'Check for Updates'
+
+        return (
+          <Row>
+            <Button
+              disabled={disabled}
+              onClick={this.props.onCheckForNonStaggeredUpdates}
+            >
+              {buttonTitle}
+            </Button>
+          </Row>
+        )
+      default:
+        return assertNever(
+          updateStatus,
+          `Unknown update status ${updateStatus}`
+        )
+    }
   }
 
   private renderUpdateDetails() {
@@ -115,6 +155,10 @@ export class About extends React.Component<IAboutProps> {
           download the latest version.
         </p>
       )
+    }
+
+    if (__DARWIN__) {
+      return null
     }
 
     if (!this.canCheckForUpdates) {
@@ -188,11 +232,38 @@ export class About extends React.Component<IAboutProps> {
       )
     }
 
+    // Without background checks, there may not have been any check at all
+    if (!getAutoInstallUpdates()) {
+      return null
+    }
+
+    if (!this.props.updateState.lastSuccessfulCheck) {
+      return (
+        <DialogError>
+          Couldn't determine the last time an update check was performed. You
+          may be running an old version. Please try manually checking for
+          updates and contact GitHub Support if the problem persists
+        </DialogError>
+      )
+    }
+
     return null
   }
 
   private renderBetaLink() {
-    return
+    return (
+      <Row>
+        <p className="no-padding">
+          <LinkButton uri={DesktopPlusReleaseNotesUri}>
+            Desktop Plus Releases
+          </LinkButton>
+          <span className="separator">|</span>
+          <LinkButton uri={UpstreamReleaseNotesUri}>
+            Upstream Releases
+          </LinkButton>
+        </p>
+      </Row>
+    )
   }
 
   public render() {

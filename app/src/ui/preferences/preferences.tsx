@@ -143,6 +143,7 @@ interface IPreferencesProps {
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
   readonly branchSortOrder: BranchSortOrder
   readonly hideWindowOnQuit: boolean
+  readonly autoInstallUpdates: boolean
   readonly onEditGlobalGitConfig: () => void
   readonly underlineLinks: boolean
   readonly showDiffCheckMarks: boolean
@@ -211,6 +212,7 @@ interface IPreferencesState {
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
   readonly branchSortOrder: BranchSortOrder
   readonly hideWindowOnQuit: boolean
+  readonly autoInstallUpdates: boolean
 
   readonly initiallySelectedTheme: ApplicationTheme
   readonly initiallySelectedTabSize: number
@@ -307,6 +309,7 @@ export class Preferences extends React.Component<
       showBranchNameInRepoList: this.props.showBranchNameInRepoList,
       branchSortOrder: this.props.branchSortOrder,
       hideWindowOnQuit: this.props.hideWindowOnQuit,
+      autoInstallUpdates: this.props.autoInstallUpdates,
       initiallySelectedTheme: this.props.selectedTheme,
       initiallySelectedTabSize: this.props.selectedTabSize,
       alwaysShowWorktreeList: this.props.alwaysShowWorktreeList,
@@ -902,6 +905,7 @@ export class Preferences extends React.Component<
             useExternalCredentialHelper={this.state.useExternalCredentialHelper}
             repositoryIndicatorsEnabled={this.state.repositoryIndicatorsEnabled}
             hideWindowOnQuit={this.state.hideWindowOnQuit}
+            autoInstallUpdates={this.state.autoInstallUpdates}
             onUseWindowsOpenSSHChanged={this.onUseWindowsOpenSSHChanged}
             onOptOutofReportingChanged={this.onOptOutofReportingChanged}
             onUseExternalCredentialHelperChanged={
@@ -911,6 +915,7 @@ export class Preferences extends React.Component<
               this.onRepositoryIndicatorsEnabledChanged
             }
             onHideWindowOnQuitChanged={this.onHideWindowOnQuitChanged}
+            onAutoInstallUpdatesChanged={this.onAutoInstallUpdatesChanged}
           />
         )
         break
@@ -948,6 +953,10 @@ export class Preferences extends React.Component<
 
   private onHideWindowOnQuitChanged = (hideWindowOnQuit: boolean) => {
     this.setState({ hideWindowOnQuit })
+  }
+
+  private onAutoInstallUpdatesChanged = (autoInstallUpdates: boolean) => {
+    this.setState({ autoInstallUpdates })
   }
 
   private onLockFileDeleted = () => {
@@ -1365,6 +1374,10 @@ export class Preferences extends React.Component<
 
       if (this.state.hideWindowOnQuit !== this.props.hideWindowOnQuit) {
         dispatcher.setHideWindowOnQuit(this.state.hideWindowOnQuit)
+      }
+
+      if (this.state.autoInstallUpdates !== this.props.autoInstallUpdates) {
+        dispatcher.setAutoInstallUpdates(this.state.autoInstallUpdates)
       }
 
       if (this.state.hooksPreferencesDirty) {

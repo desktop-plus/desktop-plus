@@ -40,9 +40,7 @@ This is an **up-to-date** fork of [GitHub Desktop](https://desktop.github.com) w
 winget install DesktopPlus.DesktopPlus
 ```
 
-To update, run `winget upgrade DesktopPlus.DesktopPlus` or `winget upgrade --all` to update all your winget packages. Make sure to update regularly to get the latest features and fixes.
-
-#### Option 2: Manual download (Not recommended)
+#### Option 2: Manual download
 
 Download and execute the installer from the [releases page](https://github.com/desktop-plus/desktop-plus/releases/latest).
 
@@ -51,8 +49,7 @@ Download and execute the installer from the [releases page](https://github.com/d
 | **.EXE Installer** | `-win-x64.exe` | `-win-arm64.exe` |
 | **.MSI Installer ⚠️** | `-win-x64.msi` | `-win-arm64.msi` |
 
-Please note that the app doesn't auto-update like the official GitHub Desktop, so you will need to manually download and install it every time you want to update.  
-For this reason, **I recommend using Winget instead of the manual download**.
+Regardless of how you install it, the app updates itself automatically in the background. You can turn this off in "Options" > "Advanced" > "App" by unchecking "Automatically download and install updates".  
 
 ⚠️ The MSI installer is meant for enterprise deployments and is not recommended for regular users. If you want to use it, keep in mind that you will need to reboot your computer to finish the installation. The MSI installer only registers a hook that will install the app on login.
 
