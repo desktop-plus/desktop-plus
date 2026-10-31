@@ -157,6 +157,10 @@
     margin-top: var(--spacing);
     font-size: var(--font-size-sm);
     color: var(--text-secondary-color);
+
+    &.mb {
+      margin-bottom: var(--spacing);
+    }
   }
 
   .example-link {

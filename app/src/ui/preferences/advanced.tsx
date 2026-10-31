@@ -203,15 +203,25 @@ export class Advanced extends React.Component<
           }
           onChange={this.onHideWindowOnQuitChanged}
         />
-        <div className="git-settings-description">
+        <div className="settings-description mb">
           <p>
             When the window is closed, the app will continue running in the
-            background. Use Ctrl+Q to completely quit the app.
+            background. Use {this.quitKeyCombination()} to completely quit the app.
           </p>
         </div>
         {__WIN32__ && this.renderAutoInstallUpdates()}
       </div>
     )
+  }
+
+  private quitKeyCombination() {
+    if (__DARWIN__) {
+      return 'Cmd+Q'
+    }
+    if (__WIN32__) {
+      return 'Alt+F4'
+    }
+    return 'Ctrl+Q'
   }
 
   private renderAutoInstallUpdates() {
@@ -227,11 +237,11 @@ export class Advanced extends React.Component<
         />
         <div
           id="auto-install-updates-description"
-          className="git-settings-description"
+          className="settings-description"
         >
           <p>
             Updates are downloaded in the background and installed the next time
-            the app restarts. You can still check for updates manually from the
+            the app restarts. You can check for updates manually from the
             About dialog.
           </p>
         </div>
