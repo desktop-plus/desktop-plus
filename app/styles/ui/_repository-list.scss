@@ -447,6 +447,10 @@
         }
 
         .change-indicator-wrapper {
+          .octicon {
+            color: var(--text-color);
+          }
+
           .counter {
             color: var(--tab-bar-active-color);
             background-color: var(--text-color);

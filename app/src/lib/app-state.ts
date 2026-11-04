@@ -353,6 +353,9 @@ export interface IAppState {
   /** Whether to show the worktree dropdown even without linked worktrees. */
   readonly alwaysShowWorktreeList: boolean
 
+  /** Whether to show changed file counts in the repository list */
+  readonly showChangedFileCount: boolean
+
   /** The number of recent repositories to show in the repository list */
   readonly recentRepositoriesCount: number
 
