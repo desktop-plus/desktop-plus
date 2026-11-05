@@ -63,6 +63,10 @@ import { SectionFilterList } from '../lib/section-filter-list'
 import { assertNever } from '../../lib/fatal-error'
 import { IAheadBehind } from '../../models/branch'
 import { ShowBranchNameInRepoListSetting } from '../../models/show-branch-name-in-repo-list'
+import {
+  RepositoryGroupHeaderStyle,
+  RepositoryGroupIndentation,
+} from '../../models/repository-group-appearance'
 import { getEditorOverrideLabel } from '../../models/editor-override'
 import { AriaLiveContainer } from '../accessibility/aria-live-container'
 import classNames from 'classnames'
@@ -126,6 +130,12 @@ interface IRepositoriesListProps {
 
   /** Controls when to show the branch name next to each repository */
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
+
+  /** How far repositories are indented under their group header */
+  readonly repositoryGroupIndentation: RepositoryGroupIndentation
+
+  /** How group headers stand out from the repositories in the list */
+  readonly repositoryGroupHeaderStyle: RepositoryGroupHeaderStyle
 
   /** Whether or not the worktrees dropdown should be shown in the toolbar */
   readonly showWorktrees: boolean
@@ -1321,8 +1331,14 @@ export class RepositoriesList extends React.Component<
           )
     this.lastItemGroupKeys = this.getLastItemGroupKeys(groups)
 
+    const className = classNames(
+      'repository-list',
+      `group-indentation-${this.props.repositoryGroupIndentation}`,
+      `group-header-${this.props.repositoryGroupHeaderStyle}`
+    )
+
     return (
-      <div className="repository-list">
+      <div className={className}>
         <SectionFilterList<IRepositoryListItem, RepositoryListGroup>
           rowHeight={RowHeight}
           selectedItem={selectedItem}

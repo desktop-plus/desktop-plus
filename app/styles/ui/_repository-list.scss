@@ -10,9 +10,23 @@
 }
 
 .repository-list {
+  --repository-group-indentation: 0px;
+
   height: 100%;
   display: flex;
   flex-direction: row;
+
+  &.group-indentation-small {
+    --repository-group-indentation: var(--spacing);
+  }
+
+  &.group-indentation-medium {
+    --repository-group-indentation: var(--spacing-double);
+  }
+
+  &.group-indentation-large {
+    --repository-group-indentation: calc(var(--spacing) * 3);
+  }
 
   /**
    * Inherit the min-width from the ToolbarDropdown so that the repositories
@@ -31,6 +45,7 @@
    */
   .repository-list-item {
     padding: 0 var(--spacing);
+    padding-left: calc(var(--spacing) + var(--repository-group-indentation));
 
     // Layout the icon and repository name horizontally
     display: flex;
@@ -44,7 +59,7 @@
     width: 100%;
 
     &.repository-worktree-item {
-      padding-left: calc(16px + var(--spacing) + var(--spacing-half));
+      padding-left: calc(16px + var(--spacing) + var(--spacing-half) + var(--repository-group-indentation));
     }
 
     .icon-for-repository {
@@ -253,6 +268,59 @@
     // A pull in progress keeps its spinner visible after the pointer leaves
     .pull-group-button.pulling {
       opacity: 1;
+    }
+  }
+
+  &:not(.group-header-default) .repository-group-header .repository-group-disclosure .octicon {
+    color: var(--text-color);
+  }
+
+  &.group-header-emphasized .repository-group-header {
+    font-size: var(--font-size-md);
+
+    .repository-group-disclosure .octicon {
+      width: 14px;
+      height: 14px;
+      margin-right: var(--spacing-third);
+    }
+  }
+
+  &.group-header-shaded,
+  &.group-header-divider,
+  &.group-header-accent {
+    .repository-group-header {
+      align-self: stretch;
+      margin-top: var(--spacing-half);
+      padding-top: 0;
+    }
+  }
+
+  &.group-header-shaded .repository-group-header {
+    margin-left: var(--spacing-half);
+    margin-right: var(--spacing-half);
+    border-radius: var(--border-radius);
+    background-color: color-mix(in srgb, var(--text-color) 8%, transparent);
+  }
+
+  &.group-header-divider .repository-group-header {
+    border-top: var(--base-border);
+  }
+
+  &.group-header-accent .repository-group-header {
+    border-left: 3px solid var(--focus-color);
+    background-color: color-mix(in srgb, var(--focus-color) 10%, transparent);
+  }
+
+  &.group-header-guides .repository-list-item {
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 8px;
+      border-left: var(--base-border);
     }
   }
 

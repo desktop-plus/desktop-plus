@@ -2048,6 +2048,8 @@ export class App extends React.Component<IAppProps, IAppState> {
             showDiffCheckMarks={this.state.showDiffCheckMarks}
             alwaysShowWorktreeList={this.state.alwaysShowWorktreeList}
             showBranchNameInRepoList={this.state.showBranchNameInRepoList}
+            repositoryGroupIndentation={this.state.repositoryGroupIndentation}
+            repositoryGroupHeaderStyle={this.state.repositoryGroupHeaderStyle}
             branchSortOrder={this.state.branchSortOrder}
             copyPathNormalization={this.state.copyPathNormalization}
             selectedCopilotModelsByAccount={
@@ -3823,6 +3825,8 @@ export class App extends React.Component<IAppProps, IAppState> {
         shellLabel={useCustomShell ? undefined : selectedShell}
         dispatcher={this.props.dispatcher}
         showBranchNameInRepoList={this.state.showBranchNameInRepoList}
+        repositoryGroupIndentation={this.state.repositoryGroupIndentation}
+        repositoryGroupHeaderStyle={this.state.repositoryGroupHeaderStyle}
         showWorktrees={this.state.showWorktrees}
         showWorktreesInRepoList={this.state.showWorktreesInRepoList}
       />

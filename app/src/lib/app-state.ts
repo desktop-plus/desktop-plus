@@ -56,6 +56,10 @@ import { TutorialStep } from '../models/tutorial-step'
 import { UncommittedChangesStrategy } from '../models/uncommitted-changes-strategy'
 import { ShowBranchNameInRepoListSetting } from '../models/show-branch-name-in-repo-list'
 import { CopyPathNormalization } from '../models/copy-path-normalization'
+import {
+  RepositoryGroupHeaderStyle,
+  RepositoryGroupIndentation,
+} from '../models/repository-group-appearance'
 import { BranchSortOrder } from '../models/branch-sort-order'
 import { DiffFontFamily } from '../models/diff-font'
 import { DragElement } from '../models/drag-drop'
@@ -470,6 +474,12 @@ export interface IAppState {
 
   /** Controls when to show the current branch name next to each repository in the repository list */
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
+
+  /** How far repositories are indented under their group header in the repository list */
+  readonly repositoryGroupIndentation: RepositoryGroupIndentation
+
+  /** How group headers stand out from the repositories in the repository list */
+  readonly repositoryGroupHeaderStyle: RepositoryGroupHeaderStyle
 
   /** Controls slash normalization applied when copying paths to the clipboard */
   readonly copyPathNormalization: CopyPathNormalization

@@ -114,6 +114,10 @@ import { BranchSortOrder } from '../../models/branch-sort-order'
 import { ShowBranchNameInRepoListSetting } from '../../models/show-branch-name-in-repo-list'
 import { DiffFontFamily } from '../../models/diff-font'
 import { CopyPathNormalization } from '../../models/copy-path-normalization'
+import {
+  RepositoryGroupHeaderStyle,
+  RepositoryGroupIndentation,
+} from '../../models/repository-group-appearance'
 import { IStashEntry } from '../../models/stash-entry'
 import { WorkflowPreferences } from '../../models/workflow-preferences'
 import { resolveWithin } from '../../lib/path'
@@ -4947,6 +4951,16 @@ export class Dispatcher {
     return this.appStore._updateShowBranchNameInRepoList(
       showBranchNameInRepoList
     )
+  }
+
+  /** Set how far repositories are indented under their group header */
+  public setRepositoryGroupIndentation(value: RepositoryGroupIndentation) {
+    return this.appStore._setRepositoryGroupIndentation(value)
+  }
+
+  /** Set how group headers stand out from the repositories in the list */
+  public setRepositoryGroupHeaderStyle(value: RepositoryGroupHeaderStyle) {
+    return this.appStore._setRepositoryGroupHeaderStyle(value)
   }
 
   public setCopyPathNormalization(value: CopyPathNormalization) {

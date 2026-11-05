@@ -16,6 +16,12 @@ import {
   defaultRecentRepositoriesCount,
 } from '../../lib/stores/app-store'
 import { ShowBranchNameInRepoListSetting } from '../../models/show-branch-name-in-repo-list'
+import {
+  RepositoryGroupHeaderStyle,
+  RepositoryGroupHeaderStyles,
+  RepositoryGroupIndentation,
+  RepositoryGroupIndentations,
+} from '../../models/repository-group-appearance'
 import { parseEnumValue } from '../../lib/enum'
 import { assertNever } from '../../lib/fatal-error'
 import { BranchSortOrder } from '../../models/branch-sort-order'
@@ -67,6 +73,14 @@ interface IAppearanceProps {
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
   readonly onShowBranchNameInRepoListChanged: (
     value: ShowBranchNameInRepoListSetting
+  ) => void
+  readonly repositoryGroupIndentation: RepositoryGroupIndentation
+  readonly onRepositoryGroupIndentationChanged: (
+    value: RepositoryGroupIndentation
+  ) => void
+  readonly repositoryGroupHeaderStyle: RepositoryGroupHeaderStyle
+  readonly onRepositoryGroupHeaderStyleChanged: (
+    value: RepositoryGroupHeaderStyle
   ) => void
   readonly branchSortOrder: BranchSortOrder
   readonly onBranchSortOrderChanged: (sortOrder: BranchSortOrder) => void
@@ -417,6 +431,30 @@ export class Appearance extends React.Component<
     }
   }
 
+  private onRepositoryGroupIndentationChanged = (
+    event: React.FormEvent<HTMLSelectElement>
+  ) => {
+    const value = parseEnumValue(
+      RepositoryGroupIndentations,
+      event.currentTarget.value
+    )
+    if (value !== undefined) {
+      this.props.onRepositoryGroupIndentationChanged(value)
+    }
+  }
+
+  private onRepositoryGroupHeaderStyleChanged = (
+    event: React.FormEvent<HTMLSelectElement>
+  ) => {
+    const value = parseEnumValue(
+      RepositoryGroupHeaderStyles,
+      event.currentTarget.value
+    )
+    if (value !== undefined) {
+      this.props.onRepositoryGroupHeaderStyleChanged(value)
+    }
+  }
+
   private onBranchSortOrderChanged = (branchSortOrder: BranchSortOrder) => {
     this.props.onBranchSortOrderChanged(branchSortOrder)
   }
@@ -489,6 +527,36 @@ export class Appearance extends React.Component<
           <option value={ShowBranchNameInRepoListSetting.Always}>Always</option>
           <option value={ShowBranchNameInRepoListSetting.WhenNotDefault}>
             When it's not the default branch
+          </option>
+        </Select>
+        <Select
+          label="Indentation of repositories in groups"
+          value={this.props.repositoryGroupIndentation}
+          onChange={this.onRepositoryGroupIndentationChanged}
+        >
+          <option value={RepositoryGroupIndentations.None}>None</option>
+          <option value={RepositoryGroupIndentations.Small}>Small</option>
+          <option value={RepositoryGroupIndentations.Medium}>Medium</option>
+          <option value={RepositoryGroupIndentations.Large}>Large</option>
+        </Select>
+        <Select
+          label="Group header style"
+          value={this.props.repositoryGroupHeaderStyle}
+          onChange={this.onRepositoryGroupHeaderStyleChanged}
+        >
+          <option value={RepositoryGroupHeaderStyles.Default}>Default</option>
+          <option value={RepositoryGroupHeaderStyles.Emphasized}>
+            Emphasized
+          </option>
+          <option value={RepositoryGroupHeaderStyles.Shaded}>
+            Shaded background
+          </option>
+          <option value={RepositoryGroupHeaderStyles.Divider}>
+            Divider line
+          </option>
+          <option value={RepositoryGroupHeaderStyles.Accent}>Accent bar</option>
+          <option value={RepositoryGroupHeaderStyles.Guides}>
+            Tree guide lines
           </option>
         </Select>
       </div>

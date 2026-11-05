@@ -19,6 +19,14 @@ import {
   defaultCopyPathNormalization,
 } from '../../models/copy-path-normalization'
 import {
+  defaultRepositoryGroupHeaderStyle,
+  defaultRepositoryGroupIndentation,
+  RepositoryGroupHeaderStyle,
+  RepositoryGroupHeaderStyles,
+  RepositoryGroupIndentation,
+  RepositoryGroupIndentations,
+} from '../../models/repository-group-appearance'
+import {
   defaultDiffFontSize,
   defaultDiffFontFamily,
   DiffFontFamily,
@@ -678,6 +686,8 @@ export const showDiffCheckMarksKey = 'diff-check-marks-visible'
 const alwaysShowWorktreeListKey = 'always-show-worktree-list'
 
 export const showBranchNameInRepoListKey = 'show-branch-name-in-repo-list'
+const repositoryGroupIndentationKey = 'repository-group-indentation'
+const repositoryGroupHeaderStyleKey = 'repository-group-header-style'
 const copyPathNormalizationKey = 'copy-path-normalization'
 const branchSortOrderKey = 'branch-sort-order'
 
@@ -888,6 +898,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
   private showBranchNameInRepoList: ShowBranchNameInRepoListSetting =
     defaultShowBranchNameInRepoListSetting
+
+  private repositoryGroupIndentation: RepositoryGroupIndentation =
+    defaultRepositoryGroupIndentation
+
+  private repositoryGroupHeaderStyle: RepositoryGroupHeaderStyle =
+    defaultRepositoryGroupHeaderStyle
 
   private copyPathNormalization: CopyPathNormalization =
     defaultCopyPathNormalization
@@ -1537,6 +1553,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
       showDiffCheckMarks: this.showDiffCheckMarks,
       alwaysShowWorktreeList: this.alwaysShowWorktreeList,
       showBranchNameInRepoList: this.showBranchNameInRepoList,
+      repositoryGroupIndentation: this.repositoryGroupIndentation,
+      repositoryGroupHeaderStyle: this.repositoryGroupHeaderStyle,
       copyPathNormalization: this.copyPathNormalization,
       branchSortOrder: this.branchSortOrder,
       preferAbsoluteDates: this.preferAbsoluteDates,
@@ -3308,6 +3326,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.showBranchNameInRepoList =
       getEnum(showBranchNameInRepoListKey, ShowBranchNameInRepoListSetting) ??
       defaultShowBranchNameInRepoListSetting
+
+    this.repositoryGroupIndentation =
+      getEnum(repositoryGroupIndentationKey, RepositoryGroupIndentations) ??
+      defaultRepositoryGroupIndentation
+
+    this.repositoryGroupHeaderStyle =
+      getEnum(repositoryGroupHeaderStyleKey, RepositoryGroupHeaderStyles) ??
+      defaultRepositoryGroupHeaderStyle
 
     this.copyPathNormalization =
       getEnum(copyPathNormalizationKey, CopyPathNormalization) ??
@@ -12360,6 +12386,24 @@ export class AppStore extends TypedBaseStore<IAppState> {
         showBranchNameInRepoListKey,
         showBranchNameInRepoList
       )
+      this.emitUpdate()
+    }
+  }
+
+  /** This shouldn't be called directly. See `Dispatcher`. */
+  public _setRepositoryGroupIndentation(value: RepositoryGroupIndentation) {
+    if (value !== this.repositoryGroupIndentation) {
+      this.repositoryGroupIndentation = value
+      localStorage.setItem(repositoryGroupIndentationKey, value)
+      this.emitUpdate()
+    }
+  }
+
+  /** This shouldn't be called directly. See `Dispatcher`. */
+  public _setRepositoryGroupHeaderStyle(value: RepositoryGroupHeaderStyle) {
+    if (value !== this.repositoryGroupHeaderStyle) {
+      this.repositoryGroupHeaderStyle = value
+      localStorage.setItem(repositoryGroupHeaderStyleKey, value)
       this.emitUpdate()
     }
   }

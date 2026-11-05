@@ -49,6 +49,10 @@ import { Notifications } from './notifications'
 import { Accessibility } from './accessibility'
 import { ShowBranchNameInRepoListSetting } from '../../models/show-branch-name-in-repo-list'
 import {
+  RepositoryGroupHeaderStyle,
+  RepositoryGroupIndentation,
+} from '../../models/repository-group-appearance'
+import {
   CopyPathNormalization,
   defaultCopyPathNormalization,
 } from '../../models/copy-path-normalization'
@@ -141,6 +145,8 @@ interface IPreferencesProps {
   readonly showConventionalCommitBadges: boolean
   readonly repositoryIndicatorsEnabled: boolean
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
+  readonly repositoryGroupIndentation: RepositoryGroupIndentation
+  readonly repositoryGroupHeaderStyle: RepositoryGroupHeaderStyle
   readonly branchSortOrder: BranchSortOrder
   readonly hideWindowOnQuit: boolean
   readonly autoInstallUpdates: boolean
@@ -210,6 +216,8 @@ interface IPreferencesState {
   readonly existingLockFilePath?: string
   readonly repositoryIndicatorsEnabled: boolean
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
+  readonly repositoryGroupIndentation: RepositoryGroupIndentation
+  readonly repositoryGroupHeaderStyle: RepositoryGroupHeaderStyle
   readonly branchSortOrder: BranchSortOrder
   readonly hideWindowOnQuit: boolean
   readonly autoInstallUpdates: boolean
@@ -307,6 +315,8 @@ export class Preferences extends React.Component<
       showConventionalCommitBadges: this.props.showConventionalCommitBadges,
       repositoryIndicatorsEnabled: this.props.repositoryIndicatorsEnabled,
       showBranchNameInRepoList: this.props.showBranchNameInRepoList,
+      repositoryGroupIndentation: this.props.repositoryGroupIndentation,
+      repositoryGroupHeaderStyle: this.props.repositoryGroupHeaderStyle,
       branchSortOrder: this.props.branchSortOrder,
       hideWindowOnQuit: this.props.hideWindowOnQuit,
       autoInstallUpdates: this.props.autoInstallUpdates,
@@ -817,6 +827,14 @@ export class Preferences extends React.Component<
             onShowBranchNameInRepoListChanged={
               this.onShowBranchNameInRepoListChanged
             }
+            repositoryGroupIndentation={this.state.repositoryGroupIndentation}
+            onRepositoryGroupIndentationChanged={
+              this.onRepositoryGroupIndentationChanged
+            }
+            repositoryGroupHeaderStyle={this.state.repositoryGroupHeaderStyle}
+            onRepositoryGroupHeaderStyleChanged={
+              this.onRepositoryGroupHeaderStyleChanged
+            }
             branchSortOrder={this.state.branchSortOrder}
             onBranchSortOrderChanged={this.onBranchSortOrderChanged}
             selectedDateFormat={
@@ -1140,6 +1158,18 @@ export class Preferences extends React.Component<
     showBranchNameInRepoList: ShowBranchNameInRepoListSetting
   ) => {
     this.setState({ showBranchNameInRepoList })
+  }
+
+  private onRepositoryGroupIndentationChanged = (
+    repositoryGroupIndentation: RepositoryGroupIndentation
+  ) => {
+    this.setState({ repositoryGroupIndentation })
+  }
+
+  private onRepositoryGroupHeaderStyleChanged = (
+    repositoryGroupHeaderStyle: RepositoryGroupHeaderStyle
+  ) => {
+    this.setState({ repositoryGroupHeaderStyle })
   }
 
   private onBranchSortOrderChanged = (branchSortOrder: BranchSortOrder) => {
@@ -1511,6 +1541,12 @@ export class Preferences extends React.Component<
     dispatcher.setAlwaysShowWorktreeList(this.state.alwaysShowWorktreeList)
 
     dispatcher.setShowBranchNameInRepoList(this.state.showBranchNameInRepoList)
+    dispatcher.setRepositoryGroupIndentation(
+      this.state.repositoryGroupIndentation
+    )
+    dispatcher.setRepositoryGroupHeaderStyle(
+      this.state.repositoryGroupHeaderStyle
+    )
     dispatcher.setBranchSortOrder(this.state.branchSortOrder)
 
     dispatcher.setShowBranchNameInRepoList(this.state.showBranchNameInRepoList)
