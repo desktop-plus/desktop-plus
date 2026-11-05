@@ -439,6 +439,11 @@
           .octicon {
             color: var(--text-color);
           }
+
+          .counter {
+            color: var(--list-item-selected-active-badge-color);
+            background-color: var(--list-item-selected-active-badge-background-color);
+          }
         }
       }
     }
@@ -469,6 +474,17 @@
     .octicon {
       color: var(--tab-bar-active-color);
       width: auto;
+    }
+
+    .counter {
+      color: var(--box-selected-active-text-color);
+      background-color: var(--tab-bar-active-color);
+      margin-left: 4px;
+      padding: 2px 5px;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      border-radius: 20px;
+      line-height: 1;
     }
   }
 

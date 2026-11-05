@@ -124,6 +124,9 @@ interface IRepositoriesListProps {
 
   readonly dispatcher: Dispatcher
 
+  /** Whether to show changed file counts in the repository list */
+  readonly showChangedFileCount: boolean
+
   /** Controls when to show the branch name next to each repository */
   readonly showBranchNameInRepoList: ShowBranchNameInRepoListSetting
 
@@ -564,6 +567,7 @@ export class RepositoriesList extends React.Component<
         matches={matches}
         aheadBehind={item.aheadBehind}
         changedFilesCount={item.changedFilesCount}
+        showChangedFileCount={this.props.showChangedFileCount}
         branchName={this.shouldShowBranchName(item) ? item.branchName : null}
         worktree={item.worktree}
       />
@@ -1342,6 +1346,7 @@ export class RepositoriesList extends React.Component<
             filterText: this.props.filterText,
             localRepositoryStateLookup: this.props.localRepositoryStateLookup,
             showWorktreesInRepoList: this.props.showWorktreesInRepoList,
+            showChangedFileCount: this.props.showChangedFileCount,
             collapsedGroups: this.state.collapsedGroups,
             groupOrder: this.state.groupOrder,
             draggedGroup: this.state.draggedGroup,

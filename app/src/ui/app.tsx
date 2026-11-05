@@ -2023,6 +2023,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             selectedShell={this.state.selectedShell}
             selectedTheme={this.state.selectedTheme}
             selectedTabSize={this.state.selectedTabSize}
+            showChangedFileCount={this.state.showChangedFileCount}
             recentRepositoriesCount={this.state.recentRepositoriesCount}
             selectedDiffFontSize={this.state.selectedDiffFontSize}
             selectedDiffFontFamily={this.state.selectedDiffFontFamily}
@@ -3822,6 +3823,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         externalEditorLabel={this.defaultExternalEditorLabel}
         shellLabel={useCustomShell ? undefined : selectedShell}
         dispatcher={this.props.dispatcher}
+        showChangedFileCount={this.state.showChangedFileCount}
         showBranchNameInRepoList={this.state.showBranchNameInRepoList}
         showWorktrees={this.state.showWorktrees}
         showWorktreesInRepoList={this.state.showWorktreesInRepoList}

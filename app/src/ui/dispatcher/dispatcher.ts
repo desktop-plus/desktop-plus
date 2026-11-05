@@ -3154,6 +3154,13 @@ export class Dispatcher {
   }
 
   /**
+   * Set whether to show changed file counts in the repository list
+   */
+  public setShowChangedFileCount(show: boolean) {
+    return this.appStore._setShowChangedFileCount(show)
+  }
+
+  /**
    * Set the number of recent repositories to show in the repository list
    */
   public setRecentRepositoriesCount(count: number) {

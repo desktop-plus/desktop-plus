@@ -536,6 +536,8 @@ const MaxSnoozeExpiryDelay = 24 * 60 * 60 * 1000
  */
 const MaxPullRequestLookups = 10
 
+const ShowChangedFileCountKey = 'show-changed-file-count'
+
 const RecentRepositoriesKey = 'recently-selected-repositories'
 /**
  *  maximum number of repositories shown in the "Recent" repositories group
@@ -838,6 +840,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private currentTheme: ApplicableTheme = ApplicationTheme.Light
   private selectedTabSize = tabSizeDefault
   private selectedDiffFontSize = defaultDiffFontSize
+  private showChangedFileCount = false
   private recentRepositoriesCount: number = defaultRecentRepositoriesCount
   private selectedDiffFontFamily = defaultDiffFontFamily
   private titleBarStyle: TitleBarStyle = __WIN32__ ? 'custom' : 'native'
@@ -983,6 +986,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       getBoolean(repositoryIndicatorsEnabledKey) ?? true
 
     this.showRecentRepositories = getBoolean(showRecentRepositoriesKey) ?? true
+    this.showChangedFileCount = getBoolean(ShowChangedFileCountKey) ?? false
     this.showWorktrees = getBoolean(showWorktreesKey) ?? true
     this.showWorktreesInRepoList =
       getBoolean(showWorktreesInRepoListKey) ?? false
@@ -1502,6 +1506,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       selectedTheme: this.selectedTheme,
       currentTheme: this.currentTheme,
       selectedTabSize: this.selectedTabSize,
+      showChangedFileCount: this.showChangedFileCount,
       recentRepositoriesCount: this.recentRepositoriesCount,
       selectedDiffFontSize: this.selectedDiffFontSize,
       selectedDiffFontFamily: this.selectedDiffFontFamily,
@@ -10733,6 +10738,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
       setNumber(tabSizeKey, tabSize)
       this.emitUpdate()
     }
+
+    return Promise.resolve()
+  }
+
+  public _setShowChangedFileCount(show: boolean) {
+    this.showChangedFileCount = show
+    setBoolean(ShowChangedFileCountKey, show)
+    this.emitUpdate()
 
     return Promise.resolve()
   }

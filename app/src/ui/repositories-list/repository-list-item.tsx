@@ -14,6 +14,7 @@ import { createObservableRef } from '../lib/observable-ref'
 import { Tooltip } from '../lib/tooltip'
 import { enableAccessibleListToolTips } from '../../lib/feature-flag'
 import { TooltippedContent } from '../lib/tooltipped-content'
+import { FilesChangedBadge } from '../changes/files-changed-badge'
 
 interface IRepositoryListItemProps {
   readonly repository: Repositoryish
@@ -29,6 +30,9 @@ interface IRepositoryListItemProps {
 
   /** Number of uncommitted changes */
   readonly changedFilesCount: number
+
+  /** Whether to show changed file counts in the repository list */
+  readonly showChangedFileCount: boolean
 
   /** The name of the current branch, if it should be displayed */
   readonly branchName: string | null
@@ -72,7 +76,6 @@ export class RepositoryListItem extends React.Component<
     const repository = this.props.repository
     const gitHubRepo =
       repository instanceof Repository ? repository.gitHubRepository : null
-    const hasChanges = this.props.changedFilesCount > 0
 
     const alias: string | null =
       repository instanceof Repository ? repository.alias : null
@@ -113,7 +116,8 @@ export class RepositoryListItem extends React.Component<
         {repository instanceof Repository &&
           renderRepoIndicators({
             aheadBehind: this.props.aheadBehind,
-            hasChanges: hasChanges,
+            changedFilesCount: this.props.changedFilesCount,
+            showChangedFileCount: this.props.showChangedFileCount,
           })}
       </div>
     )
@@ -148,7 +152,8 @@ export class RepositoryListItem extends React.Component<
 
         {renderRepoIndicators({
           aheadBehind: this.props.aheadBehind,
-          hasChanges: this.props.changedFilesCount > 0,
+          changedFilesCount: this.props.changedFilesCount,
+          showChangedFileCount: this.props.showChangedFileCount,
         })}
       </div>
     )
@@ -190,6 +195,7 @@ export class RepositoryListItem extends React.Component<
         nextProps.repository.id !== this.props.repository.id ||
         nextProps.repository !== this.props.repository ||
         nextProps.matches !== this.props.matches ||
+        nextProps.showChangedFileCount !== this.props.showChangedFileCount ||
         nextProps.branchName !== this.props.branchName ||
         nextProps.needsDisambiguation !== this.props.needsDisambiguation ||
         nextProps.aheadBehind !== this.props.aheadBehind ||
@@ -204,12 +210,17 @@ export class RepositoryListItem extends React.Component<
 
 const renderRepoIndicators: React.FunctionComponent<{
   aheadBehind: IAheadBehind | null
-  hasChanges: boolean
+  changedFilesCount: number
+  showChangedFileCount: boolean
 }> = props => {
   return (
     <div className="repo-indicators">
       {props.aheadBehind && renderAheadBehindIndicator(props.aheadBehind)}
-      {props.hasChanges && renderChangesIndicator()}
+      {props.changedFilesCount > 0 &&
+        renderChangesIndicator(
+          props.changedFilesCount,
+          props.showChangedFileCount
+        )}
     </div>
   )
 }
@@ -240,14 +251,21 @@ const renderAheadBehindIndicator = (aheadBehind: IAheadBehind) => {
   )
 }
 
-const renderChangesIndicator = () => {
+const renderChangesIndicator = (
+  changedFilesCount: number,
+  showChangedFileCount: boolean
+) => {
   return (
     <TooltippedContent
       className="change-indicator-wrapper"
       tooltip="There are uncommitted changes in this repository"
       disabled={enableAccessibleListToolTips()}
     >
-      <Octicon symbol={octicons.dotFill} />
+      {showChangedFileCount ? (
+        <FilesChangedBadge filesChangedCount={changedFilesCount} />
+      ) : (
+        <Octicon symbol={octicons.dotFill} />
+      )}
     </TooltippedContent>
   )
 }

@@ -54,6 +54,7 @@ describe('RepositoryListItem', () => {
         matches={noMatches}
         aheadBehind={{ ahead: 2, behind: 1 }}
         changedFilesCount={3}
+        showChangedFileCount={false}
         branchName={'main'}
         worktree={null}
       />
@@ -80,6 +81,7 @@ describe('RepositoryListItem', () => {
         matches={noMatches}
         aheadBehind={null}
         changedFilesCount={0}
+        showChangedFileCount={false}
         branchName={'main'}
         worktree={null}
       />
@@ -101,6 +103,7 @@ describe('RepositoryListItem', () => {
         matches={noMatches}
         aheadBehind={null}
         changedFilesCount={0}
+        showChangedFileCount={false}
         branchName={'main'}
         worktree={null}
       />
