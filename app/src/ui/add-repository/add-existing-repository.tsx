@@ -304,7 +304,7 @@ export class AddExistingRepository extends React.Component<
     const { dispatcher } = this.props
 
     const resolvedPath = this.resolvedPath(path)
-    const repositories = await dispatcher.addRepositories([resolvedPath], null)
+    const repositories = await dispatcher.addRepositories([resolvedPath])
 
     if (repositories.length > 0) {
       dispatcher.closeFoldout(FoldoutType.Repository)

@@ -23,7 +23,6 @@ export type RepositoryListGroup = (
   | {
       kind: 'dotcom'
       owner: Owner
-      login: string | null
     }
   | {
       kind: 'enterprise'
@@ -44,9 +43,7 @@ export const getGroupKey = (group: RepositoryListGroup) => {
     case 'recent':
       return `0:recent`
     case 'dotcom':
-      return displayName
-        ? `1:${displayName}`
-        : `1:${group.owner.login}:${group.login ?? group.owner.login}`
+      return displayName ? `1:${displayName}` : `1:${group.owner.login}`
     case 'enterprise':
       // Allow mixing together dotcom and enterprise repos when setting a group name manually
       return displayName ? `1:${displayName}` : `2:${group.host}`
@@ -106,7 +103,6 @@ export const getGroupForRepository = (
           kind: 'dotcom',
           owner: repo.gitHubRepository.owner,
           displayName: repo.groupName,
-          login: repo.gitHubRepository.login,
         }
   }
   if (repo instanceof Repository) {

@@ -1438,7 +1438,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     // But if they just dragged one, use the dialog so that they can initialize
     // it if needed.
     if (paths.length > 1) {
-      const addedRepositories = await dispatcher.addRepositories(paths, null)
+      const addedRepositories = await dispatcher.addRepositories(paths)
 
       if (addedRepositories.length > 0) {
         dispatcher.recordAddExistingRepository()
@@ -2107,8 +2107,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         const state = this.props.repositoryStateManager.get(repository)
         const repositoryAccount = getAccountForRepository(
           this.state.accounts,
-          repository,
-          true
+          repository
         )
 
         return (
@@ -2119,7 +2118,6 @@ export class App extends React.Component<IAppProps, IAppState> {
             dispatcher={this.props.dispatcher}
             repository={repository}
             repositoryAccount={repositoryAccount}
-            accounts={this.state.accounts}
             onDismissed={onPopupDismissedFn}
           />
         )

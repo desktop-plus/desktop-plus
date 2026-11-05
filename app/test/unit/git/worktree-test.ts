@@ -366,7 +366,6 @@ describe('git/worktree', () => {
         {},
         null,
         false,
-        null,
         gitDir,
         mainPath
       )
@@ -394,7 +393,6 @@ describe('git/worktree', () => {
         {},
         null,
         false,
-        null,
         gitDir
       )
 
@@ -419,7 +417,6 @@ describe('git/worktree', () => {
         {},
         null,
         false,
-        null,
         Path.join(repo.path, '.git'),
         mainPath
       )
@@ -444,7 +441,6 @@ describe('git/worktree', () => {
         {},
         null,
         false,
-        null,
         gitDir,
         Path.join(mainPath, 'no', 'longer', 'here')
       )

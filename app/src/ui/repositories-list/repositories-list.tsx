@@ -720,12 +720,7 @@ export class RepositoriesList extends React.Component<
     } else if (kind === 'other') {
       return displayName ?? 'Other'
     } else if (kind === 'dotcom') {
-      const accountLoginSuffix =
-        group.login && group.login !== group.owner.login
-          ? ` (${group.login})`
-          : ''
-      const defaultLabel = group.owner.login + accountLoginSuffix
-      return displayName ?? defaultLabel
+      return displayName ?? group.owner.login
     } else if (kind === 'recent') {
       return 'Recent'
     } else if (kind === 'pins') {

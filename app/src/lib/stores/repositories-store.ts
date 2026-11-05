@@ -12,7 +12,6 @@ import {
   RepoType,
 } from '../../models/github-repository'
 import {
-  LoginSpecialValue,
   Repository,
   RepositoryWithGitHubRepository,
   assertIsRepositoryWithGitHubRepository,
@@ -32,7 +31,6 @@ import { clearTagsToPush } from './helpers/tags-to-push-storage'
 import { IMatchedGitHubRepository } from '../repository-matching'
 import { shallowEquals } from '../equality'
 import { EditorOverride } from '../../models/editor-override'
-import { Account } from '../../models/account'
 
 type AddRepositoryOptions = {
   missing?: boolean
@@ -88,14 +86,13 @@ export class RepositoriesStore extends TypedBaseStore<
    */
   public async upsertGitHubRepositoryLight(
     endpoint: string,
-    apiRepository: IAPIRepository,
-    login: string | null
+    apiRepository: IAPIRepository
   ) {
     return this.db.transaction(
       'rw',
       this.db.gitHubRepositories,
       this.db.owners,
-      () => this._upsertGitHubRepository(endpoint, apiRepository, true, login)
+      () => this._upsertGitHubRepository(endpoint, apiRepository, true)
     )
   }
 
@@ -105,14 +102,13 @@ export class RepositoriesStore extends TypedBaseStore<
    */
   public async upsertGitHubRepository(
     endpoint: string,
-    apiRepository: IAPIFullRepository,
-    login: string | null
+    apiRepository: IAPIFullRepository
   ): Promise<GitHubRepository> {
     return this.db.transaction(
       'rw',
       this.db.gitHubRepositories,
       this.db.owners,
-      () => this._upsertGitHubRepository(endpoint, apiRepository, false, login)
+      () => this._upsertGitHubRepository(endpoint, apiRepository, false)
     )
   }
 
@@ -150,7 +146,6 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.name,
       repoType,
       owner,
-      repo.login,
       repo.id,
       repo.private,
       repo.htmlURL,
@@ -181,7 +176,6 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.workflowPreferences,
       repo.customEditorOverride,
       repo.isTutorialRepository,
-      repo.login,
       repo.gitDir,
       repo.mainWorktreePath
     )
@@ -230,7 +224,6 @@ export class RepositoriesStore extends TypedBaseStore<
   public async addTutorialRepository(
     path: string,
     endpoint: string,
-    login: string,
     apiRepo: IAPIFullRepository,
     gitDir?: string
   ) {
@@ -240,11 +233,7 @@ export class RepositoriesStore extends TypedBaseStore<
       this.db.gitHubRepositories,
       this.db.owners,
       async () => {
-        const ghRepo = await this.upsertGitHubRepository(
-          endpoint,
-          apiRepo,
-          login
-        )
+        const ghRepo = await this.upsertGitHubRepository(endpoint, apiRepo)
         const existingRepo = await this.db.repositories.get({ path })
 
         return await this.db.repositories.put({
@@ -257,7 +246,6 @@ export class RepositoriesStore extends TypedBaseStore<
           missing: false,
           lastStashCheckDate: null,
           isTutorialRepository: true,
-          login,
           gitDir,
         })
       }
@@ -274,7 +262,6 @@ export class RepositoriesStore extends TypedBaseStore<
   public async addRepository(
     path: string,
     gitDir: string | undefined,
-    login: string | null,
     opts?: AddRepositoryOptions
   ): Promise<Repository> {
     const repository = await this.db.transaction(
@@ -297,7 +284,6 @@ export class RepositoriesStore extends TypedBaseStore<
           alias: null,
           groupName: null,
           defaultBranch: null,
-          login,
           gitDir,
         }
         const id = await this.db.repositories.add(dbRepo)
@@ -342,7 +328,6 @@ export class RepositoriesStore extends TypedBaseStore<
       repository.workflowPreferences,
       repository.customEditorOverride,
       repository.isTutorialRepository,
-      repository.overrideLogin,
       repository.gitDir,
       repository.mainWorktreePath
     )
@@ -372,7 +357,6 @@ export class RepositoriesStore extends TypedBaseStore<
       repository.workflowPreferences,
       repository.customEditorOverride,
       repository.isTutorialRepository,
-      repository.overrideLogin,
       gitDir,
       repository.mainWorktreePath
     )
@@ -441,40 +425,6 @@ export class RepositoriesStore extends TypedBaseStore<
       repository.workflowPreferences,
       repository.customEditorOverride,
       repository.isTutorialRepository,
-      repository.overrideLogin,
-      repository.gitDir,
-      repository.mainWorktreePath
-    )
-  }
-
-  /**
-   * Update the alias for the specified repository.
-   *
-   * @param repository    The repository to update.
-   * @param defaultBranch The new default branch to use.
-   */
-  public async updateRepositoryAccount(
-    repository: Repository,
-    account: Account | null
-  ): Promise<Repository> {
-    await this.db.repositories.update(repository.id, {
-      login: account?.login ?? null,
-    })
-
-    this.emitUpdatedRepositories()
-
-    return new Repository(
-      repository.path,
-      repository.id,
-      repository.gitHubRepository,
-      repository.missing,
-      repository.alias,
-      repository.groupName,
-      repository.defaultBranch,
-      repository.workflowPreferences,
-      repository.customEditorOverride,
-      repository.isTutorialRepository,
-      account?.login ?? LoginSpecialValue.ForceNullLogin,
       repository.gitDir,
       repository.mainWorktreePath
     )
@@ -540,18 +490,9 @@ export class RepositoriesStore extends TypedBaseStore<
       repository.workflowPreferences,
       repository.customEditorOverride,
       repository.isTutorialRepository,
-      repository.overrideLogin,
       gitDir,
       mainWorktreePath
     )
-  }
-
-  public async getRepositoryForPath(path: string): Promise<Repository | null> {
-    const dbRepo = await this.db.repositories.get({ path })
-    if (dbRepo === undefined) {
-      return null
-    }
-    return this.toRepository(dbRepo)
   }
 
   /**
@@ -605,7 +546,6 @@ export class RepositoriesStore extends TypedBaseStore<
         repository.workflowPreferences,
         repository.customEditorOverride,
         repository.isTutorialRepository,
-        repository.overrideLogin,
         gitDir,
         mainWorktreePath
       ),
@@ -710,8 +650,7 @@ export class RepositoriesStore extends TypedBaseStore<
   }
 
   public async upsertGitHubRepositoryFromMatch(
-    match: IMatchedGitHubRepository,
-    login: string | null
+    match: IMatchedGitHubRepository
   ) {
     return await this.db.transaction(
       'rw',
@@ -725,18 +664,16 @@ export class RepositoriesStore extends TypedBaseStore<
           .equals([owner.id, match.name])
           .first()
 
-        if (existingRepo && existingRepo.login === login) {
+        if (existingRepo) {
           return this.toGitHubRepository(existingRepo, owner)
         }
 
         const skeletonRepo: IDatabaseGitHubRepository = {
-          id: existingRepo?.id,
           cloneURL: null,
           htmlURL: null,
           lastPruneDate: null,
           name: match.name,
           ownerID: owner.id,
-          login,
           parentID: null,
           private: null,
         }
@@ -773,7 +710,6 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.workflowPreferences,
       repo.customEditorOverride,
       repo.isTutorialRepository,
-      repo.overrideLogin,
       repo.gitDir,
       repo.mainWorktreePath
     )
@@ -785,24 +721,19 @@ export class RepositoriesStore extends TypedBaseStore<
   private async _upsertGitHubRepository(
     endpoint: string,
     gitHubRepository: IAPIRepository | IAPIFullRepository,
-    ignoreParent = false,
-    login: string | null
+    ignoreParent = false
   ): Promise<GitHubRepository> {
     const parent =
       'parent' in gitHubRepository && gitHubRepository.parent !== undefined
         ? await this._upsertGitHubRepository(
             endpoint,
             gitHubRepository.parent,
-            true,
-            login
+            true
           )
         : await Promise.resolve(null) // Dexie gets confused if we return null
 
-    const owner = await this.putOwner(
-      endpoint,
-      gitHubRepository.owner.login,
-      gitHubRepository.owner.type
-    )
+    const { login, type } = gitHubRepository.owner
+    const owner = await this.putOwner(endpoint, login, type)
 
     const existingRepo = await this.db.gitHubRepositories
       .where('[ownerID+name]')
@@ -849,7 +780,6 @@ export class RepositoriesStore extends TypedBaseStore<
       ...(existingRepo?.id !== undefined && { id: existingRepo.id }),
       ownerID: owner.id,
       name: gitHubRepository.name,
-      login,
       private: gitHubRepository.private ?? existingRepo?.private ?? null,
       htmlURL: gitHubRepository.html_url,
       cloneURL: (gitHubRepository.clone_url || existingRepo?.cloneURL) ?? null,
@@ -991,51 +921,6 @@ export class RepositoriesStore extends TypedBaseStore<
     }
 
     return branchProtectionsFound
-  }
-
-  /**
-   * Clears the 'login' field for a single repository.
-   */
-  public async clearGitHubRepositoryLogin(gitHubRepository: GitHubRepository) {
-    await this.db.gitHubRepositories.update(gitHubRepository.dbID, {
-      login: null,
-    })
-
-    this.emitUpdatedRepositories()
-  }
-
-  /**
-   * Clears the 'login' field for all repositories associated with a given endpoint, ANY OWNER and a given login.
-   */
-  public async clearGitHubRepositoryLoginForEndpointAndLogin(
-    endpoint: string,
-    login: string
-  ) {
-    await this.db.transaction(
-      'rw',
-      this.db.gitHubRepositories,
-      this.db.owners,
-      async () => {
-        // Here we are fetching the entire owners and gitHubRepositories tables.
-        // This is not ideal but we avoid having to create indexes (minimize diff with upstream) and we expect the number of owners and repositories to be relatively small.
-        const allOwners = await this.db.owners.toArray()
-        const allEndpointOwners = allOwners.filter(o => o.endpoint === endpoint)
-        const allEndpointOwnerIds = new Set(allEndpointOwners.map(o => o.id!))
-
-        const allRepos = await this.db.gitHubRepositories.toArray()
-        const reposToUpdate = allRepos.filter(
-          repo => repo.login === login && allEndpointOwnerIds.has(repo.ownerID)
-        )
-        const updatePromises = reposToUpdate.map(repo =>
-          this.db.gitHubRepositories.update(repo.id!, {
-            login: null,
-          })
-        )
-        await Promise.all(updatePromises)
-      }
-    )
-
-    this.emitUpdatedRepositories()
   }
 
   /**

@@ -61,7 +61,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'https://gitlab.com/inkscape/inkscape.git',
       accounts,
-      'foo',
       mockCanAccessRepository
     )
     assert(account === null)
@@ -71,7 +70,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'desktop/nonexistent-repo-fixture',
       accounts,
-      'foo',
       mockCanAccessRepository
     )
     assert(account === null)
@@ -81,7 +79,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'inkscape/inkscape',
       [],
-      'foo',
       mockCanAccessRepository
     )
     assert(account !== null)
@@ -92,7 +89,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'https://github.com/inkscape/inkscape',
       [],
-      'foo',
       mockCanAccessRepository
     )
     assert(account !== null)
@@ -103,7 +99,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'inkscape/inkscape',
       accounts,
-      'foo',
       mockCanAccessRepository
     )
     assert(account !== null)
@@ -114,7 +109,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'https://github.com/inkscape/inkscape.git',
       accounts,
-      'foo',
       mockCanAccessRepository
     )
     assert(account !== null)
@@ -125,7 +119,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'https://github.mycompany.com/inkscape/inkscape.git',
       accounts,
-      'foo',
       mockCanAccessRepository
     )
     assert(account !== null)
@@ -136,7 +129,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'desktop/repo-fixture',
       accounts,
-      'foo',
       mockCanAccessRepository
     )
     assert(account !== null)
@@ -147,7 +139,6 @@ describe('findAccountForRemoteURL', () => {
     const account = await findAccountForRemoteURL(
       'desktop/repo-fixture',
       [],
-      'foo',
       mockCanAccessRepository
     )
     assert(account === null)

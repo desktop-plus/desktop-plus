@@ -46,7 +46,7 @@ describe('git/clone', () => {
       it(`rejects ${protocol} URLs before creating the destination`, async t => {
         const destination = path.join(await createTempDirectory(t), 'cloned')
 
-        await assert.rejects(clone(`${protocol}::`, destination, {}, null), {
+        await assert.rejects(clone(`${protocol}::`, destination, {}), {
           message: `The "${protocol}" transport is not supported for cloning in ${__APP_NAME__}.`,
         })
         assert.strictEqual(existsSync(destination), false)
@@ -67,7 +67,7 @@ describe('git/clone', () => {
           }
 
           await assert.rejects(
-            clone('desktop-clone-test:', destination, {}, null),
+            clone('desktop-clone-test:', destination, {}),
             (error: unknown) => {
               assert.ok(isGitError(error))
               assert.ok(
@@ -96,19 +96,14 @@ describe('git/clone', () => {
         // Stop at Git's transport check without connecting or starting a helper.
         process.env.GIT_ALLOW_PROTOCOL = ''
 
-        await assert.rejects(
-          clone(url, destination, {}, null),
-          (error: unknown) => {
-            assert.ok(isGitError(error))
-            assert.ok(
-              error.result.stderr.includes(
-                `transport '${protocol}' not allowed`
-              ),
-              error.result.stderr.toString()
-            )
-            return true
-          }
-        )
+        await assert.rejects(clone(url, destination, {}), (error: unknown) => {
+          assert.ok(isGitError(error))
+          assert.ok(
+            error.result.stderr.includes(`transport '${protocol}' not allowed`),
+            error.result.stderr.toString()
+          )
+          return true
+        })
       })
     }
 
@@ -120,7 +115,7 @@ describe('git/clone', () => {
           process.env.GIT_ALLOW_PROTOCOL = allowProtocol
         }
 
-        await clone(pathToFileURL(source).href, destination, {}, null)
+        await clone(pathToFileURL(source).href, destination, {})
 
         assert.strictEqual(existsSync(path.join(destination, '.git')), true)
         assert.strictEqual(process.env.GIT_ALLOW_PROTOCOL, allowProtocol)
@@ -134,7 +129,7 @@ describe('git/clone', () => {
         process.env.GIT_ALLOW_PROTOCOL = allowProtocol
 
         await assert.rejects(
-          clone(pathToFileURL(source).href, destination, {}, null),
+          clone(pathToFileURL(source).href, destination, {}),
           (error: unknown) => {
             assert.ok(isGitError(error))
             assert.ok(
@@ -187,14 +182,14 @@ describe('git/clone', () => {
         const destination = path.join(await createTempDirectory(t), 'cloned')
 
         if (protocol === 'file' && allowProtocol !== undefined) {
-          await clone(source.path, destination, {}, null)
+          await clone(source.path, destination, {})
           assert.strictEqual(
             existsSync(path.join(destination, 'module', 'README.md')),
             true
           )
         } else {
           await assert.rejects(
-            clone(source.path, destination, {}, null),
+            clone(source.path, destination, {}),
             (error: unknown) => {
               assert.ok(isGitError(error))
               assert.ok(
@@ -222,7 +217,7 @@ describe('git/clone', () => {
     const destPath = await createTempDirectory(t)
     const clonePath = path.join(destPath, 'cloned')
 
-    await clone(source.path, clonePath, {}, null)
+    await clone(source.path, clonePath, {})
 
     assert.equal(existsSync(path.join(clonePath, '.git')), true)
     assert.equal(existsSync(path.join(clonePath, 'README.md')), true)
@@ -247,7 +242,7 @@ describe('git/clone', () => {
     const destPath = await createTempDirectory(t)
     const clonePath = path.join(destPath, 'cloned')
 
-    await clone(source.path, clonePath, { branch: 'feature' }, null)
+    await clone(source.path, clonePath, { branch: 'feature' })
 
     // Verify the feature branch was checked out
     const result = await exec(['rev-parse', '--abbrev-ref', 'HEAD'], clonePath)
@@ -266,7 +261,7 @@ describe('git/clone', () => {
     const clonePath = path.join(destPath, 'cloned')
 
     const progressEvents: Array<{ kind: string }> = []
-    await clone(source.path, clonePath, {}, null, progress => {
+    await clone(source.path, clonePath, {}, progress => {
       progressEvents.push({ kind: progress.kind })
     })
 
@@ -295,7 +290,7 @@ describe('git/clone', () => {
     const destPath = await createTempDirectory(t)
     const clonePath = path.join(destPath, 'cloned')
 
-    await clone(source, clonePath, { defaultBranch: 'trunk' }, null)
+    await clone(source, clonePath, { defaultBranch: 'trunk' })
 
     assert.equal(existsSync(path.join(clonePath, '.git')), true)
 
@@ -308,7 +303,7 @@ describe('git/clone', () => {
     const sshPath = path.join(os.homedir(), '.ssh', 'malicious-clone')
 
     await assert.rejects(
-      () => clone('https://example.com/repo.git', sshPath, {}, null),
+      () => clone('https://example.com/repo.git', sshPath, {}),
       (err: Error) => {
         assert(
           err.message.includes('sensitive system location'),
@@ -324,7 +319,7 @@ describe('git/clone', () => {
     const homePath = os.homedir()
 
     await assert.rejects(
-      () => clone('https://example.com/repo.git', homePath, {}, null),
+      () => clone('https://example.com/repo.git', homePath, {}),
       (err: Error) => {
         assert(
           err.message.includes('sensitive system location'),
@@ -340,7 +335,7 @@ describe('git/clone', () => {
     const gitConfigPath = path.join(os.homedir(), '.config', 'git')
 
     await assert.rejects(
-      () => clone('https://example.com/repo.git', gitConfigPath, {}, null),
+      () => clone('https://example.com/repo.git', gitConfigPath, {}),
       (err: Error) => {
         assert(
           err.message.includes('sensitive system location'),

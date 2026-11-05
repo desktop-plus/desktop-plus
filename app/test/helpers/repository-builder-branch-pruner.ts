@@ -71,8 +71,7 @@ export async function setupRepository(
 ) {
   let repository = await repositoriesStore.addRepository(
     path,
-    Path.join(path, '.git'),
-    null
+    Path.join(path, '.git')
   )
   if (includesGhRepo) {
     const apiRepo: IAPIFullRepository = {
@@ -104,7 +103,7 @@ export async function setupRepository(
     const endpoint = getDotComAPIEndpoint()
     repository = await repositoriesStore.setGitHubRepository(
       repository,
-      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo, null)
+      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo)
     )
   }
   await primeCaches(repository, repositoriesStateCache)

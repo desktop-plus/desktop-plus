@@ -33,16 +33,12 @@ export interface IMatchedGitHubRepository {
 /** Try to use the list of users and a remote URL to guess a GitHub repository. */
 export function matchGitHubRepository(
   accounts: ReadonlyArray<Account>,
-  remote: string,
-  login: string | null
+  remote: string
 ): IMatchedGitHubRepository | null {
   const parsedRemote = parseRemote(remote)
   if (parsedRemote === null) {
     return null
   }
-
-  // If login is null, prefer the owner account, then fallback to the first account with a matching hostname.
-  let hostnameMatch: IMatchedGitHubRepository | null = null
 
   // A remote that names a web port identifies one specific instance, so the
   // account's port has to match too. Otherwise only hostnames are compared,
@@ -59,28 +55,11 @@ export function matchGitHubRepository(
       accountHost != null &&
       remoteHost.toLowerCase() === accountHost.toLowerCase()
     ) {
-      const matched: IMatchedGitHubRepository = {
-        name: parsedRemote.name,
-        owner: parsedRemote.owner,
-        account,
-      }
-
-      if (login !== null) {
-        if (account.login === login) {
-          return matched
-        }
-      } else {
-        if (account.login === parsedRemote.owner) {
-          return matched
-        }
-        if (hostnameMatch === null) {
-          hostnameMatch = matched
-        }
-      }
+      return { name: parsedRemote.name, owner: parsedRemote.owner, account }
     }
   }
 
-  return hostnameMatch
+  return null
 }
 
 /**

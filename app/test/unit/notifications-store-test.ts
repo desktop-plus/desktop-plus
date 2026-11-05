@@ -58,7 +58,6 @@ describe('NotificationsStore', async () => {
       'repo',
       'github',
       new Owner('owner', endpoint, 1),
-      null,
       1
     )
     const repository = new Repository(

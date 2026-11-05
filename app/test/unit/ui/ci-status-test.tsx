@@ -20,7 +20,6 @@ const repository = new GitHubRepository(
   'desktop',
   'github',
   new Owner('desktop', 'https://api.github.com', 1),
-  null,
   1
 )
 

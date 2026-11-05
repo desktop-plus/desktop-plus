@@ -70,14 +70,6 @@ function setup(
   return { store, data, secure, revoked }
 }
 
-/** The AppStore fields that `_removeAccount` uses. */
-const removeAccountContext = (accountsStore: AccountsStore) => ({
-  accountsStore,
-  repositoriesStore: {
-    clearGitHubRepositoryLoginForEndpointAndLogin: async () => {},
-  },
-})
-
 describe('OAuth credential persistence', () => {
   it('reads existing access-token entries', () => {
     assert.deepEqual(deserializeAccountCredential('legacy'), {
@@ -649,7 +641,7 @@ describe('Coordinated account token renewal', () => {
       }
     )
     await AppStore.prototype._removeAccount.call(
-      removeAccountContext(store),
+      { accountsStore: store },
       account
     )
     assert.deepEqual(deleted, [renewed.accessToken])
@@ -687,7 +679,7 @@ describe('Coordinated account token renewal', () => {
       throw new Error('Unexpected revocation')
     })
     await AppStore.prototype._removeAccount.call(
-      removeAccountContext(store),
+      { accountsStore: store },
       account
     )
     const replacement = new Account(
@@ -703,7 +695,7 @@ describe('Coordinated account token renewal', () => {
     await store.addAccount(replacement)
     assert.equal(await store.removeAccount(account), null)
     await AppStore.prototype._removeAccount.call(
-      removeAccountContext(store),
+      { accountsStore: store },
       account
     )
     assert.equal(fetch.mock.callCount(), 0)

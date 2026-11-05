@@ -40,7 +40,6 @@ export interface IDatabaseGitHubRepository {
   readonly isArchived?: boolean
 
   readonly permissions?: 'read' | 'write' | 'admin' | null
-  readonly login: string | null
 }
 
 /** A record to track the protected branch information for a GitHub repository */
@@ -86,7 +85,6 @@ export interface IDatabaseRepository {
    * of Git and GitHub.
    */
   readonly isTutorialRepository?: boolean
-  readonly login: string | null
 }
 
 /**

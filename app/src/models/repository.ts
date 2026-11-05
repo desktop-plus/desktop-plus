@@ -15,10 +15,6 @@ import { findDefaultRemote } from '../lib/stores/helpers/find-default-remote'
 import { EditorOverride } from './editor-override'
 import { remoteUrlToWebUrl } from '../lib/remote-parsing'
 
-export enum LoginSpecialValue {
-  ForceNullLogin = 1,
-}
-
 function getBaseName(path: string): string {
   const baseName = Path.basename(path)
 
@@ -67,7 +63,6 @@ export class Repository {
      * which introduces new users to some core concepts of Git and GitHub.
      */
     public readonly isTutorialRepository: boolean = false,
-    public readonly overrideLogin: string | LoginSpecialValue | null = null,
     /**
      * The path to the .git directory for this repository, or undefined if it
      * hasn't been resolved yet (e.g. for repositories added before this
@@ -99,8 +94,7 @@ export class Repository {
       getCustomOverrideHash(this.customEditorOverride),
       this.workflowPreferences.forkContributionTarget,
       this.workflowPreferences.updateBranchStrategy,
-      this.isTutorialRepository,
-      this.overrideLogin
+      this.isTutorialRepository
     )
   }
 
@@ -131,17 +125,6 @@ export class Repository {
         this._url = defaultRemote.url
       }
     })
-  }
-
-  public get login(): string | null {
-    if (this.overrideLogin != null) {
-      return this.overrideLogin &&
-        this.overrideLogin !== LoginSpecialValue.ForceNullLogin
-        ? this.overrideLogin
-        : null
-    } else {
-      return this.gitHubRepository?.login ?? null
-    }
   }
 }
 

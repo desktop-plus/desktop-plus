@@ -31,8 +31,7 @@ describe('repository-matching', () => {
       ]
       const repo = matchGitHubRepository(
         accounts,
-        'https://github.com/someuser/somerepo.git',
-        null
+        'https://github.com/someuser/somerepo.git'
       )
       assert(repo !== null)
       assert.equal(repo.name, 'somerepo')
@@ -55,8 +54,7 @@ describe('repository-matching', () => {
       ]
       const repo = matchGitHubRepository(
         accounts,
-        'https://github.com/someuser/somerepo',
-        null
+        'https://github.com/someuser/somerepo'
       )
       assert(repo !== null)
       assert.equal(repo.name, 'somerepo')
@@ -79,8 +77,7 @@ describe('repository-matching', () => {
       ]
       const repo = matchGitHubRepository(
         accounts,
-        'git:github.com/someuser/somerepo.git',
-        null
+        'git:github.com/someuser/somerepo.git'
       )
       assert(repo !== null)
       assert.equal(repo.name, 'somerepo')
@@ -103,80 +100,11 @@ describe('repository-matching', () => {
       ]
       const repo = matchGitHubRepository(
         accounts,
-        'git@github.com:someuser/somerepo.git',
-        null
+        'git@github.com:someuser/somerepo.git'
       )
       assert(repo !== null)
       assert.equal(repo.name, 'somerepo')
       assert.equal(repo.owner, 'someuser')
-    })
-
-    it('prefers the account whose login matches the remote owner when login is null', () => {
-      const accounts = [
-        new Account(
-          'firstaccount',
-          'https://api.github.com',
-          'dotcom',
-          '',
-          [],
-          '',
-          1,
-          '',
-          'free'
-        ),
-        new Account(
-          'someuser',
-          'https://api.github.com',
-          'dotcom',
-          '',
-          [],
-          '',
-          2,
-          '',
-          'free'
-        ),
-      ]
-      const repo = matchGitHubRepository(
-        accounts,
-        'https://github.com/someuser/somerepo.git',
-        null
-      )
-      assert(repo !== null)
-      assert.equal(repo.account.login, 'someuser')
-    })
-
-    it('falls back to first hostname match when no account matches the remote owner', () => {
-      const accounts = [
-        new Account(
-          'alovelace',
-          'https://api.github.com',
-          'dotcom',
-          '',
-          [],
-          '',
-          1,
-          '',
-          'free'
-        ),
-        new Account(
-          'cbabbage',
-          'https://api.github.com',
-          'dotcom',
-          '',
-          [],
-          '',
-          2,
-          '',
-          'free'
-        ),
-      ]
-      const repo = matchGitHubRepository(
-        accounts,
-        'https://github.com/someuser/somerepo.git',
-        null
-      )
-      assert(repo !== null)
-      assert.equal(repo.account.login, 'alovelace')
     })
 
     it(`doesn't match if there aren't any users with that endpoint`, () => {
@@ -195,8 +123,7 @@ describe('repository-matching', () => {
       ]
       const repo = matchGitHubRepository(
         accounts,
-        'https://github.com/someuser/somerepo.git',
-        null
+        'https://github.com/someuser/somerepo.git'
       )
       assert(repo === null)
     })
@@ -246,24 +173,21 @@ describe('repository-matching', () => {
       assert.equal(
         matchGitHubRepository(
           accounts,
-          'https://git.example.com:3000/someuser/somerepo.git',
-          null
+          'https://git.example.com:3000/someuser/somerepo.git'
         )?.account.login,
         'fj-user'
       )
       assert.equal(
         matchGitHubRepository(
           accounts,
-          'https://git.example.com:8443/someuser/somerepo.git',
-          null
+          'https://git.example.com:8443/someuser/somerepo.git'
         )?.account.login,
         'gl-user'
       )
       assert.equal(
         matchGitHubRepository(
           accounts,
-          'https://git.example.com:3001/someuser/somerepo.git',
-          null
+          'https://git.example.com:3001/someuser/somerepo.git'
         )?.account.login,
         'gt-user'
       )
@@ -293,8 +217,7 @@ describe('repository-matching', () => {
       // The ssh port (2222) is unrelated to the instance's web port (3000)
       const repo = matchGitHubRepository(
         accounts,
-        'ssh://git@git.example.com:2222/someuser/somerepo.git',
-        null
+        'ssh://git@git.example.com:2222/someuser/somerepo.git'
       )
       assert(repo !== null)
       assert.equal(repo.account.login, 'fj-user')
@@ -396,8 +319,6 @@ describe('repository-matching', () => {
       parent: null,
       endpoint: 'https://api.github.com/',
       fork: true,
-      login: 'shiftkey',
-      loginForApi: 'shiftkey',
       hash: 'whatever',
       issuesEnabled: true,
       isArchived: false,

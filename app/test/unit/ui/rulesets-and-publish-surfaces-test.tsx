@@ -13,7 +13,6 @@ function createGitHubRepository() {
     'desktop',
     'github',
     new Owner('desktop', 'https://api.github.com', 1),
-    null,
     1,
     false,
     'https://github.com/desktop/desktop'

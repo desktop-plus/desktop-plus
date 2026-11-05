@@ -50,7 +50,6 @@ function createGitHubRepository(
     name,
     type,
     new Owner(owner, hosts[type], nextId++),
-    null,
     nextId++,
     null,
     htmlURL,

@@ -49,7 +49,6 @@ interface IRepositorySettingsProps {
   readonly remote: IRemote | null
   readonly repository: Repository
   readonly repositoryAccount: Account | null
-  readonly accounts: ReadonlyArray<Account>
   readonly onDismissed: () => void
 }
 
@@ -89,7 +88,6 @@ interface IRepositorySettingsState {
   readonly useCustomEditor: boolean
   readonly customEditor: ICustomIntegration
   readonly useSystemDefaultProgram: boolean
-  readonly repositoryAccount: Account | null
 }
 
 export class RepositorySettings extends React.Component<
@@ -133,7 +131,6 @@ export class RepositorySettings extends React.Component<
       },
       useSystemDefaultProgram:
         props.repository.customEditorOverride?.useSystemDefaultProgram ?? false,
-      repositoryAccount: props.repositoryAccount,
     }
   }
 
@@ -286,12 +283,9 @@ export class RepositorySettings extends React.Component<
             <Remote
               remote={remote}
               repository={this.props.repository}
-              accounts={this.props.accounts}
-              account={this.state.repositoryAccount}
               defaultBranch={this.state.defaultBranch}
               onRemoteUrlChanged={this.onRemoteUrlChanged}
               onDefaultBranchChanged={this.onDefaultBranchChanged}
-              onSelectedAccountChanged={this.onSelectedAccountChanged}
             />
           )
         } else {
@@ -440,17 +434,6 @@ export class RepositorySettings extends React.Component<
 
     // only update this if it will be different from what we have stored
     if (
-      this.state.repositoryAccount?.login !==
-      this.props.repositoryAccount?.login
-    ) {
-      await this.props.dispatcher.updateRepositoryAccount(
-        this.props.repository,
-        this.state.repositoryAccount
-      )
-    }
-
-    // only update this if it will be different from what we have stored
-    if (
       this.state.forkContributionTarget !==
         this.props.repository.workflowPreferences.forkContributionTarget ||
       this.state.updateBranchStrategy !==
@@ -561,10 +544,6 @@ export class RepositorySettings extends React.Component<
 
   private onDefaultBranchChanged = (branch: string) => {
     this.setState({ defaultBranch: branch })
-  }
-
-  private onSelectedAccountChanged = (account: Account) => {
-    this.setState({ repositoryAccount: account })
   }
 
   private onGitConfigLocationChanged = (value: GitConfigLocation) => {

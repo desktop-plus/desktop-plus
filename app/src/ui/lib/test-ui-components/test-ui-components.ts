@@ -487,7 +487,6 @@ export function showTestUI(
         repository.gitHubRepository.name,
         repository.gitHubRepository.type,
         repository.gitHubRepository.owner,
-        repository.gitHubRepository.login,
         repository.gitHubRepository.dbID,
         repository.gitHubRepository.isPrivate,
         repository.gitHubRepository.htmlURL,

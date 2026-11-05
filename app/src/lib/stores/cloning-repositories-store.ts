@@ -20,10 +20,9 @@ export class CloningRepositoriesStore extends BaseStore {
   public async clone(
     url: string,
     path: string,
-    login: string | null,
     options: CloneOptions
   ): Promise<boolean> {
-    const repository = new CloningRepository(path, url, login)
+    const repository = new CloningRepository(path, url)
     this._repositories.push(repository)
 
     const title = `Cloning into ${path}`
@@ -33,7 +32,7 @@ export class CloningRepositoriesStore extends BaseStore {
 
     let success = true
     try {
-      await cloneRepo(url, path, options, login, progress => {
+      await cloneRepo(url, path, options, progress => {
         this.stateByID.set(repository.id, progress)
         this.emitUpdate()
       })
@@ -46,7 +45,6 @@ export class CloningRepositoriesStore extends BaseStore {
         url,
         path,
         options,
-        login,
       }
       e = new ErrorWithMetadata(e, { retryAction, repository })
 

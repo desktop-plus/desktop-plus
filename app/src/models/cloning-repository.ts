@@ -13,8 +13,7 @@ export class CloningRepository {
 
   public constructor(
     public readonly path: string,
-    public readonly url: string,
-    public readonly login: string | null
+    public readonly url: string
   ) {}
 
   public get name(): string {
@@ -27,6 +26,6 @@ export class CloningRepository {
    * Objects with the same hash are guaranteed to be structurally equal.
    */
   public get hash(): string {
-    return `${this.id}+${this.path}+${this.url}+${this.login}`
+    return `${this.id}+${this.path}+${this.url}`
   }
 }

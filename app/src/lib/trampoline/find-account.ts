@@ -23,18 +23,13 @@ export const isAccountForRemote = (account: Account, remoteUrl: string) =>
 
 export async function findGitHubTrampolineAccount(
   accountsStore: AccountsStore,
-  remoteUrl: string,
-  login: string | null
+  remoteUrl: string
 ): Promise<Account | undefined> {
   const accounts = await accountsStore.getAll()
   const parsedUrl = new URL(remoteUrl)
-  const result = accounts.find(
-    a =>
-      new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin &&
-      (!login || a.login === login)
+  return accounts.find(
+    a => new URL(getHTMLURL(a.endpoint)).origin === parsedUrl.origin
   )
-
-  return result
 }
 
 export async function findGenericTrampolineAccount(

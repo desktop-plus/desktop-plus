@@ -51,9 +51,6 @@ interface IRefStatusSubscription {
   /** Owner The repository owner's login (i.e niik for niik/desktop) */
   readonly owner: string
 
-  /** Login of the account to use for fetching the commit status */
-  readonly login: string
-
   /** The repository name */
   readonly name: string
 
@@ -276,10 +273,10 @@ export class CommitStatusStore {
       return
     }
 
-    const { endpoint, owner, name, ref, login } = subscription
+    const { endpoint, owner, name, ref } = subscription
+    const account = this.accounts.find(a => a.endpoint === endpoint)
 
-    const account = getAccountForEndpoint(this.accounts, endpoint, login, false)
-    if (account === null) {
+    if (account === undefined) {
       return
     }
 
@@ -445,7 +442,6 @@ export class CommitStatusStore {
       ref,
       callbacks: new Set<StatusCallBack>(),
       branchName,
-      login: repository.loginForApi,
     }
 
     this.subscriptions.set(key, subscription)
@@ -500,11 +496,8 @@ export class CommitStatusStore {
       return checkRuns
     }
 
-    const { endpoint, owner, name, login } = subscription
-
-    const account = this.accounts.find(
-      a => a.endpoint === endpoint && a.login === login
-    )
+    const { endpoint, owner, name } = subscription
+    const account = this.accounts.find(a => a.endpoint === endpoint)
     if (account === undefined) {
       return checkRuns
     }
@@ -530,11 +523,8 @@ export class CommitStatusStore {
       return checkRuns
     }
 
-    const { endpoint, owner, name, login } = subscription
-
-    const account = this.accounts.find(
-      a => a.endpoint === endpoint && a.login === login
-    )
+    const { endpoint, owner, name } = subscription
+    const account = this.accounts.find(a => a.endpoint === endpoint)
 
     if (account === undefined) {
       return checkRuns
@@ -550,11 +540,7 @@ export class CommitStatusStore {
     checkSuiteId: number
   ): Promise<boolean> {
     const { owner, name } = repository
-    const account = getAccountForEndpoint(
-      this.accounts,
-      repository.endpoint,
-      repository.loginForApi
-    )
+    const account = getAccountForEndpoint(this.accounts, repository.endpoint)
     if (account === null) {
       return false
     }
@@ -568,11 +554,7 @@ export class CommitStatusStore {
     jobId: number
   ): Promise<boolean> {
     const { owner, name } = repository
-    const account = getAccountForEndpoint(
-      this.accounts,
-      repository.endpoint,
-      repository.loginForApi
-    )
+    const account = getAccountForEndpoint(this.accounts, repository.endpoint)
     if (account === null) {
       return false
     }
@@ -586,11 +568,7 @@ export class CommitStatusStore {
     workflowRunId: number
   ): Promise<boolean> {
     const { owner, name } = repository
-    const account = getAccountForEndpoint(
-      this.accounts,
-      repository.endpoint,
-      repository.loginForApi
-    )
+    const account = getAccountForEndpoint(this.accounts, repository.endpoint)
     if (account === null) {
       return false
     }
@@ -604,11 +582,7 @@ export class CommitStatusStore {
     checkSuiteId: number
   ): Promise<IAPICheckSuite | null> {
     const { owner, name } = repository
-    const account = getAccountForEndpoint(
-      this.accounts,
-      repository.endpoint,
-      repository.loginForApi
-    )
+    const account = getAccountForEndpoint(this.accounts, repository.endpoint)
     if (account === null) {
       return null
     }

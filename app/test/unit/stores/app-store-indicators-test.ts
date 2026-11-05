@@ -311,8 +311,7 @@ describe('AppStore repository indicators', () => {
   it('keeps local repositories when a cloning repository is selected', () => {
     const selectedRepository = new CloningRepository(
       '/repositories/cloning',
-      'https://github.com/desktop/cloning.git',
-      null
+      'https://github.com/desktop/cloning.git'
     )
     const repositories = [
       new Repository('/repositories/local', selectedRepository.id, null, false),

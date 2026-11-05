@@ -1298,15 +1298,6 @@ export class GitStore extends BaseStore {
     return status
   }
 
-  public async loadStatusLight(): Promise<IStatusResult | null> {
-    try {
-      return await getStatus(this.repository)
-    } catch (e) {
-      log.error('Failed to load repository status', e)
-      return null
-    }
-  }
-
   /**
    * Find a commit in the local cache, or load in the commit from the underlying
    * repository.

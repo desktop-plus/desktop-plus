@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { Account } from '../../src/models/account'
 import { deriveApiType } from '../../src/lib/api'
@@ -86,34 +86,18 @@ async function setupLogins(
   return store
 }
 
-function getCredential(
-  store: AccountsStore,
-  trampolineToken = 'test',
-  username?: string
-) {
+function getCredential(store: AccountsStore, trampolineToken = 'test') {
   const handler = createCredentialHelperTrampolineHandler(store)
   return handler({
     identifier: TrampolineCommandIdentifier.CredentialHelper,
     trampolineToken,
     parameters: ['get'],
     environmentVariables: new Map(),
-    stdin: `protocol=https\nhost=github.com\n${
-      username === undefined ? '' : `username=${username}\n`
-    }\n`,
+    stdin: 'protocol=https\nhost=github.com\n\n',
   })
 }
 
 describe('Refreshing Git credentials', () => {
-  // Desktop Plus looks up the repository's login, which needs a dispatcher.
-  beforeEach(() => {
-    mock.method(
-      trampolineUIHelper,
-      'getLoginForRepositoryPath',
-      async () => null
-    )
-  })
-  afterEach(() => mock.restoreAll())
-
   it('refreshes before returning credentials', async () => {
     const { store, renewals } = await setup()
     const result = await getCredential(store)
@@ -180,23 +164,6 @@ describe('Refreshing Git credentials', () => {
     assert.equal(prompt.mock.calls[0].arguments[0], 'https://github.com/')
     assert.ok(
       getHasRejectedCredentialsForEndpoint(token, 'https://github.com/')
-    )
-  })
-  it('gives each login on the host its own credentials', async () => {
-    const store = await setupLogins()
-    const result = await getCredential(store, 'test', other.login)
-    assert.ok(result)
-    const credential = parseCredential(result)
-    assert.equal(credential.get('username'), other.login)
-    assert.equal(credential.get('password'), other.token)
-
-    const ownResult = await getCredential(store, 'test', account.login)
-    assert.ok(ownResult)
-    assert.equal(parseCredential(ownResult).get('username'), account.login)
-    assert.equal(parseCredential(ownResult).get('password'), 'new-access')
-    assert.equal(
-      (await store.getAccountWithFreshToken(other)).token,
-      other.token
     )
   })
 })

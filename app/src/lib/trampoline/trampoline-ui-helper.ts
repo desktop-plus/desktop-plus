@@ -152,18 +152,6 @@ class TrampolineUIHelper {
         assertNever(apiType, `Unexpected API type: ${apiType}`)
     }
   }
-
-  public async getLoginForRepositoryPath(path: string): Promise<string | null> {
-    const repo = await this.dispatcher.getRepositoryForPath(path)
-    if (repo) {
-      // Ugly hack to avoid infinite loading in Windows (https://github.com/desktop-plus/desktop-plus/issues/119)
-      // Additionally, don't await this call, as it could fail and we don't want to show an error to the user in that case (https://github.com/desktop-plus/desktop-plus/issues/146)
-      this.dispatcher.loadStatusLight(repo).catch(e => {
-        log.error(`Trampoline loadStatusLight failed (${repo.path})`, e)
-      })
-    }
-    return repo?.login ?? null
-  }
 }
 
 export const trampolineUIHelper = new TrampolineUIHelper()

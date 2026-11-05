@@ -35,7 +35,6 @@ function makePullRequest(
     'repo',
     'github',
     owner,
-    null,
     1,
     false,
     'https://example.com/owner/repo'

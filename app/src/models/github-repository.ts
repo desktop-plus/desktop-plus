@@ -25,7 +25,6 @@ export class GitHubRepository {
     public readonly name: string,
     public readonly type: RepoType,
     public readonly owner: Owner,
-    public readonly login: string | null = null,
     /**
      * The ID of the repository in the app's local database. This is no relation
      * to the API ID.
@@ -44,7 +43,6 @@ export class GitHubRepository {
       this.name,
       this.type,
       this.owner.login,
-      this.login,
       this.dbID,
       this.isPrivate,
       this.htmlURL,
@@ -68,11 +66,6 @@ export class GitHubRepository {
   /** Is the repository a fork? */
   public get fork(): boolean {
     return !!this.parent
-  }
-
-  public get loginForApi(): string {
-    // If no login is set explicitly, assume we might be logged in as the repo owner
-    return this.login ?? this.owner.login
   }
 }
 

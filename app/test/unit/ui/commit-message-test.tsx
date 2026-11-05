@@ -54,7 +54,6 @@ function createRepository() {
     'desktop',
     'github',
     owner,
-    'login',
     99,
     false,
     'https://github.com/octocat/desktop'

@@ -110,19 +110,6 @@ export class AccountPicker extends React.Component<
 
   private renderAccount = (item: IAccountListItem, matches: IMatches) => {
     const account = item.account
-    if (account.isAnonymous) {
-      return (
-        <div className="account-list-item">
-          <Avatar
-            accounts={this.props.accounts}
-            user={this.getAvatarUser(account)}
-          />
-          <div className="info">
-            <div className="title">No account</div>
-          </div>
-        </div>
-      )
-    }
 
     return (
       <div className="account-list-item">
@@ -153,25 +140,18 @@ export class AccountPicker extends React.Component<
     `@${item.account.login} ${item.account.friendlyEndpoint}`
 
   public render() {
+    const account = this.props.selectedAccount
+
     return (
       <PopoverDropdown
         className="account-picker"
         contentTitle="Choose an account"
         buttonContent={
           <div className="account">
-            {this.props.selectedAccount.isAnonymous ? (
-              'Use default account'
-            ) : (
-              <>
-                <span className="login">
-                  @{this.props.selectedAccount.login}
-                </span>{' '}
-                -{' '}
-                <span className="endpoint">
-                  {this.props.selectedAccount.friendlyEndpoint}
-                </span>
-              </>
-            )}
+            <span className="login">@{account.login}</span> -{' '}
+            <span className="endpoint">
+              {this.props.selectedAccount.friendlyEndpoint}
+            </span>
           </div>
         }
         label="Account"

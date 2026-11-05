@@ -10,20 +10,14 @@ import {
 /** Get the authenticated account for the repository. */
 export function getAccountForRepository(
   accounts: ReadonlyArray<Account>,
-  repository: Repository,
-  strict: boolean = false
+  repository: Repository
 ): Account | null {
   const gitHubRepository = repository.gitHubRepository
   if (!gitHubRepository) {
     return null
   }
 
-  return getAccountForEndpoint(
-    accounts,
-    gitHubRepository.endpoint,
-    gitHubRepository.loginForApi,
-    strict
-  )
+  return getAccountForEndpoint(accounts, gitHubRepository.endpoint)
 }
 
 /**

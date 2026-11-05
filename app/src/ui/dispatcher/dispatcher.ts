@@ -194,10 +194,9 @@ export class Dispatcher {
    * this will post an error to that affect.
    */
   public addRepositories(
-    paths: ReadonlyArray<string>,
-    login: string | null
+    paths: ReadonlyArray<string>
   ): Promise<ReadonlyArray<Repository>> {
-    return this.appStore._addRepositories(paths, login)
+    return this.appStore._addRepositories(paths)
   }
 
   /**
@@ -214,15 +213,9 @@ export class Dispatcher {
   public addTutorialRepository(
     path: string,
     endpoint: string,
-    apiRepository: IAPIFullRepository,
-    login: string
+    apiRepository: IAPIFullRepository
   ) {
-    return this.appStore._addTutorialRepository(
-      path,
-      endpoint,
-      apiRepository,
-      login
-    )
+    return this.appStore._addTutorialRepository(path, endpoint, apiRepository)
   }
 
   /** Resume an already started onboarding tutorial */
@@ -471,10 +464,6 @@ export class Dispatcher {
    */
   public refreshRepository(repository: Repository): Promise<void> {
     return this.appStore._refreshOrRecoverRepository(repository)
-  }
-
-  public async loadStatusLight(repository: Repository): Promise<void> {
-    await this.appStore._loadStatusLight(repository)
   }
 
   /**
@@ -948,24 +937,18 @@ export class Dispatcher {
    * Clone a missing repository to the previous path, and update it's
    * state in the repository list if the clone completes without error.
    */
-  public cloneAgain(url: string, path: string, login: string): Promise<void> {
-    return this.appStore._cloneAgain(url, path, login)
+  public cloneAgain(url: string, path: string): Promise<void> {
+    return this.appStore._cloneAgain(url, path)
   }
 
   /** Clone the repository to the path. */
   public async clone(
     url: string,
     path: string,
-    login: string | null,
     options?: { branch?: string; defaultBranch?: string }
   ): Promise<Repository | null> {
     return this.appStore._completeOpenInDesktop(async () => {
-      const { promise, repository } = this.appStore._clone(
-        url,
-        path,
-        login,
-        options
-      )
+      const { promise, repository } = this.appStore._clone(url, path, options)
       await this.selectRepository(repository)
       const success = await promise
       // TODO: this exit condition is not great, bob
@@ -973,7 +956,7 @@ export class Dispatcher {
         return null
       }
 
-      const addedRepositories = await this.addRepositories([path], login)
+      const addedRepositories = await this.addRepositories([path])
 
       if (addedRepositories.length < 1) {
         return null
@@ -1043,15 +1026,6 @@ export class Dispatcher {
     branch: string | null
   ): Promise<void> {
     return this.appStore._updateRepositoryDefaultBranch(repository, branch)
-  }
-
-  /** Changes the repository's account */
-  public updateRepositoryAccount(
-    repository: Repository,
-    account: Account | null
-  ): Promise<Repository> {
-    account = account?.isAnonymous ? null : account
-    return this.appStore._updateRepositoryAccount(repository, account)
   }
 
   public updateRepositoryEditorOverride(
@@ -2246,10 +2220,6 @@ export class Dispatcher {
     )
   }
 
-  public async getRepositoryForPath(path: string): Promise<Repository | null> {
-    return await this.appStore._getRepositoryForPath(path)
-  }
-
   public async setAppFocusState(isFocused: boolean): Promise<void> {
     await this.appStore._setAppFocusState(isFocused)
 
@@ -2700,12 +2670,7 @@ export class Dispatcher {
         return this.fetch(retryAction.repository, FetchType.UserInitiatedTask)
 
       case RetryActionType.Clone:
-        await this.clone(
-          retryAction.url,
-          retryAction.path,
-          retryAction.login,
-          retryAction.options
-        )
+        await this.clone(retryAction.url, retryAction.path, retryAction.options)
         break
 
       case RetryActionType.Checkout:

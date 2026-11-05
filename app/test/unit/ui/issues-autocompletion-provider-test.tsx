@@ -37,7 +37,7 @@ function toDispatcher(dispatcher: TestDispatcher): Dispatcher {
 
 function createProvider() {
   const owner = new Owner('desktop', 'https://api.github.com', 1)
-  const repository = new GitHubRepository('desktop', 'github', owner, null, 99)
+  const repository = new GitHubRepository('desktop', 'github', owner, 99)
 
   return new IssuesAutocompletionProvider(
     new IssuesStore(new TestIssuesDatabase()),

@@ -23,7 +23,6 @@ function createForkRepository() {
     'desktop',
     'github',
     parentOwner,
-    null,
     2,
     false,
     'https://github.com/github/desktop'
@@ -32,7 +31,6 @@ function createForkRepository() {
     'desktop',
     'github',
     owner,
-    null,
     1,
     false,
     'https://github.com/desktop/desktop',
@@ -52,7 +50,6 @@ describe('static status and link components', () => {
       'desktop',
       'github',
       new Owner('desktop', 'https://api.github.com', 1),
-      null,
       1,
       false,
       'https://github.com/desktop/desktop'

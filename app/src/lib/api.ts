@@ -3435,15 +3435,9 @@ export function deriveApiType<T>(
 /** Get the account for the endpoint. */
 export function getAccountForEndpoint(
   accounts: ReadonlyArray<Account>,
-  endpoint: string,
-  login: string,
-  strict: boolean = false
+  endpoint: string
 ): Account | null {
-  return (
-    accounts.find(a => a.endpoint === endpoint && a.login === login) ||
-    (!strict && accounts.find(a => a.endpoint === endpoint)) ||
-    null
-  )
+  return accounts.find(a => a.endpoint === endpoint) || null
 }
 
 function pkceChallengeParams(codeChallenge: string): string {

@@ -932,12 +932,7 @@ export class CloneRepository extends React.Component<
       return { url }
     }
 
-    const { selectedAccount } = this.getSelectedTabState()
-    const account = await findAccountForRemoteURL(
-      url,
-      this.props.accounts,
-      selectedAccount?.login ?? null
-    )
+    const account = await findAccountForRemoteURL(url, this.props.accounts)
     if (lastParsedIdentifier !== null && account !== null) {
       const api = API.fromAccount(account)
       const { owner, name } = lastParsedIdentifier
@@ -991,12 +986,10 @@ export class CloneRepository extends React.Component<
     }
 
     const { url, defaultBranch } = cloneInfo
-    const { selectedAccount } = this.getSelectedTabState()
 
     this.props.dispatcher.closeFoldout(FoldoutType.Repository)
     try {
-      const login = selectedAccount?.login ?? null
-      this.cloneImpl(url.trim(), path, login, defaultBranch)
+      this.cloneImpl(url.trim(), path, defaultBranch)
     } catch (e) {
       log.error(`CloneRepository: clone failed to complete to ${path}`, e)
       this.setState({ loading: false })
@@ -1004,14 +997,9 @@ export class CloneRepository extends React.Component<
     }
   }
 
-  private cloneImpl(
-    url: string,
-    path: string,
-    login: string | null,
-    defaultBranch?: string
-  ) {
+  private cloneImpl(url: string, path: string, defaultBranch?: string) {
     const { selectedAccount } = this.getSelectedTabState()
-    this.props.dispatcher.clone(url, path, login, { defaultBranch })
+    this.props.dispatcher.clone(url, path, { defaultBranch })
     this.props.onDismissed()
 
     setDefaultDirForAccount(Path.resolve(path, '..'), selectedAccount)

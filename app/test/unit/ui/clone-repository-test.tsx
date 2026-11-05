@@ -219,7 +219,6 @@ describe('CloneRepository path validation', () => {
     assert.deepStrictEqual(clone.mock.calls[0].arguments, [
       url,
       path,
-      null,
       { defaultBranch: undefined },
     ])
   })

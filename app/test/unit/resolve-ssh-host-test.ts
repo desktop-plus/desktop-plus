@@ -203,8 +203,8 @@ describe('resolveSSHRemoteAlias', () => {
     try {
       const url = 'companyname-server-git:group/repo.git'
       const repo =
-        matchGitHubRepository(accounts, url, null) ??
-        matchGitHubRepository(accounts, await resolveSSHRemoteAlias(url), null)
+        matchGitHubRepository(accounts, url) ??
+        matchGitHubRepository(accounts, await resolveSSHRemoteAlias(url))
 
       assert(repo !== null)
       assert.equal(repo.account.login, 'gl-user')

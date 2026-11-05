@@ -11,7 +11,7 @@ export const CopilotLicenseTypeNoAccess = 'NO_ACCESS'
  * and a particular account.
  */
 export function accountEquals(x: Account, y: Account) {
-  return x.endpoint === y.endpoint && x.id === y.id && x.login === y.login
+  return x.endpoint === y.endpoint && x.id === y.id
 }
 
 export type AccountAPIType =
@@ -121,10 +121,6 @@ export class Account {
     return (this._friendlyEndpoint ??= isDotComAccount(this)
       ? 'GitHub.com'
       : new URL(getHTMLURL(this.endpoint)).host)
-  }
-
-  public get isAnonymous() {
-    return this.login === '' && this.token === ''
   }
 }
 

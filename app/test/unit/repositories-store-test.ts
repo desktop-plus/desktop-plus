@@ -27,11 +27,7 @@ describe('RepositoriesStore', () => {
   describe('adding a new repository', () => {
     it('contains the added repository', async () => {
       const repoPath = '/some/cool/path'
-      await repositoriesStore.addRepository(
-        repoPath,
-        join(repoPath, '.git'),
-        null
-      )
+      await repositoriesStore.addRepository(repoPath, join(repoPath, '.git'))
 
       const repositories = await repositoriesStore.getAll()
       assert.equal(repositories[0].path, repoPath)
@@ -42,13 +38,11 @@ describe('RepositoriesStore', () => {
     it('returns multiple repositories', async () => {
       await repositoriesStore.addRepository(
         '/some/cool/path',
-        '/some/cool/path/.git',
-        null
+        '/some/cool/path/.git'
       )
       await repositoriesStore.addRepository(
         '/some/other/path',
-        '/some/other/path/.git',
-        null
+        '/some/other/path/.git'
       )
 
       const repositories = await repositoriesStore.getAll()
@@ -88,10 +82,9 @@ describe('RepositoriesStore', () => {
       await repositoriesStore.setGitHubRepository(
         await repositoriesStore.addRepository(
           '/some/cool/path',
-          '/some/cool/path/.git',
-          null
+          '/some/cool/path/.git'
         ),
-        await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo, null)
+        await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo)
       )
 
       const repositories = await repositoriesStore.getAll()
@@ -109,19 +102,17 @@ describe('RepositoriesStore', () => {
       const firstRepo = await repositoriesStore.setGitHubRepository(
         await repositoriesStore.addRepository(
           '/some/cool/path',
-          '/some/cool/path/.git',
-          null
+          '/some/cool/path/.git'
         ),
-        await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo, null)
+        await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo)
       )
 
       const secondRepo = await repositoriesStore.setGitHubRepository(
         await repositoriesStore.addRepository(
           '/some/other/path',
-          '/some/other/path/.git',
-          null
+          '/some/other/path/.git'
         ),
-        await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo, null)
+        await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo)
       )
 
       assert.equal(
@@ -169,8 +160,7 @@ describe('RepositoriesStore', () => {
 
       const ghRepo = await repositoriesStore.upsertGitHubRepository(
         endpoint,
-        apiRepo,
-        null
+        apiRepo
       )
       assert.equal(ghRepo.type, 'gitlab')
 
@@ -184,8 +174,7 @@ describe('RepositoriesStore', () => {
 
       const ghRepo = await repositoriesStore.upsertGitHubRepository(
         endpoint,
-        apiRepo,
-        null
+        apiRepo
       )
 
       // Simulate the account being removed and localStorage cleared while
@@ -200,7 +189,7 @@ describe('RepositoriesStore', () => {
 
     it('keeps the persisted apiType when upserting without a registry entry', async () => {
       registerEndpointApiType(endpoint, 'gitlab')
-      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo, null)
+      await repositoriesStore.upsertGitHubRepository(endpoint, apiRepo)
 
       // Registry entry lost while IndexedDB survived
       localStorage.removeItem('api-endpoint-types')
@@ -208,8 +197,7 @@ describe('RepositoriesStore', () => {
 
       const reUpserted = await repositoriesStore.upsertGitHubRepository(
         endpoint,
-        apiRepo,
-        null
+        apiRepo
       )
       assert.equal(reUpserted.type, 'gitlab')
 
@@ -225,8 +213,7 @@ describe('RepositoriesStore', () => {
           ...apiRepo,
           clone_url: 'https://github.com/my-user/my-repo',
           html_url: 'https://github.com/my-user/my-repo',
-        },
-        null
+        }
       )
       assert.equal(dotComRepo.type, 'github')
 
@@ -249,8 +236,7 @@ describe('RepositoriesStore', () => {
     it('persists the main worktree path', async () => {
       const repository = await repositoriesStore.addRepository(
         mainPath,
-        join(mainPath, '.git'),
-        'login'
+        join(mainPath, '.git')
       )
 
       await repositoriesStore.switchWorktree(
@@ -269,8 +255,7 @@ describe('RepositoriesStore', () => {
     it('keeps the main worktree path when switching between worktrees', async () => {
       const repository = await repositoriesStore.addRepository(
         mainPath,
-        join(mainPath, '.git'),
-        'login'
+        join(mainPath, '.git')
       )
 
       const { repository: onWorktree } = await repositoriesStore.switchWorktree(
@@ -303,8 +288,7 @@ describe('RepositoriesStore', () => {
     async function onWorktree() {
       const repository = await repositoriesStore.addRepository(
         mainPath,
-        join(mainPath, '.git'),
-        'login'
+        join(mainPath, '.git')
       )
 
       const { repository: switched } = await repositoriesStore.switchWorktree(

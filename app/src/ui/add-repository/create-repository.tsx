@@ -275,10 +275,7 @@ export class CreateRepository extends React.Component<
       return this.props.dispatcher.postError(e)
     }
 
-    const repositories = await this.props.dispatcher.addRepositories(
-      [fullPath],
-      null
-    )
+    const repositories = await this.props.dispatcher.addRepositories([fullPath])
     if (repositories.length < 1) {
       return
     }

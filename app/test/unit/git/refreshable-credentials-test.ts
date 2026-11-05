@@ -10,7 +10,6 @@ import { Account } from '../../../src/models/account'
 import { AccountsStore } from '../../../src/lib/stores/accounts-store'
 import { IOAuthToken } from '../../../src/lib/oauth-token'
 import { trampolineServer } from '../../../src/lib/trampoline/trampoline-server'
-import { trampolineUIHelper } from '../../../src/lib/trampoline/trampoline-ui-helper'
 import { TrampolineCommandIdentifier } from '../../../src/lib/trampoline/trampoline-command'
 import { createCredentialHelperTrampolineHandler } from '../../../src/lib/trampoline/trampoline-credential-helper'
 import { unregisterHost } from '../../../src/lib/endpoint-api-type-registry'
@@ -132,12 +131,6 @@ async function serveRepositories(
 
 describe('Refreshable credentials in Git', () => {
   it('a running push keeps working while another consumer waits to renew its token', async t => {
-    // Desktop Plus looks up the repository's login, which needs a dispatcher.
-    t.mock.method(
-      trampolineUIHelper,
-      'getLoginForRepositoryPath',
-      async () => null
-    )
     let clock = Date.now()
     const validTokens = new Set(['initial-access'])
     let renewals = 0
@@ -234,11 +227,6 @@ describe('Refreshable credentials in Git', () => {
   })
 
   it('pushes to a self-hosted GitLab with a renewed OAuth token and its Git username', async t => {
-    t.mock.method(
-      trampolineUIHelper,
-      'getLoginForRepositoryPath',
-      async () => null
-    )
     t.after(() => unregisterHost('gitlab.test'))
     let renewals = 0
     const store = new AccountsStore(

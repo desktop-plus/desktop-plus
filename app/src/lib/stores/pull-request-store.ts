@@ -96,32 +96,25 @@ export class PullRequestStore {
     // after the timestamp we give it we will always get at least one issue
     // back. See `storePullRequests` for details on how that's handled.
     if (!lastUpdatedAt) {
-      return this.fetchAndStoreOpenPullRequests(api, repo, account.login)
+      return this.fetchAndStoreOpenPullRequests(api, repo)
     } else {
-      return this.fetchAndStoreUpdatedPullRequests(
-        api,
-        repo,
-        lastUpdatedAt,
-        account.login
-      )
+      return this.fetchAndStoreUpdatedPullRequests(api, repo, lastUpdatedAt)
     }
   }
 
   private async fetchAndStoreOpenPullRequests(
     api: API,
-    repository: GitHubRepository,
-    login: string
+    repository: GitHubRepository
   ) {
     const { name, owner } = getNameWithOwner(repository)
     const open = await api.fetchAllOpenPullRequests(owner, name)
-    await this.storePullRequestsAndEmitUpdate(open, repository, login)
+    await this.storePullRequestsAndEmitUpdate(open, repository)
   }
 
   private async fetchAndStoreUpdatedPullRequests(
     api: API,
     repository: GitHubRepository,
-    lastUpdatedAt: Date,
-    login: string
+    lastUpdatedAt: Date
   ) {
     const { name, owner } = getNameWithOwner(repository)
     const updated = await api
@@ -135,11 +128,7 @@ export class PullRequestStore {
       )
 
     if (updated !== null) {
-      return await this.storePullRequestsAndEmitUpdate(
-        updated,
-        repository,
-        login
-      )
+      return await this.storePullRequestsAndEmitUpdate(updated, repository)
     } else {
       // If we fail to load updated pull requests either because
       // there's too many updated PRs since the last time we
@@ -157,7 +146,7 @@ export class PullRequestStore {
       // the number of merged PRs since the last time we fetched could
       // number in the thousands.
       await this.db.deleteAllPullRequestsInRepository(repository)
-      await this.fetchAndStoreOpenPullRequests(api, repository, login)
+      await this.fetchAndStoreOpenPullRequests(api, repository)
     }
   }
 
@@ -227,10 +216,9 @@ export class PullRequestStore {
    */
   private async storePullRequestsAndEmitUpdate(
     pullRequestsFromAPI: ReadonlyArray<IAPIPullRequest>,
-    repository: GitHubRepository,
-    login: string
+    repository: GitHubRepository
   ) {
-    if (await this.storePullRequests(pullRequestsFromAPI, repository, login)) {
+    if (await this.storePullRequests(pullRequestsFromAPI, repository)) {
       this.emitPullRequestsChanged(repository, await this.getAll(repository))
     }
   }
@@ -244,8 +232,7 @@ export class PullRequestStore {
    */
   private async storePullRequests(
     pullRequestsFromAPI: ReadonlyArray<IAPIPullRequest>,
-    repository: GitHubRepository,
-    login: string
+    repository: GitHubRepository
   ) {
     if (pullRequestsFromAPI.length === 0) {
       return false
@@ -291,7 +278,7 @@ export class PullRequestStore {
         return fatalError('PR cannot have a null base repo')
       }
 
-      const baseGitHubRepo = await upsertRepo(endpoint, pr.base.repo, login)
+      const baseGitHubRepo = await upsertRepo(endpoint, pr.base.repo)
 
       if (pr.state === 'closed') {
         prsToDelete.push(getPullRequestKey(baseGitHubRepo, pr.number))
@@ -313,7 +300,7 @@ export class PullRequestStore {
         continue
       }
 
-      const headRepo = await upsertRepo(endpoint, pr.head.repo, login)
+      const headRepo = await upsertRepo(endpoint, pr.head.repo)
 
       prsToUpsert.push({
         number: pr.number,
