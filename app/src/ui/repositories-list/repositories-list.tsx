@@ -1346,6 +1346,7 @@ export class RepositoriesList extends React.Component<
             filterText: this.props.filterText,
             localRepositoryStateLookup: this.props.localRepositoryStateLookup,
             showWorktreesInRepoList: this.props.showWorktreesInRepoList,
+            showChangedFileCount: this.props.showChangedFileCount,
             collapsedGroups: this.state.collapsedGroups,
             groupOrder: this.state.groupOrder,
             draggedGroup: this.state.draggedGroup,
