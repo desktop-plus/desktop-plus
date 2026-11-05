@@ -1,6 +1,6 @@
 import { ISecureStore } from './stores/stores'
 import { getKeyForAccount } from './auth'
-import { Account, accountEquals } from '../models/account'
+import { Account, accountEquals, getAccountKey } from '../models/account'
 import { getHTMLURL } from './api'
 import {
   IOAuthToken,
@@ -69,8 +69,6 @@ interface ICredentialSession {
   failedRecovery?: { readonly token: string; readonly at: number }
 }
 
-type SignIn = Pick<Account, 'endpoint' | 'login'>
-
 interface ILease {
   readonly token: string
   readonly holder: string
@@ -117,15 +115,12 @@ export interface ICredentialSessionsDelegate {
    */
   readonly requireSignIn: (account: Account) => Promise<Account | null>
 
-  /** A renewed access token for the endpoint was saved and installed. */
-  readonly onTokenRenewed: (
-    endpoint: string,
-    accessToken: string,
-    login: string
-  ) => void
+  /** A renewed access token for the account was saved and installed. */
+  readonly onTokenRenewed: (account: Account, accessToken: string) => void
 
   /**
-   * A sign-in was saved and installed, replacing any session for its login.
+   * A sign-in was saved and installed, replacing any session for the same
+   * account (endpoint and login).
    *
    * Called synchronously with the swap, so the owner's account list never
    * disagrees with the installed session.
@@ -142,13 +137,17 @@ export interface ICredentialSessionsDelegate {
 /**
  * Credential lifecycle for signed-in accounts: one session per account.
  *
+ * Multiple accounts can be signed in to the same endpoint. Sessions are keyed
+ * by `getAccountKey` (endpoint and login), which also matches how credentials
+ * are stored in secure storage.
+ *
  * Owns token renewal, lookup of stale token copies, rejected-token handling,
  * and ordered secure-storage writes. The account list stays with the owner,
  * which is told through `ICredentialSessionsDelegate` when it must change.
  */
 export class CredentialSessions {
-  /** Signed-in session for each `signInKey`: account, credential, renewal state. */
-  private readonly sessionsBySignIn = new Map<string, ICredentialSession>()
+  /** Signed-in session for each account key: account, credential, renewal state. */
+  private readonly sessionsByKey = new Map<string, ICredentialSession>()
   /**
    * Session that issued each access token, keyed by `tokenKey`. API clients
    * keep the token they were created with; this maps that copy (even after
@@ -189,7 +188,7 @@ export class CredentialSessions {
       leaseWaiters: new Set(),
     }
     this.retireSession(account)
-    this.sessionsBySignIn.set(this.signInKey(account), session)
+    this.sessionsByKey.set(getAccountKey(account), session)
     this.sessionsByAccount.set(restored, session)
     if (credential !== null) {
       this.sessionsByToken.set(
@@ -201,7 +200,7 @@ export class CredentialSessions {
   }
 
   /**
-   * Save and install a new credential, replacing any session for its login.
+   * Save and install a new credential, replacing any session for the account.
    *
    * Saves run in call order and each one is installed as soon as it succeeds,
    * so memory always matches the last successful save. A failed save leaves
@@ -213,7 +212,7 @@ export class CredentialSessions {
     credential: IOAuthToken
   ): Promise<Account> {
     const authenticated = account.withToken(credential.accessToken)
-    await this.write(this.signInKey(account), async () => {
+    await this.write(account, async () => {
       await this.secureStore.setItem(
         getKeyForAccount(account),
         account.login,
@@ -231,9 +230,9 @@ export class CredentialSessions {
     return authenticated
   }
 
-  /** Stop using the login's session so no caller can obtain its token again. */
-  public retire(endpoint: string, login: string): void {
-    this.retireSession({ endpoint, login })
+  /** Stop using the account's session so no caller can obtain its token again. */
+  public retire(account: Account): void {
+    this.retireSession(account)
   }
 
   /**
@@ -243,9 +242,8 @@ export class CredentialSessions {
    * the stored item now holds that sign-in's credential.
    */
   public delete(account: Account): Promise<void> {
-    return this.write(this.signInKey(account), async () => {
-      const current = this.getSession(account)
-      if (current?.account.login === account.login) {
+    return this.write(account, async () => {
+      if (this.sessionsByKey.has(getAccountKey(account))) {
         return
       }
       if (await this.hasNewerStoredCredential(account)) {
@@ -258,41 +256,74 @@ export class CredentialSessions {
     })
   }
 
-  private retireSession(account: SignIn): void {
-    const previous = this.getSession(account)
+  private retireSession(account: Account): void {
+    const key = getAccountKey(account)
+    const previous = this.sessionsByKey.get(key)
     if (previous !== undefined) {
       previous.retired = true
       previous.credential = null
       this.notifyLeaseWaiters(previous)
     }
-    this.sessionsBySignIn.delete(this.signInKey(account))
+    this.sessionsByKey.delete(key)
   }
 
-  /** Resolve token snapshots held by long-lived clients without changing identity. */
-  public resolveToken(
+  /** The current session for the account, if it's still the same account. */
+  private getSession(account: Account): ICredentialSession | undefined {
+    const session = this.sessionsByKey.get(getAccountKey(account))
+    return session?.account.id === account.id ? session : undefined
+  }
+
+  private getSessionsForEndpoint(endpoint: string) {
+    return [...this.sessionsByKey.values()].filter(
+      s => s.account.endpoint === endpoint
+    )
+  }
+
+  /**
+   * Resolve token snapshots held by long-lived clients without changing identity.
+   *
+   * `login` is the caller's account, when known: it's the only way to tell
+   * which of an endpoint's accounts an empty token belongs to.
+   */
+  public async resolveToken(
     endpoint: string,
     token: string,
     login?: string
   ): Promise<string> {
-    const session = this.sessionsByToken.get(this.tokenKey(endpoint, token))
-    // Several accounts can share an endpoint: only the caller's login
-    // identifies which one an empty token belongs to.
-    const current =
-      login === undefined ? undefined : this.getSession({ endpoint, login })
-    if (token === '' && current?.credential === null) {
-      return this.validToken(current)
+    const caller =
+      login === undefined
+        ? undefined
+        : this.sessionsByKey.get(getAccountKey({ endpoint, login }))
+    if (token === '' && caller?.credential === null) {
+      // Secure storage may have been unavailable when this window loaded it.
+      return this.validToken(caller)
     }
+    if (token === '' && login === undefined) {
+      // Accounts restored without a stored credential have an empty token.
+      // We can't tell which of them a client belongs to, but none of them can
+      // authenticate, so require all of them to sign in again.
+      const missing = this.getSessionsForEndpoint(endpoint).filter(
+        s => s.credential === null
+      )
+      // validToken first adopts a credential that secure storage now has
+      // (e.g. once unlocked) and only requires sign in otherwise.
+      const results = await Promise.allSettled(
+        missing.map(s => this.validToken(s))
+      )
+      if (results.some(r => r.status === 'rejected')) {
+        throw new AccountRequiresSignInError()
+      }
+    }
+    const session = this.sessionsByToken.get(this.tokenKey(endpoint, token))
     // Never resolve a caller's token to another account's current token.
     if (
-      session !== undefined &&
-      login !== undefined &&
-      session.account.login !== login
+      session === undefined ||
+      (login !== undefined &&
+        getAccountKey(session.account) !== getAccountKey({ endpoint, login }))
     ) {
-      return Promise.resolve(token)
+      return token
     }
-    return session === undefined
-      ? Promise.resolve(token)
-      : this.validToken(session)
+    return this.validToken(session)
   }
 
   /**
@@ -308,7 +339,7 @@ export class CredentialSessions {
     minimumValidity = refreshMargin
   ): Promise<string> {
     const session = this.getSession(account)
-    if (session === undefined || session.account.id !== account.id) {
+    if (session === undefined) {
       throw new AccountRequiresSignInError()
     }
     const token = await this.validToken(session, minimumValidity)
@@ -391,7 +422,7 @@ export class CredentialSessions {
   ): Promise<ITokenLease> {
     for (;;) {
       const session = this.getSession(account)
-      if (session === undefined || session.account.id !== account.id) {
+      if (session === undefined) {
         throw new AccountRequiresSignInError()
       }
       let token: string
@@ -464,13 +495,13 @@ export class CredentialSessions {
   }
 
   /**
-   * Follow the login's current session across renewals.
+   * Follow the account's current session across renewals.
    *
    * The returned function yields that session's access token, or null once it
    * is retired, so a slow caller never adopts a later sign-in's token.
    */
-  public trackToken(endpoint: string, login: string): () => string | null {
-    const session = this.getSession({ endpoint, login })
+  public trackToken(account: Account): () => string | null {
+    const session = this.getSession(account)
     return () =>
       session === undefined || session.retired
         ? null
@@ -568,7 +599,11 @@ export class CredentialSessions {
   /** Ignore obsolete 401s; sign out when the current token is rejected. */
   public async invalidateToken(endpoint: string, token: string): Promise<void> {
     const session = this.sessionsByToken.get(this.tokenKey(endpoint, token))
-    if (session === undefined || session.credential?.accessToken !== token) {
+    if (
+      session === undefined ||
+      session.retired ||
+      session.credential?.accessToken !== token
+    ) {
       return
     }
     // A request using the previous pair can finish while rotation is in flight.
@@ -686,35 +721,27 @@ export class CredentialSessions {
     return `${endpoint}\0${token}`
   }
 
-  /** Identifies an account: several logins can share an endpoint. */
-  private signInKey({ endpoint, login }: SignIn) {
-    return `${endpoint}\0${login}`
-  }
-
-  private getSession(account: SignIn) {
-    return this.sessionsBySignIn.get(this.signInKey(account))
-  }
-
   private async write(
-    endpoint: string,
+    account: Account,
     action: () => Promise<void>
   ): Promise<void> {
-    const previous = this.credentialWriteQueues.get(endpoint)
+    const key = getAccountKey(account)
+    const previous = this.credentialWriteQueues.get(key)
     const next = (previous ?? Promise.resolve()).then(action)
     // The caller receives the error; the queue must remain usable for sign-out.
     const settled = next.catch(() => {})
-    this.credentialWriteQueues.set(endpoint, settled)
+    this.credentialWriteQueues.set(key, settled)
     try {
       await next
     } finally {
-      if (this.credentialWriteQueues.get(endpoint) === settled) {
-        this.credentialWriteQueues.delete(endpoint)
+      if (this.credentialWriteQueues.get(key) === settled) {
+        this.credentialWriteQueues.delete(key)
       }
     }
   }
 
   private requireSignIn(session: ICredentialSession): Promise<Account | null> {
-    if (this.getSession(session.account) !== session) {
+    if (this.sessionsByKey.get(getAccountKey(session.account)) !== session) {
       return Promise.resolve(null)
     }
     session.signedOutCredential = session.credential
@@ -755,11 +782,7 @@ export class CredentialSessions {
       this.tokenKey(account.endpoint, stored.accessToken),
       session
     )
-    this.delegate.onTokenRenewed(
-      account.endpoint,
-      stored.accessToken,
-      account.login
-    )
+    this.delegate.onTokenRenewed(account, stored.accessToken)
     log.info('Adopted OAuth credentials saved by another window.')
     return stored
   }
@@ -972,7 +995,7 @@ export class CredentialSessions {
       throw new AccountRequiresSignInError()
     }
     try {
-      await this.write(this.signInKey(account), async () => {
+      await this.write(account, async () => {
         if (session.retired) {
           throw new AccountRequiresSignInError()
         }
@@ -1004,11 +1027,7 @@ export class CredentialSessions {
       this.tokenKey(account.endpoint, renewed.accessToken),
       session
     )
-    this.delegate.onTokenRenewed(
-      account.endpoint,
-      renewed.accessToken,
-      account.login
-    )
+    this.delegate.onTokenRenewed(account, renewed.accessToken)
     notifyRefreshEvent('success')
     log.info('OAuth credentials renewed and saved.')
     return renewed.accessToken

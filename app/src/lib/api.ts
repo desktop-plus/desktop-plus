@@ -1862,6 +1862,25 @@ export class API {
   }
 
   /**
+   * Fetch a repo by its owner and name to find out whether the account can
+   * access it.
+   *
+   * Resolves to null when the repository isn't visible to the account (404).
+   * Unlike `fetchRepository`, any other failure (network errors, rate limits,
+   * server errors) is thrown so that it isn't mistaken for a lack of access.
+   */
+  public async fetchRepositoryIfAccessible(
+    owner: string,
+    name: string
+  ): Promise<IAPIFullRepository | null> {
+    const response = await this.ghRequest('GET', `repos/${owner}/${name}`)
+    if (response.status === HttpStatusCode.NotFound) {
+      return null
+    }
+    return parsedResponse<IAPIFullRepository>(response)
+  }
+
+  /**
    * Fetch info needed to clone a repository. That includes:
    *  - The canonical clone URL for a repository, respecting the protocol
    *    preference if provided.
@@ -3432,22 +3451,21 @@ export function deriveApiType<T>(
   }
 }
 
-/** Get the account for the endpoint. */
-export function getAccountForEndpoint(
-  accounts: ReadonlyArray<Account>,
-  endpoint: string
-): Account | null {
-  return accounts.find(a => a.endpoint === endpoint) || null
-}
-
 function pkceChallengeParams(codeChallenge: string): string {
   return `code_challenge=${codeChallenge}&code_challenge_method=S256`
 }
 
+/**
+ * Build an OAuth authorization URL.
+ *
+ * Supplying a login requests that account and disables sign-up. The caller
+ * must still verify the identity returned by OAuth.
+ */
 export function getOAuthAuthorizationURL(
   endpoint: string,
   state: string,
   codeChallenge: string,
+  login: string | undefined,
   shortLived: boolean
 ): string {
   const urlBase = getHTMLURL(endpoint)
@@ -3458,9 +3476,15 @@ export function getOAuthAuthorizationURL(
     ).join(' ')
   )
   const pkceParams = pkceChallengeParams(codeChallenge)
+  // Without a specific login, let the user pick which of their browser's
+  // GitHub sessions to sign in with rather than silently using the active one.
+  const accountParameters =
+    login === undefined
+      ? '&prompt=select_account'
+      : `&login=${encodeURIComponent(login)}&allow_signup=false`
 
   return new window.URL(
-    `/login/oauth/authorize?client_id=${ClientID}&scope=${scope}&state=${state}&${pkceParams}`,
+    `/login/oauth/authorize?client_id=${ClientID}&scope=${scope}&state=${state}&${pkceParams}${accountParameters}`,
     urlBase
   ).toString()
 }

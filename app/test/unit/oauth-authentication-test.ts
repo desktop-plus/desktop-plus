@@ -48,6 +48,8 @@ interface IAuthenticationResponses {
   readonly exchange?: () => Promise<Response>
   readonly user?: () => Promise<Response>
   readonly revoke?: (init?: RequestInit) => Promise<Response>
+  /** Reauthenticate this login instead of starting a new sign-in. */
+  readonly expectedLogin?: string
 }
 
 async function createAuthentication(
@@ -131,7 +133,16 @@ async function createAuthentication(
     }
   )
 
-  signInStore.beginDotComSignIn(result => results.push(result))
+  const onResult = (result: SignInResult) => results.push(result)
+  if (responses.expectedLogin === undefined) {
+    signInStore.beginDotComSignIn(onResult)
+  } else {
+    signInStore.beginSignInForAccount(
+      endpoint,
+      responses.expectedLogin,
+      onResult
+    )
+  }
   await signInStore.authenticateWithBrowser()
   fetchMock.mock.resetCalls()
   const state = signInStore.getState()
@@ -174,6 +185,7 @@ describe('OAuth API integration', () => {
             apiEndpoint,
             'csrf-state',
             'code-challenge',
+            undefined,
             shortLived
           )
         )
@@ -523,6 +535,40 @@ describe('OAuth sign-in integration', { timeout: 10_000 }, () => {
     assert.deepStrictEqual(await harness.accountsStore.getAll(), [])
     assert.ok(!state.error.message.includes(oauthResponse.refresh_token))
     assert.deepStrictEqual(harness.revoked, [oauthResponse.access_token])
+  })
+
+  it('rejects a different identity during reauthentication before saving it', async t => {
+    const harness = await createAuthentication(t, { expectedLogin: 'mona' })
+    await harness.signInStore.resolveOAuthRequest(harness.action)
+    await setImmediate()
+
+    const state = harness.signInStore.getState()
+    assert.ok(state?.kind === SignInStep.Authentication)
+    assert.match(
+      state.error?.message ?? '',
+      /Please sign in as mona on github\.com/
+    )
+    assert.strictEqual(state.loading, false)
+    assert.strictEqual(state.expectedLogin, 'mona')
+    assert.deepStrictEqual(harness.authenticated, [])
+    assert.deepStrictEqual(harness.results, [])
+    assert.deepStrictEqual(await harness.accountsStore.getAll(), [])
+    assert.deepStrictEqual(harness.revoked, [oauthResponse.access_token])
+  })
+
+  it('accepts the expected identity case-insensitively', async t => {
+    const harness = await createAuthentication(t, { expectedLogin: 'OCTOCAT' })
+    await harness.signInStore.resolveOAuthRequest(harness.action)
+    await setImmediate()
+
+    assert.strictEqual(harness.signInStore.getState()?.kind, SignInStep.Success)
+    assert.strictEqual(harness.results.length, 1)
+    assert.strictEqual(harness.results[0].kind, 'success')
+    assert.deepStrictEqual(
+      (await harness.accountsStore.getAll()).map(a => a.login),
+      ['octocat']
+    )
+    assert.deepStrictEqual(harness.revoked, [])
   })
 
   it('ignores duplicate OAuth callbacks while exchange is in flight', async t => {

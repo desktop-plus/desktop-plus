@@ -274,13 +274,13 @@ trampolineServer.registerCommandHandler(
   createAskpassTrampolineHandler(accountsStore)
 )
 
-trampolineServer.registerCommandHandler(
-  TrampolineCommandIdentifier.CredentialHelper,
-  createCredentialHelperTrampolineHandler(accountsStore)
-)
-
 const repositoriesStore = new RepositoriesStore(
   new RepositoriesDatabase('Database')
+)
+
+trampolineServer.registerCommandHandler(
+  TrampolineCommandIdentifier.CredentialHelper,
+  createCredentialHelperTrampolineHandler(accountsStore, repositoriesStore)
 )
 
 const pullRequestStore = new PullRequestStore(
@@ -308,7 +308,8 @@ const notificationsStore = new NotificationsStore(
   accountsStore,
   aliveStore,
   pullRequestCoordinator,
-  statsStore
+  statsStore,
+  repositoriesStore
 )
 
 const notificationsDebugStore = new NotificationsDebugStore(

@@ -1,6 +1,5 @@
 export enum CloneRepositoryTab {
-  DotCom = 0,
-  Enterprise,
+  GitHub = 0,
   Bitbucket,
   GitLab,
   Forgejo,

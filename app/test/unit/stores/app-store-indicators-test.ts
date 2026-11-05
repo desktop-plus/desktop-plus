@@ -79,7 +79,8 @@ describe('AppStore repository indicators', () => {
       stores.accountsStore,
       new AliveStore(stores.accountsStore),
       pullRequestCoordinator,
-      statsStore
+      statsStore,
+      stores.repositoriesStore
     )
     appStore = new AppStore(
       stores.gitHubUserStore,

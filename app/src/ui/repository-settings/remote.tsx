@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { IRemote } from '../../models/remote'
 import { TextBox } from '../lib/text-box'
-import { DialogContent } from '../dialog'
 import { Repository } from '../../models/repository'
 import { getDotComAPIEndpoint, getEndpointForRepository } from '../../lib/api'
 
@@ -32,7 +31,7 @@ export class Remote extends React.Component<IRemoteProps, {}> {
     const endpoint = repoEndpoint ?? getDotComAPIEndpoint()
 
     return (
-      <DialogContent>
+      <>
         <div className="config-row">
           <TextBox
             placeholder="Remote URL"
@@ -61,7 +60,7 @@ export class Remote extends React.Component<IRemoteProps, {}> {
             value={endpoint}
           />
         </div>
-      </DialogContent>
+      </>
     )
   }
 }

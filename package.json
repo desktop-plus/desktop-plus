@@ -62,7 +62,10 @@
     "yarn": ">= 1.9"
   },
   "resolutions": {
+    "@github/markdownlint-github/markdown-it": "14.3.3",
     "@types/react-css-transition-replace/@types/react": "^16.14.62",
+    "markdownlint-cli/js-yaml": "5.4.3",
+    "markdownlint-cli/smol-toml": "1.9.1",
     "yauzl": "3.3.1",
     "wrap-ansi": "7.0.0"
   },

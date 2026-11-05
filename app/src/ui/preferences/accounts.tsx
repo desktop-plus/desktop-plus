@@ -1,5 +1,9 @@
 import * as React from 'react'
-import { Account, isDotComAccount } from '../../models/account'
+import {
+  Account,
+  isDotComAccount,
+  isEnterpriseAccount,
+} from '../../models/account'
 import { IAvatarUser } from '../../models/avatar'
 import { lookupPreferredEmail } from '../../lib/email'
 import { assertNever } from '../../lib/fatal-error'
@@ -9,13 +13,13 @@ import { DialogContent, DialogPreferredFocusClassName } from '../dialog'
 import { Avatar } from '../lib/avatar'
 import { CallToAction } from '../lib/call-to-action'
 import { LinkButton } from '../lib/link-button'
-import { getHTMLURL } from '../../lib/api'
 import {
   isCodebergCloud,
   isGitLabCloud,
   isGiteaCloud,
 } from '../../lib/endpoint-capabilities'
 import { SelfHostedApiType } from '../../lib/stores/sign-in-store'
+import { groupAccountsByHost } from '../../lib/group-accounts-by-host'
 
 interface IAccountsProps {
   readonly accounts: ReadonlyArray<Account>
@@ -62,49 +66,88 @@ const selfHostedApiTypeFor = (
 
 export class Accounts extends React.Component<IAccountsProps, {}> {
   public render() {
+    const { accounts } = this.props
+    const dotComAccounts = accounts.filter(isDotComAccount)
+
     return (
       <DialogContent className="accounts-tab">
-        <h2>GitHub.com</h2>
-        {this.renderMultipleDotComAccounts()}
+        <div className="accounts-section">
+          <h2>GitHub.com</h2>
+          {dotComAccounts.map(account =>
+            this.renderAccount(account, SignInType.DotCom)
+          )}
+          {dotComAccounts.length === 0 ? (
+            this.renderSignIn(SignInType.DotCom)
+          ) : (
+            <Button onClick={this.props.onDotComSignIn}>
+              Add GitHub.com account
+            </Button>
+          )}
+        </div>
 
-        <h2>GitHub Enterprise</h2>
-        {this.renderMultipleEnterpriseAccounts()}
+        <div className="accounts-section">
+          <h2>GitHub Enterprise</h2>
+          {this.renderMultipleEnterpriseAccounts()}
+        </div>
 
-        <h2>Bitbucket</h2>
-        {this.renderMultipleBitbucketAccounts()}
+        <div className="accounts-section">
+          <h2>Bitbucket</h2>
+          {this.renderMultipleBitbucketAccounts()}
+        </div>
 
-        <h2>GitLab</h2>
-        {this.renderMultipleGitLabAccounts()}
+        <div className="accounts-section">
+          <h2>GitLab</h2>
+          {this.renderMultipleGitLabAccounts()}
+        </div>
 
-        <h2>Codeberg / Forgejo</h2>
-        {this.renderMultipleForgejoAccounts()}
+        <div className="accounts-section">
+          <h2>Codeberg / Forgejo</h2>
+          {this.renderMultipleForgejoAccounts()}
+        </div>
 
-        <h2>Gitea</h2>
-        {this.renderMultipleGiteaAccounts()}
+        <div className="accounts-section">
+          <h2>Gitea</h2>
+          {this.renderMultipleGiteaAccounts()}
+        </div>
       </DialogContent>
     )
   }
 
-  private renderMultipleDotComAccounts() {
-    const dotComAccounts = this.props.accounts.filter(isDotComAccount)
-    return this.renderMultipleAccounts(
-      dotComAccounts,
-      SignInType.DotCom,
-      'Add GitHub account',
-      this.props.onDotComSignIn
+  private renderMultipleEnterpriseAccounts() {
+    const enterpriseAccounts = this.props.accounts.filter(isEnterpriseAccount)
+
+    if (enterpriseAccounts.length === 0) {
+      return this.renderSignIn(SignInType.Enterprise)
+    }
+
+    return (
+      <>
+        {this.renderAccountsByHost(enterpriseAccounts, SignInType.Enterprise)}
+        <Button onClick={this.props.onEnterpriseSignIn}>
+          Add GitHub Enterprise account
+        </Button>
+      </>
     )
   }
 
-  private renderMultipleEnterpriseAccounts() {
-    const enterpriseAccounts = this.props.accounts.filter(
-      a => a.apiType === 'enterprise'
-    )
-    return this.renderMultipleAccounts(
-      enterpriseAccounts,
-      SignInType.Enterprise,
-      'Add GitHub Enterprise account',
-      this.props.onEnterpriseSignIn
-    )
+  /** Render the given accounts under a heading per host. */
+  private renderAccountsByHost(
+    accounts: ReadonlyArray<Account>,
+    type: SignInType
+  ) {
+    return groupAccountsByHost(accounts).map(([host, hostAccounts]) => {
+      const headingId = `${SignInType[type].toLowerCase()}-accounts-${host}`
+      return (
+        <section
+          key={host}
+          className="enterprise-host"
+          aria-labelledby={headingId}
+        >
+          <h3 id={headingId}>{host}</h3>
+          {hostAccounts.map(account => this.renderAccount(account, type))}
+        </section>
+      )
+    })
   }
 
   private renderMultipleBitbucketAccounts() {
@@ -159,11 +202,13 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
     buttonText: string,
     onSignIn: () => void
   ) {
+    const cloudAccounts = accounts.filter(a => !isSelfHostedAccount(a))
+    const selfHostedAccounts = accounts.filter(isSelfHostedAccount)
+
     return (
       <>
-        {accounts.map(account => {
-          return this.renderAccount(account, type)
-        })}
+        {cloudAccounts.map(account => this.renderAccount(account, type))}
+        {this.renderAccountsByHost(selfHostedAccounts, type)}
         {accounts.length === 0 ? (
           this.renderSignIn(type)
         ) : (
@@ -209,28 +254,17 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
 
     return (
       <Row
-        key={account.endpoint + ' ' + account.login}
+        key={JSON.stringify([
+          account.endpoint.toLowerCase(),
+          account.login.toLowerCase(),
+        ])}
         className="account-info"
       >
         <div className="user-info-container">
           <Avatar accounts={this.props.accounts} user={avatarUser} />
           <div className="user-info">
-            {account.apiType === 'enterprise' ||
-            isSelfHostedAccount(account) ? (
-              <>
-                <div className="account-title">
-                  {account.name === account.login
-                    ? `@${account.login}`
-                    : `@${account.login} (${account.name})`}
-                </div>
-                <div className="endpoint">{getHTMLURL(account.endpoint)}</div>
-              </>
-            ) : (
-              <>
-                <div className="name">{account.name}</div>
-                <div className="login">@{account.login}</div>
-              </>
-            )}
+            <div className="name">{account.name}</div>
+            <div className="login">@{account.login}</div>
           </div>
         </div>
         <Button onClick={this.logout(account)} className={className}>

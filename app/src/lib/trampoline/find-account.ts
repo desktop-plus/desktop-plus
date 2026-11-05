@@ -22,7 +22,7 @@ export const isAccountForRemote = (account: Account, remoteUrl: string) =>
   new URL(getHTMLURL(account.endpoint)).origin === new URL(remoteUrl).origin
 
 export async function findGitHubTrampolineAccount(
-  accountsStore: AccountsStore,
+  accountsStore: Pick<AccountsStore, 'getAll'>,
   remoteUrl: string
 ): Promise<Account | undefined> {
   const accounts = await accountsStore.getAll()

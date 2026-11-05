@@ -14,6 +14,7 @@ import memoizeOne from 'memoize-one'
 import { GitError, getDescriptionForError } from '../git/core'
 import { getDesktopAskpassTrampolineFilename } from 'desktop-trampoline'
 import { forgetAccountCredentials } from './third-party-git-auth'
+import { IAccountIdentity } from '../../models/account'
 
 const hasRejectedCredentialsForEndpoint = new Map<string, Set<string>>()
 
@@ -62,6 +63,14 @@ export const holdCredentialLease = (
 
 const isBackgroundTaskEnvironment = new Map<string, boolean>()
 const trampolineEnvironmentPath = new Map<string, string>()
+const trampolineFallbackAccount = new Map<string, IAccountIdentity>()
+
+/**
+ * The account to use when no account can be resolved from the repository at
+ * the operation's path. See `IGitExecutionOptions.fallbackAccount`.
+ */
+export const getTrampolineFallbackAccount = (token: string) =>
+  trampolineFallbackAccount.get(token)
 
 export const getTrampolineEnvironmentPath = (trampolineToken: string) =>
   trampolineEnvironmentPath.get(trampolineToken) ?? process.cwd()
@@ -115,18 +124,29 @@ const fatalPromptsDisabledRe =
  *
  * @param fn        Function to invoke with all the necessary environment
  *                  variables.
+ *
+ * @param fallbackAccount The account to use when no account can be resolved
+ *                        from the repository at `path`. Only intended for
+ *                        edge cases, see `IGitExecutionOptions.fallbackAccount`.
  */
 export async function withTrampolineEnv<T>(
   fn: (env: object) => Promise<T>,
   path: string,
   isBackgroundTask = false,
-  customEnv?: Record<string, string | undefined>
+  customEnv?: Record<string, string | undefined>,
+  fallbackAccount?: IAccountIdentity
 ): Promise<T> {
   const sshEnv = await getSSHEnvironment()
 
   return withTrampolineToken(async token => {
     isBackgroundTaskEnvironment.set(token, isBackgroundTask)
     trampolineEnvironmentPath.set(token, path)
+    if (fallbackAccount !== undefined) {
+      // Copy the identity so that an Account (and its token) passed in by
+      // mistake isn't retained for the duration of the operation.
+      const { endpoint, login } = fallbackAccount
+      trampolineFallbackAccount.set(token, { endpoint, login })
+    }
 
     const existingGitEnvConfig =
       customEnv?.['GIT_CONFIG_PARAMETERS'] ??
@@ -226,6 +246,7 @@ export async function withTrampolineEnv<T>(
       hasRejectedCredentialsForEndpoint.delete(token)
       trampolineEnvironmentPath.delete(token)
       forgetAccountCredentials(token)
+      trampolineFallbackAccount.delete(token)
     }
   })
 }

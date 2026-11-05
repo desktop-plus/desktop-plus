@@ -986,7 +986,7 @@ describe('Coordinated account token renewal', () => {
     }
   })
 
-  it('loading different logins for an endpoint keeps every account', async () => {
+  it('loading multiple accounts for an endpoint keeps a session for each', async () => {
     const { data, secure } = setup()
     const other = new Account(
       'other',
@@ -1020,19 +1020,19 @@ describe('Coordinated account token renewal', () => {
       async () => true
     )
 
-    // Desktop Plus supports several accounts per endpoint, each with its own
-    // credential session.
-    assert.deepEqual(await store.getAll(), [account, other])
-    assert.equal(
-      await store.resolveToken(other.endpoint, other.token),
-      other.token
-    )
-    assert.equal(renewals, 0)
     assert.equal(
       await store.resolveToken(account.endpoint, account.token),
       renewed.accessToken
     )
+    assert.equal(
+      await store.resolveToken(other.endpoint, other.token),
+      other.token
+    )
     assert.equal(renewals, 1)
+    assert.deepEqual(await store.getAll(), [
+      account.withToken(renewed.accessToken),
+      other,
+    ])
     assert.deepEqual(await store.removeAccount(other), other)
     assert.deepEqual(await store.getAll(), [
       account.withToken(renewed.accessToken),
@@ -1069,7 +1069,24 @@ describe('Coordinated account token renewal', () => {
     )
   })
 
-  it('adding another login never redirects stale clients to another identity', async () => {
+  it('loading duplicate entries for an account keeps only the last session live', async () => {
+    const { data, secure } = setup()
+    data.setItem(
+      'users',
+      JSON.stringify([account.withToken(''), account.withToken('')])
+    )
+    await secure.setItem(getKeyForAccount(account), account.login, 'stored')
+    const store = new AccountsStore(data, secure)
+
+    assert.deepEqual(await store.getAll(), [account.withToken('stored')])
+    assert.deepEqual(
+      await store.removeAccount(account),
+      account.withToken('stored')
+    )
+    assert.deepEqual(await store.getAll(), [])
+  })
+
+  it('signing in to another account on the endpoint keeps the first account', async () => {
     const { store } = setup()
     await store.addAccount(account, rotating)
     const other = new Account(
@@ -1083,7 +1100,7 @@ describe('Coordinated account token renewal', () => {
       'Other'
     )
     await store.addAccount(other)
-    // Desktop Plus keeps both accounts signed in, each with its own token.
+    assert.deepEqual(await store.getAll(), [account, other])
     assert.equal(
       await store.resolveToken(account.endpoint, account.token),
       renewed.accessToken
