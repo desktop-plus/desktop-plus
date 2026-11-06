@@ -11,7 +11,7 @@ import { updateMenuState as ipcUpdateMenuState } from '../ui/main-process-proxy'
 import { AppMenu, MenuItem } from '../models/app-menu'
 import { hasConflictedFiles } from './status'
 import { findContributionTargetDefaultBranch } from './branch'
-import { hasDefaultRemoteUrl } from '../models/repository'
+import { hasDefaultRemoteUrl } from './repository-remote-url'
 import { enableCopilotAppHandoff, enableWorktreeSupport } from './feature-flag'
 
 export interface IMenuItemState {

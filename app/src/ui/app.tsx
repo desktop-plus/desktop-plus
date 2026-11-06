@@ -33,10 +33,10 @@ import {
   Repository,
   getGitHubHtmlUrl,
   getNonForkGitHubRepository,
-  getNonGitHubUrl,
   getUpdateBranchStrategy,
   isRepositoryWithGitHubRepository,
 } from '../models/repository'
+import { getNonGitHubUrl } from '../lib/repository-remote-url'
 import { Branch } from '../models/branch'
 import {
   getDiffFontFamilyCssValue,

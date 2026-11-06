@@ -38,8 +38,10 @@ const remote = {
 }
 
 before(() => {
-  // Resolving the repository URL runs Git in its nonexistent path
-  mock.getter(Repository.prototype, 'url', () => null)
+  // Resolving the remote URL runs Git in the repository's nonexistent path
+  mock.module('../../../src/lib/repository-remote-url.ts', {
+    namedExports: { getDefaultRemoteUrl: () => null },
+  })
   mock.module('../../../src/lib/git/index.ts', {
     namedExports: { readGitIgnoreAtRoot: async () => '' },
   })

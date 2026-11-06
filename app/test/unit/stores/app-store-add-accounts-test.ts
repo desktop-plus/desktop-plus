@@ -4,13 +4,15 @@ import { setImmediate } from 'node:timers/promises'
 import * as Path from 'path'
 import { existsSync } from 'fs'
 import type { AppStore } from '../../../src/lib/stores/app-store'
-import type { IAPIPullRequest, IAPIRepository } from '../../../src/lib/api'
-import type { Account } from '../../../src/models/account'
-import type {
+import { API, IAPIPullRequest } from '../../../src/lib/api'
+import { Account } from '../../../src/models/account'
+import {
+  isRepositoryWithGitHubRepository,
   Repository,
   RepositoryWithGitHubRepository,
 } from '../../../src/models/repository'
-import type { Popup } from '../../../src/models/popup'
+import { Popup, PopupType } from '../../../src/models/popup'
+import { createMockAPI, createMockAPIRepository } from '../../helpers/mock-api'
 import type { ITestStores } from '../../helpers/app-store-test-harness'
 import type { TestStatsDatabase } from '../../helpers/databases/test-stats-database'
 
@@ -19,21 +21,33 @@ describe('AppStore explicitly adding repositories', () => {
   let statsDb: TestStatsDatabase
   let stores: ITestStores
   const endpoint = 'https://api.github.com'
-  // Loaded after mocking because these transitively import main-process-proxy
-  let API: typeof import('../../../src/lib/api').API
-  let Account: typeof import('../../../src/models/account').Account
-  let Repository: typeof import('../../../src/models/repository').Repository
-  let isRepositoryWithGitHubRepository: typeof import('../../../src/models/repository').isRepositoryWithGitHubRepository
-  let PopupType: typeof import('../../../src/models/popup').PopupType
-  let createMockAPI: typeof import('../../helpers/mock-api').createMockAPI
-  let createMockAPIRepository: typeof import('../../helpers/mock-api').createMockAPIRepository
-  let alice: Account
-  let bob: Account
-  let apiRepository: IAPIRepository & {
-    parent: undefined
-    permissions: { pull: boolean; push: boolean; admin: boolean }
+  const alice = new Account(
+    'alice',
+    endpoint,
+    'dotcom',
+    'alice-token',
+    [],
+    '',
+    1,
+    ''
+  )
+  const bob = new Account('bob', endpoint, 'dotcom', 'bob-token', [], '', 2, '')
+  const apiRepository = {
+    ...createMockAPIRepository(),
+    parent: undefined,
+    permissions: { pull: true, push: true, admin: false },
   }
-  let apiPullRequest: IAPIPullRequest
+  const apiPullRequest: IAPIPullRequest = {
+    number: 42,
+    title: 'Example pull request',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    user: apiRepository.owner,
+    head: { ref: 'feature', sha: 'head', repo: apiRepository },
+    base: { ref: 'main', sha: 'base', repo: apiRepository },
+    body: '',
+    state: 'open',
+  }
 
   before(async () => {
     mock.module('../../../src/ui/main-process-proxy', {
@@ -45,42 +59,6 @@ describe('AppStore explicitly adding repositories', () => {
         updatePreferredAppMenuItemLabels: () => {},
       },
     })
-    ;({ API } = await import('../../../src/lib/api'))
-    ;({ Account } = await import('../../../src/models/account'))
-    ;({ Repository, isRepositoryWithGitHubRepository } = await import(
-      '../../../src/models/repository'
-    ))
-    ;({ PopupType } = await import('../../../src/models/popup'))
-    ;({ createMockAPI, createMockAPIRepository } = await import(
-      '../../helpers/mock-api'
-    ))
-    alice = new Account(
-      'alice',
-      endpoint,
-      'dotcom',
-      'alice-token',
-      [],
-      '',
-      1,
-      ''
-    )
-    bob = new Account('bob', endpoint, 'dotcom', 'bob-token', [], '', 2, '')
-    apiRepository = {
-      ...createMockAPIRepository(),
-      parent: undefined,
-      permissions: { pull: true, push: true, admin: false },
-    }
-    apiPullRequest = {
-      number: 42,
-      title: 'Example pull request',
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-      user: apiRepository.owner,
-      head: { ref: 'feature', sha: 'head', repo: apiRepository },
-      base: { ref: 'main', sha: 'base', repo: apiRepository },
-      body: '',
-      state: 'open',
-    }
     const { AppStore } = await import('../../../src/lib/stores/app-store')
     const { createTestStores } = await import(
       '../../helpers/app-store-test-harness'

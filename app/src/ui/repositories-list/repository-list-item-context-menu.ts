@@ -13,10 +13,8 @@ import {
   DefaultEditorLabel,
   DefaultShellLabel,
 } from '../lib/context-menu'
-import {
-  isRepositoryWithGitHubRepository,
-  hasDefaultRemoteUrl,
-} from '../../models/repository'
+import { isRepositoryWithGitHubRepository } from '../../models/repository'
+import { hasDefaultRemoteUrl } from '../../lib/repository-remote-url'
 import { GitHubRepository } from '../../models/github-repository'
 import { getForgejoName } from '../../lib/forgejo-name'
 import { WorktreeEntry } from '../../models/worktree'

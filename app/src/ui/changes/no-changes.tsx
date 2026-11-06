@@ -2,10 +2,10 @@ import * as React from 'react'
 
 import { encodePathAsUrl } from '../../lib/path'
 import {
-  hasDefaultRemoteUrl,
   isRepositoryWithGitHubRepository,
   Repository,
 } from '../../models/repository'
+import { hasDefaultRemoteUrl } from '../../lib/repository-remote-url'
 import { GitHubRepository } from '../../models/github-repository'
 import { LinkButton } from '../lib/link-button'
 import { MenuIDs } from '../../models/menu-ids'

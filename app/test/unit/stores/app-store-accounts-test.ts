@@ -4,8 +4,11 @@ import type { TestContext } from 'node:test'
 import { setImmediate } from 'node:timers/promises'
 import type { AppStore } from '../../../src/lib/stores/app-store'
 import type { SignInResult } from '../../../src/lib/stores/sign-in-store'
-import type { Account } from '../../../src/models/account'
-import type { Popup, PopupType } from '../../../src/models/popup'
+import { Account } from '../../../src/models/account'
+import { PopupType } from '../../../src/models/popup'
+import type { Popup } from '../../../src/models/popup'
+import { isRepositoryWithGitHubRepository } from '../../../src/models/repository'
+import { createMockAPIRepository } from '../../helpers/mock-api'
 import type { ITestStores } from '../../helpers/app-store-test-harness'
 import type { TestStatsDatabase } from '../../helpers/databases/test-stats-database'
 import { exec } from 'dugite'
@@ -15,13 +18,26 @@ describe('AppStore repository accounts', () => {
   let statsDb: TestStatsDatabase
   let stores: ITestStores
   const endpoint = 'https://api.github.com'
-  // Loaded after mocking because these transitively import main-process-proxy
-  let Account: typeof import('../../../src/models/account').Account
-  let PopupType: typeof import('../../../src/models/popup').PopupType
-  let isRepositoryWithGitHubRepository: typeof import('../../../src/models/repository').isRepositoryWithGitHubRepository
-  let createMockAPIRepository: typeof import('../../helpers/mock-api').createMockAPIRepository
-  let alice: Account
-  let bob: Account
+  const alice = new Account(
+    'alice',
+    endpoint,
+    'dotcom',
+    'alice-token',
+    [],
+    '',
+    1,
+    'Alice'
+  )
+  const bob = new Account(
+    'bob',
+    endpoint,
+    'dotcom',
+    'bob-token',
+    [],
+    '',
+    2,
+    'Bob'
+  )
   const popups: Popup[] = []
 
   before(async () => {
@@ -39,23 +55,6 @@ describe('AppStore repository accounts', () => {
         updateAccounts: () => {},
       },
     })
-    ;({ Account } = await import('../../../src/models/account'))
-    ;({ PopupType } = await import('../../../src/models/popup'))
-    ;({ isRepositoryWithGitHubRepository } = await import(
-      '../../../src/models/repository'
-    ))
-    ;({ createMockAPIRepository } = await import('../../helpers/mock-api'))
-    alice = new Account(
-      'alice',
-      endpoint,
-      'dotcom',
-      'alice-token',
-      [],
-      '',
-      1,
-      'Alice'
-    )
-    bob = new Account('bob', endpoint, 'dotcom', 'bob-token', [], '', 2, 'Bob')
     const { AppStore } = await import('../../../src/lib/stores/app-store')
     const { createTestStores } = await import(
       '../../helpers/app-store-test-harness'

@@ -3,6 +3,7 @@ import { IRemote } from '../../models/remote'
 import { TextBox } from '../lib/text-box'
 import { Repository } from '../../models/repository'
 import { getDotComAPIEndpoint, getEndpointForRepository } from '../../lib/api'
+import { getDefaultRemoteUrl } from '../../lib/repository-remote-url'
 
 interface IRemoteProps {
   /** The remote being shown. */
@@ -25,9 +26,8 @@ export class Remote extends React.Component<IRemoteProps, {}> {
   public render() {
     const { remote, defaultBranch } = this.props
 
-    const repoEndpoint = this.props.repository.url
-      ? getEndpointForRepository(this.props.repository.url)
-      : null
+    const url = getDefaultRemoteUrl(this.props.repository)
+    const repoEndpoint = url ? getEndpointForRepository(url) : null
     const endpoint = repoEndpoint ?? getDotComAPIEndpoint()
 
     return (

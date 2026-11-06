@@ -71,8 +71,10 @@ const repository = (
 let generateRepositoryListContextMenu: typeof import('../../../src/ui/repositories-list/repository-list-item-context-menu').generateRepositoryListContextMenu
 
 before(async () => {
-  // Resolving the URL of a non-GitHub repository runs Git in its nonexistent path
-  mock.getter(Repository.prototype, 'url', () => null)
+  // Resolving the remote URL loads and runs Git
+  mock.module('../../../src/lib/repository-remote-url.ts', {
+    namedExports: { hasDefaultRemoteUrl: () => false },
+  })
   mock.module('../../../src/ui/main-process-proxy.ts', {
     namedExports: { writeClipboardText: () => {} },
   })
