@@ -64,6 +64,7 @@ describe('API', () => {
         getOAuthAuthorizationURL(
           'https://api.github.com',
           'csrf-state',
+          'code-challenge',
           undefined,
           false
         )
@@ -82,6 +83,7 @@ describe('API', () => {
         getOAuthAuthorizationURL(
           'https://enterprise.example.com/api/v3',
           'csrf-state',
+          'code-challenge',
           'mona+work&scope=admin',
           false
         )

@@ -229,7 +229,9 @@ export class CloneRepository extends React.Component<
       if (apiType === 'generic') {
         return []
       }
-      return accounts.filter(account => account.apiType === apiType)
+      return groupAccountsByHost(
+        accounts.filter(account => account.apiType === apiType)
+      ).flatMap(([, hostAccounts]) => hostAccounts)
     }
   )
 
@@ -542,11 +544,7 @@ export class CloneRepository extends React.Component<
           <CloneGithubRepository
             path={tabState.path ?? ''}
             account={selectedAccount}
-            accounts={
-              tab === CloneRepositoryTab.GitHub
-                ? this.props.accounts
-                : this.getAccountsForTab(tab, this.props.accounts)
-            }
+            accounts={this.getAccountsForTab(tab, this.props.accounts)}
             selectedItem={tabState.selectedItem}
             onSelectionChanged={this.onSelectionChanged}
             onPathChanged={this.onPathChanged}

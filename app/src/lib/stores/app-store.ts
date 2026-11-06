@@ -181,7 +181,6 @@ import {
   GitLabCloudAPIEndpoint,
   CodebergCloudAPIEndpoint,
   GiteaCloudAPIEndpoint,
-  deriveApiType,
   IAPIOrganization,
   getEndpointForRepository,
   IAPIFullRepository,
@@ -190,6 +189,11 @@ import {
   IAPICreatePushProtectionBypassResponse,
 } from '../api'
 import { revokeAccountToken } from '../third-party-oauth-token'
+import {
+  findRegisteredEndpointForHost,
+  getRegisteredEndpoint,
+  tryGetHost,
+} from '../endpoint-api-type-registry'
 import { shell } from '../app-shell'
 import {
   CompareAction,
@@ -3137,6 +3141,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
   /** Load the initial state for the app. */
   public async loadInitialState() {
     const accounts = await this.accountsStore.getAll()
+    await this.repositoriesStore.migrateForkAccountAssignments(
+      await this.accountsStore.getPersistedIdentities()
+    )
     await this.repositoriesStore.migrateAccountAssignments(
       await this.accountsStore.getPersistedIdentities()
     )
@@ -10415,12 +10422,16 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return this._beginGiteaSignIn(onResult)
     }
 
-    const apiType = deriveApiType(endpoint, 'enterprise' as const)
-    if (isSelfHostedApiType(apiType)) {
-      this._beginSelfHostedSignIn(apiType, onResult)
-    } else {
-      await this._beginEnterpriseSignIn(onResult)
+    // A registered host is a self-hosted instance, so sign in to that
+    // instance rather than to GitHub Enterprise.
+    const registered =
+      getRegisteredEndpoint(endpoint) ??
+      findRegisteredEndpointForHost(tryGetHost(endpoint))
+    if (registered !== undefined && isSelfHostedApiType(registered.apiType)) {
+      this._beginSelfHostedSignIn(registered.apiType, onResult)
+      return this._setSignInEndpoint(registered.webBaseUrl)
     }
+    await this._beginEnterpriseSignIn(onResult)
     return this._setSignInEndpoint(getHTMLURL(endpoint), true)
   }
 

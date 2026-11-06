@@ -20,6 +20,7 @@ const endpoint = 'https://api.github.com'
 const firstAccount = new Account(
   'first',
   endpoint,
+  'dotcom',
   'first-token',
   [],
   '',
@@ -29,6 +30,7 @@ const firstAccount = new Account(
 const secondAccount = new Account(
   'second',
   endpoint,
+  'dotcom',
   'second-token',
   [],
   '',
@@ -37,6 +39,7 @@ const secondAccount = new Account(
 )
 const githubRepository = new GitHubRepository(
   'desktop',
+  'github',
   new Owner('desktop', endpoint, 1),
   1
 )
@@ -49,7 +52,10 @@ function localRepository(login: string | null, id = 1) {
     githubRepository,
     false,
     null,
+    null,
+    null,
     {},
+    null,
     false,
     undefined,
     undefined,
@@ -255,6 +261,7 @@ describe('CommitStatusStore account assignment', () => {
     })
     const upstream = new GitHubRepository(
       'upstream',
+      'github',
       new Owner('another-owner', endpoint, 10),
       2
     )
@@ -275,6 +282,7 @@ describe('CommitStatusStore account assignment', () => {
     })
     const otherRepository = new GitHubRepository(
       'desktop',
+      'github',
       new Owner('desktop', 'https://enterprise.example/api/v3', 1),
       2
     )

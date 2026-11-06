@@ -126,6 +126,15 @@ async function getExternalCredential(input: Credential, token: string) {
   return cred
 }
 
+async function usesGenericCredentials(repository: Repository, store: Store) {
+  const gitHubRepository = repository.gitHubRepository
+  return (
+    gitHubRepository !== null &&
+    gitHubRepository.type !== 'github' &&
+    !(await store.getAll()).some(a => a.endpoint === gitHubRepository.endpoint)
+  )
+}
+
 /** Implementation of the 'get' git credential helper command */
 /** Whether the URL has the same origin as the endpoint's web URL. */
 function isSameOrigin(url: URL, endpoint: string) {
@@ -152,7 +161,8 @@ async function getCredential(
   const repository =
     existing !== undefined &&
     existing.gitHubRepository === null &&
-    (await endpointKind()) !== 'generic'
+    ((await endpointKind()) !== 'generic' ||
+      (await findGitHubTrampolineAccount(store, endpoint)) !== undefined)
       ? await ui.associateRepositoryWithEndpoint(
           existing,
           getAPIEndpoint(endpoint)
@@ -165,7 +175,8 @@ async function getCredential(
   if (
     repository !== undefined &&
     repositoryEndpoint !== undefined &&
-    isSameOrigin(credentialUrl, repositoryEndpoint)
+    isSameOrigin(credentialUrl, repositoryEndpoint) &&
+    !(await usesGenericCredentials(repository, store))
   ) {
     const account =
       getAccountForRepository(await store.getAll(), repository) ??
@@ -234,6 +245,13 @@ const getEndpointKind = async (cred: Credential, store: Store) => {
   }
 
   const existingAccount = await findGitHubTrampolineAccount(store, endpoint)
+  if (
+    existingAccount &&
+    existingAccount.apiType !== 'dotcom' &&
+    existingAccount.apiType !== 'enterprise'
+  ) {
+    return 'generic'
+  }
   if (existingAccount) {
     return isDotCom(existingAccount.endpoint) ? 'github.com' : 'enterprise'
   }

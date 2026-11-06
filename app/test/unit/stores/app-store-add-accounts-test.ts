@@ -4,15 +4,13 @@ import { setImmediate } from 'node:timers/promises'
 import * as Path from 'path'
 import { existsSync } from 'fs'
 import type { AppStore } from '../../../src/lib/stores/app-store'
-import { API, IAPIPullRequest } from '../../../src/lib/api'
-import { Account } from '../../../src/models/account'
-import {
-  isRepositoryWithGitHubRepository,
+import type { IAPIPullRequest, IAPIRepository } from '../../../src/lib/api'
+import type { Account } from '../../../src/models/account'
+import type {
   Repository,
   RepositoryWithGitHubRepository,
 } from '../../../src/models/repository'
-import { Popup, PopupType } from '../../../src/models/popup'
-import { createMockAPI, createMockAPIRepository } from '../../helpers/mock-api'
+import type { Popup } from '../../../src/models/popup'
 import type { ITestStores } from '../../helpers/app-store-test-harness'
 import type { TestStatsDatabase } from '../../helpers/databases/test-stats-database'
 
@@ -21,34 +19,68 @@ describe('AppStore explicitly adding repositories', () => {
   let statsDb: TestStatsDatabase
   let stores: ITestStores
   const endpoint = 'https://api.github.com'
-  const alice = new Account('alice', endpoint, 'alice-token', [], '', 1, '')
-  const bob = new Account('bob', endpoint, 'bob-token', [], '', 2, '')
-  const apiRepository = {
-    ...createMockAPIRepository(),
-    parent: undefined,
-    permissions: { pull: true, push: true, admin: false },
+  // Loaded after mocking because these transitively import main-process-proxy
+  let API: typeof import('../../../src/lib/api').API
+  let Account: typeof import('../../../src/models/account').Account
+  let Repository: typeof import('../../../src/models/repository').Repository
+  let isRepositoryWithGitHubRepository: typeof import('../../../src/models/repository').isRepositoryWithGitHubRepository
+  let PopupType: typeof import('../../../src/models/popup').PopupType
+  let createMockAPI: typeof import('../../helpers/mock-api').createMockAPI
+  let createMockAPIRepository: typeof import('../../helpers/mock-api').createMockAPIRepository
+  let alice: Account
+  let bob: Account
+  let apiRepository: IAPIRepository & {
+    parent: undefined
+    permissions: { pull: boolean; push: boolean; admin: boolean }
   }
-  const apiPullRequest: IAPIPullRequest = {
-    number: 42,
-    title: 'Example pull request',
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-    user: apiRepository.owner,
-    head: { ref: 'feature', sha: 'head', repo: apiRepository },
-    base: { ref: 'main', sha: 'base', repo: apiRepository },
-    body: '',
-    state: 'open',
-  }
+  let apiPullRequest: IAPIPullRequest
 
   before(async () => {
     mock.module('../../../src/ui/main-process-proxy', {
       namedExports: {
         ...(await import('../../../src/ui/main-process-proxy')),
         getAppMenu: () => {},
+        updateMenuState: () => {},
         updateAccounts: () => {},
         updatePreferredAppMenuItemLabels: () => {},
       },
     })
+    ;({ API } = await import('../../../src/lib/api'))
+    ;({ Account } = await import('../../../src/models/account'))
+    ;({ Repository, isRepositoryWithGitHubRepository } = await import(
+      '../../../src/models/repository'
+    ))
+    ;({ PopupType } = await import('../../../src/models/popup'))
+    ;({ createMockAPI, createMockAPIRepository } = await import(
+      '../../helpers/mock-api'
+    ))
+    alice = new Account(
+      'alice',
+      endpoint,
+      'dotcom',
+      'alice-token',
+      [],
+      '',
+      1,
+      ''
+    )
+    bob = new Account('bob', endpoint, 'dotcom', 'bob-token', [], '', 2, '')
+    apiRepository = {
+      ...createMockAPIRepository(),
+      parent: undefined,
+      permissions: { pull: true, push: true, admin: false },
+    }
+    apiPullRequest = {
+      number: 42,
+      title: 'Example pull request',
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+      user: apiRepository.owner,
+      head: { ref: 'feature', sha: 'head', repo: apiRepository },
+      base: { ref: 'main', sha: 'base', repo: apiRepository },
+      body: '',
+      state: 'open',
+    }
     const { AppStore } = await import('../../../src/lib/stores/app-store')
     const { createTestStores } = await import(
       '../../helpers/app-store-test-harness'
@@ -490,7 +522,10 @@ describe('AppStore explicitly adding repositories', () => {
       })
 
       it('uses the current account after switching back to a worktree', async t => {
-        const { main } = await setupWorktree(t)
+        const { main, added: linked } = await setupWorktree(t)
+        // Switching must move this record rather than select the linked
+        // worktree's own record, which only differs in path on macOS/Windows.
+        await stores.repositoriesStore.removeRepository(linked)
         const { listWorktrees } = await import('../../../src/lib/git/worktree')
         const { realpath } = await import('fs/promises')
         const mainPath = await realpath(main.path)
@@ -629,7 +664,12 @@ describe('AppStore explicitly adding repositories', () => {
     const repository = new Repository(
       '/enterprise',
       -1,
-      new GitHubRepository('repo', new Owner('owner', enterprise, -1), -1),
+      new GitHubRepository(
+        'repo',
+        'github',
+        new Owner('owner', enterprise, -1),
+        -1
+      ),
       false
     )
     assert.ok(isRepositoryWithGitHubRepository(repository))
@@ -935,7 +975,16 @@ describe('AppStore explicitly adding repositories', () => {
       const accounts = appStore['accounts']
       appStore['accounts'] = [
         ...accounts,
-        new Account('carol', ported, 'carol-token', [], '', 3, ''),
+        new Account(
+          'carol',
+          ported,
+          'enterprise',
+          'carol-token',
+          [],
+          '',
+          3,
+          ''
+        ),
       ]
       t.after(() => {
         appStore['accounts'] = accounts
@@ -1037,10 +1086,18 @@ describe('AppStore explicitly adding repositories', () => {
       const missing = new Repository(
         '/missing',
         4242,
-        new GitHubRepository('repo', new Owner('owner', endpoint, -1), -1),
+        new GitHubRepository(
+          'repo',
+          'github',
+          new Owner('owner', endpoint, -1),
+          -1
+        ),
         true,
         null,
+        null,
+        null,
         {},
+        null,
         false,
         undefined,
         undefined,

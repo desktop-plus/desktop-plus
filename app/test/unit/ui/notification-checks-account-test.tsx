@@ -16,9 +16,32 @@ import { createMockAPI } from '../../helpers/mock-api'
 import { render, waitFor } from '../../helpers/ui/render'
 
 const endpoint = 'https://api.github.com'
-const first = new Account('first', endpoint, 'first-token', [], '', 1, '')
-const second = new Account('second', endpoint, 'second-token', [], '', 2, '')
-const github = new GitHubRepository('repo', new Owner('owner', endpoint, 1), 1)
+const first = new Account(
+  'first',
+  endpoint,
+  'dotcom',
+  'first-token',
+  [],
+  '',
+  1,
+  ''
+)
+const second = new Account(
+  'second',
+  endpoint,
+  'dotcom',
+  'second-token',
+  [],
+  '',
+  2,
+  ''
+)
+const github = new GitHubRepository(
+  'repo',
+  'github',
+  new Owner('owner', endpoint, 1),
+  1
+)
 const ref = new PullRequestRef('branch', 'abc123', github)
 const pullRequest = new PullRequest(
   new Date(),
@@ -77,7 +100,10 @@ function local(login: string | null) {
     github,
     false,
     null,
+    null,
+    null,
     {},
+    null,
     false,
     undefined,
     undefined,

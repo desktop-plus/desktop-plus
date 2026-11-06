@@ -64,8 +64,8 @@ describe('AliveStore', () => {
       })
     )
     const endpoint = 'https://api.github.com'
-    const alice = new Account('alice', endpoint, 'a', [], '', 1, '')
-    const bob = new Account('bob', endpoint, 'b', [], '', 2, '')
+    const alice = new Account('alice', endpoint, 'dotcom', 'a', [], '', 1, '')
+    const bob = new Account('bob', endpoint, 'dotcom', 'b', [], '', 2, '')
     const accountsStore = new AccountsStore(
       new InMemoryStore(),
       new AsyncInMemoryStore()

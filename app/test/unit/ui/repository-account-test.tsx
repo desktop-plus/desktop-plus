@@ -20,11 +20,21 @@ import {
 
 const endpoint = 'https://api.github.com'
 const enterpriseEndpoint = 'https://enterprise.example.com/api/v3'
-const personal = new Account('personal', endpoint, 'token', [], '', 1, '')
-const work = new Account('work', endpoint, 'token', [], '', 2, '')
+const personal = new Account(
+  'personal',
+  endpoint,
+  'dotcom',
+  'token',
+  [],
+  '',
+  1,
+  ''
+)
+const work = new Account('work', endpoint, 'dotcom', 'token', [], '', 2, '')
 const enterprise = new Account(
   'work',
   enterpriseEndpoint,
+  'enterprise',
   'token',
   [],
   '',
@@ -78,10 +88,18 @@ function createRepository(login: string | null = null, host = endpoint) {
   const repository = new Repository(
     '/repository',
     1,
-    new GitHubRepository('repository', new Owner('owner', host, 1), 1),
+    new GitHubRepository(
+      'repository',
+      'github',
+      new Owner('owner', host, 1),
+      1
+    ),
     false,
     null,
+    null,
+    null,
     {},
+    null,
     false,
     undefined,
     undefined,

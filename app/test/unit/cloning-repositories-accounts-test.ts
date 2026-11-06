@@ -15,6 +15,7 @@ describe('CloningRepositoriesStore account selection', () => {
     account: new Account(
       'alice',
       'https://api.github.com',
+      'dotcom',
       'secret-token',
       [],
       '',

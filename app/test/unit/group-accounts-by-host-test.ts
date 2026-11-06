@@ -4,7 +4,7 @@ import { groupAccountsByHost } from '../../src/lib/group-accounts-by-host'
 import { Account } from '../../src/models/account'
 
 const account = (login: string, endpoint: string) =>
-  new Account(login, endpoint, '', [], '', 1, '')
+  new Account(login, endpoint, 'enterprise', '', [], '', 1, '')
 
 describe('groupAccountsByHost', () => {
   it('groups by web host, sorted alphabetically, keeping account order', () => {

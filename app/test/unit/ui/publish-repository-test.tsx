@@ -14,13 +14,41 @@ import { fireEvent, render, screen, waitFor } from '../../helpers/ui/render'
 const endpoint = 'https://api.github.com'
 const zebraEndpoint = 'https://zebra.example.com/api/v3'
 const acmeEndpoint = 'https://acme.example.com/api/v3'
-const alice = new Account('alice', endpoint, 'alice-token', [], '', 1, '')
-const bob = new Account('bob', endpoint, 'bob-token', [], '', 2, '')
-const zebraCarol = new Account('carol', zebraEndpoint, 'z-token', [], '', 3, '')
-const acmeDave = new Account('dave', acmeEndpoint, 'a-token', [], '', 4, '')
+const alice = new Account(
+  'alice',
+  endpoint,
+  'dotcom',
+  'alice-token',
+  [],
+  '',
+  1,
+  ''
+)
+const bob = new Account('bob', endpoint, 'dotcom', 'bob-token', [], '', 2, '')
+const zebraCarol = new Account(
+  'carol',
+  zebraEndpoint,
+  'enterprise',
+  'z-token',
+  [],
+  '',
+  3,
+  ''
+)
+const acmeDave = new Account(
+  'dave',
+  acmeEndpoint,
+  'enterprise',
+  'a-token',
+  [],
+  '',
+  4,
+  ''
+)
 const gheErin = new Account(
   'erin',
   'https://api.octo.ghe.com',
+  'enterprise',
   'g-token',
   [],
   '',

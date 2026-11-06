@@ -11,9 +11,32 @@ import { InMemoryStore, AsyncInMemoryStore } from '../helpers/stores'
 import { TrampolineCommandIdentifier } from '../../src/lib/trampoline/trampoline-command'
 
 const endpoint = 'https://api.github.com'
-const alice = new Account('alice', endpoint, 'alice-token', [], '', 1, 'Alice')
-const bob = new Account('bob', endpoint, 'bob-token', [], '', 2, 'Bob')
-const github = new GitHubRepository('repo', new Owner('owner', endpoint, 1), 1)
+const alice = new Account(
+  'alice',
+  endpoint,
+  'dotcom',
+  'alice-token',
+  [],
+  '',
+  1,
+  'Alice'
+)
+const bob = new Account(
+  'bob',
+  endpoint,
+  'dotcom',
+  'bob-token',
+  [],
+  '',
+  2,
+  'Bob'
+)
+const github = new GitHubRepository(
+  'repo',
+  'github',
+  new Owner('owner', endpoint, 1),
+  1
+)
 
 class TestAccountsStore extends AccountsStore {
   public constructor(private current: ReadonlyArray<Account>) {
@@ -56,7 +79,10 @@ function repository(login: string | null, path = '/repo') {
     github,
     false,
     null,
+    null,
+    null,
     {},
+    null,
     false,
     undefined,
     undefined,
@@ -290,6 +316,7 @@ describe('repository-aware credential trampoline', () => {
     const other = new Account(
       'alice',
       'https://other.ghe.com/api/v3',
+      'enterprise',
       'other-token',
       [],
       '',
@@ -309,6 +336,7 @@ describe('repository-aware credential trampoline', () => {
         new Account(
           'alice',
           'https://other.ghe.com/api/v3',
+          'enterprise',
           'other-token',
           [],
           '',

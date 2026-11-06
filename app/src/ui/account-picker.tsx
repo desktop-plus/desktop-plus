@@ -65,6 +65,7 @@ const toListItem = (account: Account): IAccountListItem => ({
 /**
  * Group accounts like the Accounts preferences: GitHub.com first, then a
  * group per GitHub Enterprise host.
+ * Accounts of other providers follow, also grouped by host.
  */
 function getHostGroups(
   accounts: ReadonlyArray<Account>
@@ -73,11 +74,18 @@ function getHostGroups(
   const enterpriseGroups = groupAccountsByHost(
     accounts.filter(isEnterpriseAccount)
   )
+  const otherGroups = groupAccountsByHost(
+    accounts.filter(a => !isDotComAccount(a) && !isEnterpriseAccount(a))
+  )
   return [
     ...(dotComAccounts.length > 0
       ? [{ identifier: 'GitHub.com', items: dotComAccounts.map(toListItem) }]
       : []),
     ...enterpriseGroups.map(([identifier, accounts]) => ({
+      identifier,
+      items: accounts.map(toListItem),
+    })),
+    ...otherGroups.map(([identifier, accounts]) => ({
       identifier,
       items: accounts.map(toListItem),
     })),

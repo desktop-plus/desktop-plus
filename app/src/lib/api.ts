@@ -3805,6 +3805,26 @@ export class BitbucketAPI extends API {
     }
   }
 
+  public override async fetchRepositoryIfAccessible(
+    owner: string,
+    name: string
+  ): Promise<IAPIFullRepository | null> {
+    const response = await this.request(
+      this.endpoint,
+      'GET',
+      `repositories/${owner}/${name}`
+    )
+    if (
+      response.status === HttpStatusCode.NotFound ||
+      response.status === HttpStatusCode.Forbidden
+    ) {
+      return null
+    }
+    return toIAPIFullRepositoryFromBitbucket(
+      await parsedResponse<IBitbucketAPIRepository>(response)
+    )
+  }
+
   public override async fetchProtectedBranches() {
     // This could be implemented with GET /repositories/{workspace}/{repo_slug}/branch-restrictions,
     // but it would require increasing the OAuth scope to admin:repository, and currently this is
@@ -4091,6 +4111,24 @@ export class GitLabAPI extends API {
     }
   }
 
+  public override async fetchRepositoryIfAccessible(
+    owner: string,
+    name: string
+  ): Promise<IAPIFullRepository | null> {
+    const projectPath = encodeURIComponent(`${owner}/${name}`)
+    const response = await this.request(
+      this.endpoint,
+      'GET',
+      `projects/${projectPath}`
+    )
+    if (response.status === HttpStatusCode.NotFound) {
+      return null
+    }
+    return toIAPIFullRepositoryFromGitLab(
+      await parsedResponse<IGitLabAPIRepository>(response)
+    )
+  }
+
   private async fetchRepositoryById(
     id: number
   ): Promise<IGitLabAPIRepository | null> {
@@ -4348,6 +4386,23 @@ export class ForgejoAPI extends API {
       log.warn(`fetchRepository: an error occurred for '${owner}/${name}'`, e)
       return null
     }
+  }
+
+  public override async fetchRepositoryIfAccessible(
+    owner: string,
+    name: string
+  ): Promise<IAPIFullRepository | null> {
+    const response = await this.request(
+      this.endpoint,
+      'GET',
+      `repos/${owner}/${name}`
+    )
+    if (response.status === HttpStatusCode.NotFound) {
+      return null
+    }
+    return toIAPIFullRepositoryFromForgejo(
+      await parsedResponse<IForgejoAPIRepository>(response)
+    )
   }
 
   public override async fetchAllOpenPullRequests(

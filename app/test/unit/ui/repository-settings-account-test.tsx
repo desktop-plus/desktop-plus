@@ -9,11 +9,21 @@ import type { Dispatcher } from '../../../src/ui/dispatcher'
 import { fireEvent, render, screen, waitFor } from '../../helpers/ui/render'
 
 const endpoint = 'https://api.github.com'
-const personal = new Account('personal', endpoint, 'token', [], '', 1, '')
-const work = new Account('work', endpoint, 'token', [], '', 2, '')
+const personal = new Account(
+  'personal',
+  endpoint,
+  'dotcom',
+  'token',
+  [],
+  '',
+  1,
+  ''
+)
+const work = new Account('work', endpoint, 'dotcom', 'token', [], '', 2, '')
 const enterprise = new Account(
   'enterprise',
   'https://enterprise.example.com/api/v3',
+  'enterprise',
   'token',
   [],
   '',
@@ -28,6 +38,8 @@ const remote = {
 }
 
 before(() => {
+  // Resolving the repository URL runs Git in its nonexistent path
+  mock.getter(Repository.prototype, 'url', () => null)
   mock.module('../../../src/lib/git/index.ts', {
     namedExports: { readGitIgnoreAtRoot: async () => '' },
   })
@@ -51,11 +63,19 @@ function createRepository(login: string | null = null, github = true) {
     '/repository',
     1,
     github
-      ? new GitHubRepository('repository', new Owner('owner', endpoint, 1), 1)
+      ? new GitHubRepository(
+          'repository',
+          'github',
+          new Owner('owner', endpoint, 1),
+          1
+        )
       : null,
     false,
     null,
+    null,
+    null,
     {},
+    null,
     false,
     undefined,
     undefined,
@@ -206,7 +226,7 @@ describe('RepositorySettings account', () => {
   it('preserves account and remote edits across unrelated props updates', async () => {
     const view = await renderSettings()
     fireEvent.change(accountSelect(), { target: { value: 'work' } })
-    const input = screen.getByRole('textbox', { hidden: true })
+    const input = screen.getByPlaceholderText('Remote URL')
     fireEvent.change(input, {
       target: { value: 'https://github.com/owner/new' },
     })
@@ -225,7 +245,7 @@ describe('RepositorySettings account', () => {
   it('sets the remote URL on the repository with its newly saved account', async () => {
     const view = await renderSettings()
     fireEvent.change(accountSelect(), { target: { value: 'work' } })
-    fireEvent.change(screen.getByRole('textbox', { hidden: true }), {
+    fireEvent.change(screen.getByPlaceholderText('Remote URL'), {
       target: { value: 'https://github.com/owner/new' },
     })
     save()

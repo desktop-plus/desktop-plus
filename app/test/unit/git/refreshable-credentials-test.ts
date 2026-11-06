@@ -184,12 +184,16 @@ describe('Refreshable credentials in Git', () => {
       1,
       new GitHubRepository(
         'remote',
+        'github',
         new Owner('owner', account.endpoint, 1),
         1
       ),
       false,
       null,
+      null,
+      null,
       {},
+      null,
       false,
       undefined,
       undefined,
@@ -283,9 +287,32 @@ describe('Refreshable credentials in Git', () => {
         expiresAt: Date.now(),
       }
     )
+    const repository = await setupEmptyRepository(t)
+    const repositories = new RepositoriesStore(new TestRepositoriesDatabase())
+    const assigned = new Repository(
+      repository.path,
+      1,
+      new GitHubRepository(
+        'remote',
+        'gitlab',
+        new Owner('owner', 'http://gitlab.test/api/v4', 1, undefined, 'gitlab'),
+        1
+      ),
+      false,
+      null,
+      null,
+      null,
+      {},
+      null,
+      false,
+      undefined,
+      undefined,
+      'octocat'
+    )
+    t.mock.method(repositories, 'getAll', async () => [assigned])
     trampolineServer.registerCommandHandler(
       TrampolineCommandIdentifier.CredentialHelper,
-      createCredentialHelperTrampolineHandler(store)
+      createCredentialHelperTrampolineHandler(store, repositories)
     )
 
     const root = await createTempDirectory(t)
@@ -297,7 +324,6 @@ describe('Refreshable credentials in Git', () => {
       async () => {}
     )
 
-    const repository = await setupEmptyRepository(t)
     await makeCommit(repository, {
       entries: [{ path: 'README.md', contents: 'hello' }],
       commitMessage: 'initial commit',

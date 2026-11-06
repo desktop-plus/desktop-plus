@@ -323,9 +323,27 @@ class SizedResizeObserver implements ResizeObserver {
 describe('CloneRepository GitHub tab account changes', () => {
   const dotCom = 'https://api.github.com'
   const enterprise = 'https://ghe.example.com/api/v3'
-  const alice = new Account('alice', dotCom, 'alice-token', [], '', 1, '')
-  const bob = new Account('bob', dotCom, 'bob-token', [], '', 2, '')
-  const carol = new Account('carol', enterprise, 'carol-token', [], '', 3, '')
+  const alice = new Account(
+    'alice',
+    dotCom,
+    'dotcom',
+    'alice-token',
+    [],
+    '',
+    1,
+    ''
+  )
+  const bob = new Account('bob', dotCom, 'dotcom', 'bob-token', [], '', 2, '')
+  const carol = new Account(
+    'carol',
+    enterprise,
+    'enterprise',
+    'carol-token',
+    [],
+    '',
+    3,
+    ''
+  )
 
   const repository = (owner: string, name: string) =>
     createMockAPIRepository({

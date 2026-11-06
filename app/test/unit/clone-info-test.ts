@@ -6,9 +6,27 @@ import { Account } from '../../src/models/account'
 
 const dotCom = getDotComAPIEndpoint()
 const enterprise = getEnterpriseAPIURL('https://ghe.example.com')
-const alice = new Account('alice', dotCom, 'alice-token', [], '', 1, '')
-const bob = new Account('bob', dotCom, 'bob-token', [], '', 2, '')
-const carol = new Account('carol', enterprise, 'carol-token', [], '', 3, '')
+const alice = new Account(
+  'alice',
+  dotCom,
+  'dotcom',
+  'alice-token',
+  [],
+  '',
+  1,
+  ''
+)
+const bob = new Account('bob', dotCom, 'dotcom', 'bob-token', [], '', 2, '')
+const carol = new Account(
+  'carol',
+  enterprise,
+  'enterprise',
+  'carol-token',
+  [],
+  '',
+  3,
+  ''
+)
 
 /** A lookup where only the given logins (with '' meaning anonymous) have access. */
 function createLookup(withAccess: ReadonlyArray<string>) {
@@ -122,7 +140,16 @@ describe('resolveURLCloneInfo', () => {
 
   describe('with an Enterprise server on a non-default port', () => {
     const ported = getEnterpriseAPIURL('https://ghe.example.com:8443')
-    const dave = new Account('dave', ported, 'dave-token', [], '', 4, '')
+    const dave = new Account(
+      'dave',
+      ported,
+      'enterprise',
+      'dave-token',
+      [],
+      '',
+      4,
+      ''
+    )
 
     /** A lookup where every account has access, recording who was asked. */
     function createRecordingLookup() {

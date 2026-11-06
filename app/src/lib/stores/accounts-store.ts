@@ -22,6 +22,7 @@ import { assertNever, fatalError } from '../fatal-error'
 import { TypedBaseStore } from './base-store'
 import { isGHE } from '../endpoint-capabilities'
 import { compare, compareDescending } from '../compare'
+import { caseInsensitiveEquals } from '../compare'
 import {
   isRegisteredApiType,
   registerEndpointApiType,
@@ -159,6 +160,26 @@ const friendlyApiTypeName = (apiType: AccountAPIType) => {
     case 'gitea':
       return 'Gitea'
   }
+}
+
+function withLogin(account: Account, login: string): Account {
+  return account.login === login
+    ? account
+    : new Account(
+        login,
+        account.endpoint,
+        account.apiType,
+        account.token,
+        account.emails,
+        account.avatarURL,
+        account.id,
+        account.name,
+        account.plan,
+        account.copilotEndpoint,
+        account.isCopilotDesktopEnabled,
+        account.features,
+        account.copilotLicenseType
+      )
 }
 
 /** The store for logged in accounts. */
@@ -536,19 +557,21 @@ export class AccountsStore extends TypedBaseStore<ReadonlyArray<Account>> {
       const updated = await updatedAccount(fresh)
       // The login keys the account's session, secure-storage item and
       // repository associations, so a renamed user keeps the previous login
-      // until they sign in again.
-      if (updated.login !== account.login) {
+      // until they sign in again. A change of case only keeps the stored login
+      // too, since it keys the (case-sensitive) secure-storage item.
+      if (!caseInsensitiveEquals(updated.login, account.login)) {
         log.warn(
           `Account '${account.login}' was renamed to '${updated.login}'. Sign in again to use the new login.`
         )
         return
       }
+      const refreshed = withLogin(updated, account.login)
       const token = currentToken()
       if (token !== null) {
         const key = getAccountKey(account)
         this.accounts = this.accounts.map(a =>
           getAccountKey(a) === key
-            ? this.credentials.inheritSession(a, updated.withToken(token))
+            ? this.credentials.inheritSession(a, refreshed.withToken(token))
             : a
         )
         this.save()

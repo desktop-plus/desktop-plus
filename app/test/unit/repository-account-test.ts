@@ -11,18 +11,42 @@ import { TestRepositoriesDatabase } from '../helpers/databases'
 import { createMockAPIRepository } from '../helpers/mock-api'
 
 const endpoint = 'https://api.github.com'
-const alice = new Account('alice', endpoint, 'alice-token', [], '', 1, 'Alice')
-const bob = new Account('bob', endpoint, 'bob-token', [], '', 2, 'Bob')
+const alice = new Account(
+  'alice',
+  endpoint,
+  'dotcom',
+  'alice-token',
+  [],
+  '',
+  1,
+  'Alice'
+)
+const bob = new Account(
+  'bob',
+  endpoint,
+  'dotcom',
+  'bob-token',
+  [],
+  '',
+  2,
+  'Bob'
+)
 const enterprise = new Account(
   'alice',
   'https://enterprise.example/api/v3',
+  'enterprise',
   'enterprise-token',
   [],
   '',
   1,
   'Alice'
 )
-const github = new GitHubRepository('repo', new Owner('owner', endpoint, 1), 1)
+const github = new GitHubRepository(
+  'repo',
+  'github',
+  new Owner('owner', endpoint, 1),
+  1
+)
 
 function repository(login: string | null = null) {
   return new Repository(
@@ -31,7 +55,10 @@ function repository(login: string | null = null) {
     github,
     false,
     null,
+    null,
+    null,
     {},
+    null,
     false,
     undefined,
     undefined,
@@ -83,12 +110,16 @@ describe('Repository account persistence', () => {
         path: '/legacy',
         gitHubRepositoryID: github.dbID,
         alias: null,
+        groupName: null,
+        defaultBranch: null,
         missing: false,
       },
       {
         path: '/unmatched',
         gitHubRepositoryID: null,
         alias: null,
+        groupName: null,
+        defaultBranch: null,
         missing: false,
       },
     ])
@@ -121,6 +152,8 @@ describe('Repository account persistence', () => {
       path: '/legacy',
       gitHubRepositoryID: github.dbID,
       alias: null,
+      groupName: null,
+      defaultBranch: null,
       missing: false,
     })
     await store.migrateAccountAssignments([{ endpoint, login: 'alice' }])

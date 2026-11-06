@@ -21,6 +21,7 @@ it('passes the local account context through the quick view badge to CI status',
   )
   const github = new GitHubRepository(
     'repo',
+    'github',
     new Owner('owner', 'https://api.github.com', 1),
     1
   )
@@ -42,7 +43,10 @@ it('passes the local account context through the quick view badge to CI status',
       github,
       false,
       null,
+      null,
+      null,
       {},
+      null,
       false,
       undefined,
       undefined,

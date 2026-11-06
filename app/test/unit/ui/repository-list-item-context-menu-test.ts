@@ -10,10 +10,42 @@ import { IMenuItem } from '../../../src/lib/menu-item'
 
 const endpoint = 'https://ghe.example.com/api/v3'
 const otherEndpoint = 'https://api.github.com'
-const first = new Account('first', endpoint, 'token', [], '', 1, '')
-const second = new Account('second', endpoint, 'token', [], '', 2, '')
-const elsewhere = new Account('third', otherEndpoint, 'token', [], '', 3, '')
-const github = new GitHubRepository('repo', new Owner('owner', endpoint, 1), 1)
+const first = new Account(
+  'first',
+  endpoint,
+  'enterprise',
+  'token',
+  [],
+  '',
+  1,
+  ''
+)
+const second = new Account(
+  'second',
+  endpoint,
+  'enterprise',
+  'token',
+  [],
+  '',
+  2,
+  ''
+)
+const elsewhere = new Account(
+  'third',
+  otherEndpoint,
+  'dotcom',
+  'token',
+  [],
+  '',
+  3,
+  ''
+)
+const github = new GitHubRepository(
+  'repo',
+  'github',
+  new Owner('owner', endpoint, 1),
+  1
+)
 
 const repository = (
   login: string | null,
@@ -26,7 +58,10 @@ const repository = (
     gitHubRepository,
     missing,
     null,
+    null,
+    null,
     {},
+    null,
     false,
     undefined,
     undefined,
@@ -36,6 +71,8 @@ const repository = (
 let generateRepositoryListContextMenu: typeof import('../../../src/ui/repositories-list/repository-list-item-context-menu').generateRepositoryListContextMenu
 
 before(async () => {
+  // Resolving the URL of a non-GitHub repository runs Git in its nonexistent path
+  mock.getter(Repository.prototype, 'url', () => null)
   mock.module('../../../src/ui/main-process-proxy.ts', {
     namedExports: { writeClipboardText: () => {} },
   })
@@ -65,6 +102,12 @@ const getMenu = (
     onRemoveRepository: () => {},
     onChangeRepositoryAlias: () => {},
     onRemoveRepositoryAlias: () => {},
+    onSnoozeRepository: () => {},
+    onNewGroupForRepository: () => {},
+    onRemoveRepositoryGroupName: () => {},
+    groupNames: [],
+    onAssignRepositoryGroupName: () => {},
+    onCopyRepoPath: () => {},
   })
 
 const getAccountMenu = (

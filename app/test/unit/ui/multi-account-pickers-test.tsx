@@ -21,8 +21,17 @@ import { createTempDirectory } from '../../helpers/temp'
 import { fireEvent, render, screen, waitFor } from '../../helpers/ui/render'
 
 const endpoint = 'https://api.github.com'
-const alice = new Account('alice', endpoint, 'alice-token', [], '', 1, '')
-const bob = new Account('bob', endpoint, 'bob-token', [], '', 2, '')
+const alice = new Account(
+  'alice',
+  endpoint,
+  'dotcom',
+  'alice-token',
+  [],
+  '',
+  1,
+  ''
+)
+const bob = new Account('bob', endpoint, 'dotcom', 'bob-token', [], '', 2, '')
 
 /** Reports a fixed size so the virtualized account list renders its rows. */
 class SizedResizeObserver implements ResizeObserver {
@@ -123,6 +132,7 @@ describe('account pickers with multiple accounts on one endpoint', () => {
     const enterpriseAlice = new Account(
       'alice',
       enterpriseEndpoint,
+      'enterprise',
       'ghe-token',
       [],
       '',
@@ -132,6 +142,7 @@ describe('account pickers with multiple accounts on one endpoint', () => {
     const enterpriseBob = new Account(
       'bob',
       enterpriseEndpoint,
+      'enterprise',
       'ghe-bob-token',
       [],
       '',
@@ -153,7 +164,10 @@ describe('account pickers with multiple accounts on one endpoint', () => {
             gitHubRepository,
             false,
             null,
+            null,
+            null,
             {},
+            null,
             false,
             undefined,
             undefined,
@@ -178,6 +192,7 @@ const enterpriseEndpoint = 'https://ghe.example.com/api/v3'
 const enterpriseCarol = new Account(
   'carol',
   enterpriseEndpoint,
+  'enterprise',
   'carol-token',
   [],
   '',

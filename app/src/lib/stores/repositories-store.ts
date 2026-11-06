@@ -33,6 +33,7 @@ import { shallowEquals } from '../equality'
 import { EditorOverride } from '../../models/editor-override'
 import { Account, IAccountIdentity, isSameAccount } from '../../models/account'
 import { caseInsensitiveEquals } from '../compare'
+import { migrateForkAccountAssignments } from './helpers/migrate-fork-account-assignments'
 
 type AddRepositoryOptions = {
   missing?: boolean
@@ -271,6 +272,22 @@ export class RepositoriesStore extends TypedBaseStore<
   }
 
   /**
+   * Must run before `migrateAccountAssignments`.
+   */
+  public async migrateForkAccountAssignments(
+    accounts: ReadonlyArray<IAccountIdentity>
+  ) {
+    const migrated = await migrateForkAccountAssignments(
+      this.db,
+      accounts,
+      (id, login) => this.getGitHubRepositoryForAccount(id, login)
+    )
+    if (migrated) {
+      this.emitUpdatedRepositories()
+    }
+  }
+
+  /**
    * Assign legacy repositories once, using the accounts persisted at startup.
    *
    * Pass every persisted identity, not just the accounts whose credentials
@@ -485,10 +502,15 @@ export class RepositoriesStore extends TypedBaseStore<
     missing: boolean
   ): Promise<Repository> {
     if (repository.missing === missing) {
-      return repository
+      return this.getStoredRepository(repository)
     }
 
     return this.updateRepositoryRecord(repository, { missing })
+  }
+
+  private async getStoredRepository(repository: Repository) {
+    const record = await this.db.repositories.get(repository.id)
+    return record === undefined ? repository : this.toRepository(record)
   }
 
   /** Update the repository's `gitDir` path. */
@@ -497,7 +519,7 @@ export class RepositoriesStore extends TypedBaseStore<
     gitDir: string
   ): Promise<Repository> {
     if (repository.gitDir === gitDir) {
-      return repository
+      return this.getStoredRepository(repository)
     }
 
     return this.updateRepositoryRecord(repository, { gitDir })
@@ -548,28 +570,14 @@ export class RepositoriesStore extends TypedBaseStore<
     defaultBranch: string | null
   ): Promise<Repository> {
     if (repository.defaultBranch === defaultBranch) {
-      return repository
+      return this.getStoredRepository(repository)
     }
 
     await this.db.repositories.update(repository.id, { defaultBranch })
 
     this.emitUpdatedRepositories()
 
-    return new Repository(
-      repository.path,
-      repository.id,
-      repository.gitHubRepository,
-      repository.missing,
-      repository.alias,
-      repository.groupName,
-      defaultBranch,
-      repository.workflowPreferences,
-      repository.customEditorOverride,
-      repository.isTutorialRepository,
-      repository.gitDir,
-      repository.mainWorktreePath,
-      repository.login
-    )
+    return this.getStoredRepository(repository)
   }
 
   public async updateRepositoryEditorOverride(

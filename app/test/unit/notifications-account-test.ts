@@ -19,10 +19,7 @@ import { Account } from '../../src/models/account'
 import { GitHubRepository } from '../../src/models/github-repository'
 import { Owner } from '../../src/models/owner'
 import { PullRequest, PullRequestRef } from '../../src/models/pull-request'
-import {
-  Repository,
-  assertIsRepositoryWithGitHubRepository,
-} from '../../src/models/repository'
+import type { Repository } from '../../src/models/repository'
 import { ForkContributionTarget } from '../../src/models/workflow-preferences'
 import {
   createMockAPI,
@@ -32,17 +29,32 @@ import {
 import type { StatsStore } from '../../src/lib/stats'
 
 const endpoint = 'https://api.github.com'
-const first = new Account('first', endpoint, 'first-token', [], '', 1, '')
+const first = new Account(
+  'first',
+  endpoint,
+  'dotcom',
+  'first-token',
+  [],
+  '',
+  1,
+  ''
+)
 const second = new Account(
   'second',
   endpoint,
+  'dotcom',
   'second-token',
   [createMockAPIEmail('second@example.com')],
   '',
   2,
   ''
 )
-const github = new GitHubRepository('repo', new Owner('owner', endpoint, 1), 1)
+const github = new GitHubRepository(
+  'repo',
+  'github',
+  new Owner('owner', endpoint, 1),
+  1
+)
 const head = new PullRequestRef('branch', 'abc123', github)
 const pullRequest = new PullRequest(
   new Date(),
@@ -55,6 +67,8 @@ const pullRequest = new PullRequest(
   ''
 )
 const showNotification = mock.fn()
+// Loaded after mocking because it transitively imports the notifications store
+let repositoryModel: typeof import('../../src/models/repository')
 const getCommit = mock.fn(async () => {
   const { Commit } = await import('../../src/models/commit')
   const { CommitIdentity } = await import('../../src/models/commit-identity')
@@ -66,7 +80,7 @@ const getCommit = mock.fn(async () => {
   return new Commit('abc123', 'abc123', '', '', identity, identity, [], [], [])
 })
 
-before(() => {
+before(async () => {
   mock.module('../../src/lib/git/index.ts', {
     namedExports: { getCommit },
   })
@@ -76,22 +90,26 @@ before(() => {
   mock.module('../../src/lib/notifications/show-notification.ts', {
     namedExports: { showNotification },
   })
+  repositoryModel = await import('../../src/models/repository')
 })
 
 function local(login: string | null, remote = github, id = 1) {
-  const repository = new Repository(
+  const repository = new repositoryModel.Repository(
     `/repo-${id}`,
     id,
     remote,
     false,
     null,
+    null,
+    null,
     { forkContributionTarget: ForkContributionTarget.Parent },
+    null,
     false,
     undefined,
     undefined,
     login
   )
-  assertIsRepositoryWithGitHubRepository(repository)
+  repositoryModel.assertIsRepositoryWithGitHubRepository(repository)
   return repository
 }
 
@@ -298,6 +316,7 @@ describe('Notification repository account assignment', () => {
     const { store, debug, requests } = await createStores(t)
     const enterprise = new GitHubRepository(
       'repo',
+      'github',
       new Owner('owner', 'https://enterprise.example/api/v3', 1),
       2
     )
@@ -333,7 +352,7 @@ describe('Notification repository account assignment', () => {
     store.setRecentRepositories([local('first'), local('second', github, 2)])
     await emit(commentEvent)
     store.selectRepository(
-      local('second', new GitHubRepository('other', github.owner, 2))
+      local('second', new GitHubRepository('other', 'github', github.owner, 2))
     )
     await emit(reviewEvent)
     assert.deepStrictEqual(requests, [])
@@ -371,6 +390,7 @@ describe('Notification repository account assignment', () => {
     const { store, emit, requests } = await createStores(t)
     const fork = new GitHubRepository(
       'fork',
+      'github',
       new Owner('second', endpoint, 2),
       2,
       null,
@@ -411,7 +431,7 @@ describe('NotificationsDebugStore account isolation', () => {
     assert.strictEqual(requests.length, 6)
     const other = local(
       'second',
-      new GitHubRepository('other', github.owner, 2)
+      new GitHubRepository('other', 'github', github.owner, 2)
     )
     await debug.getPullRequestComments(other, 1)
     await debug.getPullRequestReviews(other, 1)

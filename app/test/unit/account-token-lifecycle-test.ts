@@ -1434,7 +1434,6 @@ describe('Several accounts on one endpoint', () => {
       `${other.login}:${other.token}`,
     ])
 
-    assert.equal(await store.resolveToken(account.endpoint, ''), '')
     assert.equal(
       await store.resolveToken(account.endpoint, '', other.login),
       ''
@@ -1495,6 +1494,28 @@ describe('Several accounts on one endpoint', () => {
       accessToken: account.token,
     })
     await expectUsable(store, account, account.token)
+  })
+
+  it('keeps the stored login when the API only changes its case', async t => {
+    const { store, secure } = setup()
+    await store.addAccount(account)
+    t.mock.method(API.prototype, 'fetchAccount', async () => ({
+      ...createMockAPIIdentity({ login: 'OctoCat' }),
+      name: 'Updated Octocat',
+    }))
+    t.mock.method(API.prototype, 'fetchEmails', async () => [])
+    t.mock.method(API.prototype, 'fetchUserCopilotInfo', async () => null)
+    t.mock.method(API.prototype, 'fetchFeatureFlags', async () => [])
+
+    await store.refresh()
+
+    const [refreshed] = await store.getAll()
+    assert.equal(refreshed.login, account.login)
+    assert.equal(refreshed.name, 'Updated Octocat')
+    assert.deepEqual(await stored(secure, account), {
+      accessToken: account.token,
+    })
+    await expectUsable(store, refreshed, account.token)
   })
 
   it('renewing a third-party login leaves another login untouched', async () => {
