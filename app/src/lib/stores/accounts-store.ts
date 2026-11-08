@@ -55,6 +55,7 @@ import {
   PersistedUsers,
   withPersistedUsers,
 } from './legacy-account-credential'
+import { migrateForkAccountIds } from './helpers/migrate-fork-account-assignments'
 
 // Ensure that GitHub.com accounts appear first followed by Enterprise
 // accounts, sorted by the order in which they were added.
@@ -231,6 +232,7 @@ export class AccountsStore extends TypedBaseStore<ReadonlyArray<Account>> {
       now,
       revokeToken
     )
+    migrateForkAccountIds(dataStore)
     this.loadingPromise = this.loadFromStore()
   }
 

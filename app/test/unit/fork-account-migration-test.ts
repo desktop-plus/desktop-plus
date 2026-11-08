@@ -2,11 +2,18 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { setImmediate } from 'node:timers/promises'
 import { RepositoriesStore } from '../../src/lib/stores/repositories-store'
-import { ForkAccountMigrationKey } from '../../src/lib/stores/helpers/migrate-fork-account-assignments'
+import {
+  ForkAccountMigrationKey,
+  migrateForkAccountIds,
+} from '../../src/lib/stores/helpers/migrate-fork-account-assignments'
+import { deriveNumericAccountId } from '../../src/lib/derive-numeric-account-id'
 import { getOwnerKey } from '../../src/lib/databases/repositories-database'
 import { IAccountIdentity } from '../../src/models/account'
 import { RepoType } from '../../src/models/github-repository'
 import { TestRepositoriesDatabase } from '../helpers/databases'
+import { AccountsStore } from '../../src/lib/stores/accounts-store'
+import { BitbucketCloudAPIEndpoint } from '../../src/lib/api'
+import { InMemoryStore, AsyncInMemoryStore } from '../helpers/stores'
 
 const dotcom = 'https://api.github.com'
 const gitlab = 'https://gitlab.example.com/api/v4'
@@ -214,5 +221,73 @@ describe('Desktop Plus account migration', () => {
       login: null,
     })
     assert.deepEqual(await logins([alice]), [null])
+  })
+})
+
+describe('Desktop Plus account id migration', () => {
+  const bitbucket = (login: string, id = 0) => ({
+    login,
+    endpoint: BitbucketCloudAPIEndpoint,
+    apiType: 'bitbucket',
+    token: '',
+    emails: [],
+    avatarURL: '',
+    id,
+    name: '',
+  })
+
+  const storeWith = (users: ReadonlyArray<object>) => {
+    const dataStore = new InMemoryStore()
+    dataStore.setItem('users', JSON.stringify(users))
+    return dataStore
+  }
+
+  const persistedIds = (dataStore: InMemoryStore): ReadonlyArray<number> =>
+    JSON.parse(dataStore.getItem('users')).map((u: { id: number }) => u.id)
+
+  beforeEach(() => localStorage.removeItem(ForkAccountMigrationKey))
+  afterEach(() => localStorage.removeItem(ForkAccountMigrationKey))
+
+  it('derives distinct Bitbucket ids from the username, ignoring case', () => {
+    assert.notEqual(
+      deriveNumericAccountId('joan'),
+      deriveNumericAccountId('anna')
+    )
+    assert.equal(deriveNumericAccountId('joan'), deriveNumericAccountId('Joan'))
+    assert.ok(deriveNumericAccountId('joan') > 0)
+  })
+
+  it('assigns derived ids only to Bitbucket accounts without one', () => {
+    const dataStore = storeWith([
+      bitbucket('joan'),
+      bitbucket('anna'),
+      bitbucket('kept', 7),
+    ])
+    migrateForkAccountIds(dataStore)
+    assert.deepEqual(persistedIds(dataStore), [
+      deriveNumericAccountId('joan'),
+      deriveNumericAccountId('anna'),
+      7,
+    ])
+  })
+
+  it('does nothing once the fork migration has run', () => {
+    localStorage.setItem(ForkAccountMigrationKey, '1')
+    const dataStore = storeWith([bitbucket('joan')])
+    migrateForkAccountIds(dataStore)
+    assert.deepEqual(persistedIds(dataStore), [0])
+  })
+
+  it('loads legacy Bitbucket users with distinct ids', async () => {
+    const dataStore = storeWith([bitbucket('joan'), bitbucket('anna')])
+    const accountsStore = new AccountsStore(dataStore, new AsyncInMemoryStore())
+
+    const expected = ['joan', 'anna'].map(deriveNumericAccountId)
+    const users = await accountsStore.getAll()
+    assert.deepEqual(
+      ['joan', 'anna'].map(l => users.find(u => u.login === l)?.id),
+      expected
+    )
+    assert.deepEqual(persistedIds(dataStore), expected)
   })
 })

@@ -37,6 +37,7 @@ import { urlWithoutCredentials } from './trampoline/url-without-credentials'
 import { CopilotError, parseCopilotPaymentRequiredError } from './copilot-error'
 import { BypassReasonType } from '../ui/secret-scanning/bypass-push-protection-dialog'
 import { assertNever } from './fatal-error'
+import { deriveNumericAccountId } from './derive-numeric-account-id'
 
 const envEndpoint = process.env['DESKTOP_GITHUB_DOTCOM_API_ENDPOINT']
 const envHTMLURL = process.env['DESKTOP_GITHUB_DOTCOM_HTML_URL']
@@ -466,7 +467,7 @@ function toIAPIFullIdentityFromBitbucket(
   identity: IBitbucketAPIIdentity
 ): IAPIFullIdentity {
   return {
-    id: 0,
+    id: deriveNumericAccountId(identity.username),
     login: identity.username,
     avatar_url: identity.links.avatar.href,
     html_url: identity.links.html.href,

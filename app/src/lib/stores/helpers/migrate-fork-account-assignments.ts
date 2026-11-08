@@ -1,12 +1,45 @@
 import { RepositoriesDatabase } from '../../databases/repositories-database'
 import { GitHubRepository } from '../../../models/github-repository'
-import { IAccountIdentity, isSameAccount } from '../../../models/account'
+import {
+  AccountAPIType,
+  IAccountIdentity,
+  isSameAccount,
+} from '../../../models/account'
 import { caseInsensitiveEquals } from '../../compare'
+import { deriveNumericAccountId } from '../../derive-numeric-account-id'
+import { IDataStore } from '../stores'
 
 /**
  * Set once the account data has been migrated
  */
 export const ForkAccountMigrationKey = 'fork-account-assignments-migrated'
+
+interface IPersistedAccountId {
+  readonly login: string
+  readonly id: number
+  readonly apiType?: AccountAPIType
+}
+
+const needsBitbucketId = (account: IPersistedAccountId) =>
+  account.apiType === 'bitbucket' && account.id === 0
+
+export function migrateForkAccountIds(dataStore: IDataStore) {
+  if (localStorage.getItem(ForkAccountMigrationKey) !== null) {
+    return
+  }
+  const raw = dataStore.getItem('users')
+  if (!raw) {
+    return
+  }
+  const accounts: ReadonlyArray<IPersistedAccountId> = JSON.parse(raw)
+  if (!Array.isArray(accounts) || !accounts.some(needsBitbucketId)) {
+    return
+  }
+  const migrated = accounts.map(a =>
+    needsBitbucketId(a) ? { ...a, id: deriveNumericAccountId(a.login) } : a
+  )
+  dataStore.setItem('users', JSON.stringify(migrated))
+}
 
 type GetGitHubRepositoryForAccount = (
   id: number,
