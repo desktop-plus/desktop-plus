@@ -9,6 +9,8 @@ import {
 } from '../../../src/models/status'
 import { DiffSelection, DiffSelectionType } from '../../../src/models/diff'
 import type { WorktreeEntry } from '../../../src/models/worktree'
+import { writeFile } from 'fs/promises'
+import { join } from 'path'
 
 describe('AppStore repository indicators', () => {
   let appStore: AppStore
@@ -150,7 +152,9 @@ describe('AppStore repository indicators', () => {
   })
 
   it('keeps the changes view and repository indicator in sync when switching to Changes', async t => {
-    const repository = new Repository('/repositories/changed', 3, null, false)
+    const { seed } = await import('../../helpers/assisted-commit')
+    const repository = await seed(t, { 'changed.txt': 'before\n' })
+    await writeFile(join(repository.path, 'changed.txt'), 'after\n')
     const gitStore = appStore['gitStoreCache'].get(repository)
     const cache = appStore['repositoryStateCache']
     appStore['selectedRepository'] = repository
@@ -263,7 +267,9 @@ describe('AppStore repository indicators', () => {
   })
 
   it('keeps the repository list worktrees when loading status', async t => {
-    const repository = new Repository('/repositories/worktrees', 5, null, false)
+    // Loading a non-null status inspects the real Git directory
+    const { seed } = await import('../../helpers/assisted-commit')
+    const repository = await seed(t, { 'file.txt': 'content\n' })
     const gitStore = appStore['gitStoreCache'].get(repository)
     const worktrees: ReadonlyArray<WorktreeEntry> = [
       {

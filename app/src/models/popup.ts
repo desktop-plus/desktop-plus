@@ -122,6 +122,7 @@ export enum PopupType {
   BypassPushProtection = 'BypassPushProtection',
   GenerateCommitMessageOverrideWarning = 'GenerateCommitMessageOverrideWarning',
   GenerateCommitMessageDisclaimer = 'GenerateCommitMessageDisclaimer',
+  AssistedCommitDisclaimer = 'AssistedCommitDisclaimer',
   CopilotConflictResolutionDisclaimer = 'CopilotConflictResolutionDisclaimer',
   HookFailed = 'HookFailed',
   CommitProgress = 'CommitProgress',
@@ -536,6 +537,8 @@ export type PopupDetail =
   | {
       type: PopupType.Error
       error: Error
+      /** Include retained causes when explicitly inspecting assisted-run details. */
+      showCauses?: boolean
     }
   | {
       type: PopupType.InstallingUpdate
@@ -602,6 +605,11 @@ export type PopupDetail =
       // from this popup we will trigger the commit message generation too.
       repository: Repository
       filesSelected: ReadonlyArray<WorkingDirectoryFileChange>
+    }
+  | {
+      type: PopupType.AssistedCommitDisclaimer
+      repository: Repository
+      onAccepted: () => void
     }
   | {
       type: PopupType.CopilotConflictResolutionDisclaimer

@@ -269,6 +269,8 @@ import {
 } from '../models/editor-override'
 import { IDeleteWorktreeOptions, WorktreeEntry } from '../models/worktree'
 import { shouldShowWorktreeDropdown } from '../lib/worktree-dropdown'
+import { isAssistedCommitRepositoryLocked } from '../models/assisted-commit-run'
+import { isRepositoryAffectedByAssistedCommit } from '../lib/git/repository-operation'
 
 const MinuteInMilliseconds = 1000 * 60
 const HourInMilliseconds = MinuteInMilliseconds * 60
@@ -3125,6 +3127,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         return (
           <AppError
             error={popup.error}
+            showCauses={popup.showCauses}
             onDismissed={onPopupDismissedFn}
             onShowPopup={this.showPopup}
             onRetryAction={this.onRetryAction}
@@ -3295,6 +3298,22 @@ export class App extends React.Component<IAppProps, IAppState> {
             onDismissed={onPopupDismissedFn}
           >
             Review and edit the generated message carefully before use.
+          </CopilotDisclaimer>
+        )
+      }
+      case PopupType.AssistedCommitDisclaimer: {
+        return (
+          <CopilotDisclaimer
+            key="assisted-commit-disclaimer"
+            onAccepted={popup.onAccepted}
+            onDismissed={onPopupDismissedFn}
+          >
+            Copilot will plan your selected changes, and GitHub Desktop will
+            create one or more local commits with their generated messages.
+            Copilot will not edit your files. You can cancel before local
+            acceptance to undo commits created by this run. If Push after
+            committing is enabled, all local commits are kept once pushing
+            starts, even if the push fails.
           </CopilotDisclaimer>
         )
       }
@@ -4281,6 +4300,10 @@ export class App extends React.Component<IAppProps, IAppState> {
         remoteName={remoteName}
         lastFetched={state.lastFetched}
         networkActionInProgress={state.isPushPullFetchInProgress}
+        disabled={
+          isAssistedCommitRepositoryLocked(state.changesState.assistedCommit) ||
+          isRepositoryAffectedByAssistedCommit(selection.repository.path)
+        }
         progress={progress}
         tipState={tip.kind}
         pullWithRebase={pullWithRebase}
@@ -4469,6 +4492,11 @@ export class App extends React.Component<IAppProps, IAppState> {
         onDropDownStateChanged={this.onWorktreeDropdownStateChanged}
         enableFocusTrap={enableFocusTrap}
         worktreeDropdownWidth={this.state.worktreeDropdownWidth}
+        disabled={
+          isAssistedCommitRepositoryLocked(
+            selection.state.changesState.assistedCommit
+          ) || isRepositoryAffectedByAssistedCommit(repository.path)
+        }
       />
     )
   }

@@ -80,6 +80,8 @@ interface ICommitGraphSidebarProps {
   readonly localTags: Map<string, string> | null
   readonly tagsToPush: ReadonlyArray<string> | null
   readonly isMultiCommitOperationInProgress?: boolean
+  /** Whether assisted execution or retained recovery locks this repository. */
+  readonly isAssistedCommitRepositoryLocked?: boolean
   readonly shasToHighlight: ReadonlyArray<string>
   readonly accounts: ReadonlyArray<Account>
   readonly preferAbsoluteDates: boolean
@@ -854,6 +856,9 @@ export class CommitGraphSidebar extends React.Component<
         disableSquashing={commitGraphIsTreeMode}
         isMultiCommitOperationInProgress={
           this.props.isMultiCommitOperationInProgress
+        }
+        isAssistedCommitRepositoryLocked={
+          this.props.isAssistedCommitRepositoryLocked
         }
         keyboardReorderData={this.state.keyboardReorderData}
         accounts={this.props.accounts}

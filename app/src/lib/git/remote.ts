@@ -1,4 +1,4 @@
-import { git } from './core'
+import { git, IGitStringExecutionOptions } from './core'
 import { GitError } from 'dugite'
 
 import { Repository } from '../../models/repository'
@@ -12,22 +12,26 @@ import memoizeOne from 'memoize-one'
  *
  * Returns the first fetch URL for each remote, with Git's URL rewrites applied.
  * Remotes without a fetch URL are omitted.
+ * Optional environment overrides apply only to these lookups.
  */
 export async function getRemotes(
-  repository: Repository
+  repository: Repository,
+  options?: Pick<IGitStringExecutionOptions, 'env'>
 ): Promise<ReadonlyArray<IRemote>> {
-  return getRemotesFromPath(repository.path)
+  return getRemotesFromPath(repository.path, options)
 }
 
 /**
  * List the remotes, sorted alphabetically by `name`, for a repository path.
  */
 export async function getRemotesFromPath(
-  path: string
+  path: string,
+  options?: Pick<IGitStringExecutionOptions, 'env'>
 ): Promise<ReadonlyArray<IRemote>> {
   // Config queries also work outside repositories, where they can still return
   // global remotes. Preserve the empty result for non-repository directories.
   const result = await git(['rev-parse', '--git-dir'], path, 'getRemotes', {
+    ...options,
     expectedErrors: new Set([GitError.NotAGitRepository]),
   })
 
@@ -43,6 +47,7 @@ export async function getRemotesFromPath(
     path,
     'getRemotes',
     {
+      ...options,
       // Git returns 1 when no URL keys match, including in a new repository.
       successExitCodes: new Set([0, 1]),
     }
@@ -85,7 +90,8 @@ export async function getRemotesFromPath(
         name,
       ],
       path,
-      'getRemotes'
+      'getRemotes',
+      options
     )
     // Remove only Git's final LF; trimEnd() would also remove URL whitespace.
     remotes.push({ name, url: stdout.slice(0, -1) })

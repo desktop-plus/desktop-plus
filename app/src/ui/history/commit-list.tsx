@@ -195,6 +195,9 @@ interface ICommitListProps {
    * conflicts resolution step allows interaction with history) */
   readonly isMultiCommitOperationInProgress?: boolean
 
+  /** Whether assisted execution or retained recovery locks this repository. */
+  readonly isAssistedCommitRepositoryLocked?: boolean
+
   /** Callback to render commit drag element */
   readonly onRenderCommitDragElement?: (
     commit: Commit,
@@ -381,6 +384,7 @@ export class CommitList extends React.Component<
         emoji={this.props.emoji}
         isDraggable={
           this.props.isMultiCommitOperationInProgress === false &&
+          this.props.isAssistedCommitRepositoryLocked !== true &&
           !this.inKeyboardReorderMode
         }
         onSquash={this.onSquash}
@@ -688,6 +692,7 @@ export class CommitList extends React.Component<
       emptyListMessage,
       reorderingEnabled,
       isMultiCommitOperationInProgress,
+      isAssistedCommitRepositoryLocked,
     } = this.props
     if (commitSHAs.length === 0) {
       return (
@@ -734,7 +739,8 @@ export class CommitList extends React.Component<
           keyboardInsertionElementRenderer={this.renderKeyboardInsertionElement}
           insertionDragType={
             reorderingEnabled === true &&
-            isMultiCommitOperationInProgress === false
+            isMultiCommitOperationInProgress === false &&
+            isAssistedCommitRepositoryLocked !== true
               ? DragType.Commit
               : undefined
           }
@@ -748,6 +754,7 @@ export class CommitList extends React.Component<
             showConventionalCommitBadges:
               this.props.showConventionalCommitBadges,
             additionalInvalidationProps: this.props.additionalInvalidationProps,
+            isAssistedCommitRepositoryLocked,
           }}
           setScrollTop={this.props.compareListScrollTop}
           rowCustomClassNameMap={this.getRowCustomClassMap()}
@@ -1029,14 +1036,17 @@ export class CommitList extends React.Component<
   private canCherryPick(): boolean {
     const { onCherryPick, isMultiCommitOperationInProgress } = this.props
     return (
-      onCherryPick !== undefined && isMultiCommitOperationInProgress === false
+      onCherryPick !== undefined &&
+      isMultiCommitOperationInProgress === false &&
+      this.props.isAssistedCommitRepositoryLocked !== true
     )
   }
 
   private canReorder = () =>
     this.props.onKeyboardReorder !== undefined &&
     this.props.disableReordering === false &&
-    this.props.isMultiCommitOperationInProgress === false
+    this.props.isMultiCommitOperationInProgress === false &&
+    this.props.isAssistedCommitRepositoryLocked !== true
 
   private canSquash(): boolean {
     const { onSquash, disableSquashing, isMultiCommitOperationInProgress } =
@@ -1044,7 +1054,8 @@ export class CommitList extends React.Component<
     return (
       onSquash !== undefined &&
       disableSquashing === false &&
-      isMultiCommitOperationInProgress === false
+      isMultiCommitOperationInProgress === false &&
+      this.props.isAssistedCommitRepositoryLocked !== true
     )
   }
 

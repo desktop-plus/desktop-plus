@@ -101,7 +101,7 @@ export class PopupManager {
    **/
   public addPopup(popupToAdd: Popup): Popup {
     if (popupToAdd.type === PopupType.Error) {
-      return this.addErrorPopup(popupToAdd.error)
+      return this.addErrorPopup(popupToAdd.error, popupToAdd.showCauses)
     }
 
     const existingPopup = this.getPopupsOfType(popupToAdd.type)
@@ -142,11 +142,12 @@ export class PopupManager {
    * - The popup will be given a unique id.
    * - Multiple popups of a type error.
    **/
-  public addErrorPopup(error: Error): Popup {
+  public addErrorPopup(error: Error, showCauses?: boolean): Popup {
     const popup: Popup = {
       id: ++this.popupCounter,
       type: PopupType.Error,
       error,
+      ...(showCauses === undefined ? {} : { showCauses }),
     }
     this.popupStack = this.popupStack.concat(popup)
     this.checkStackLength()

@@ -3,6 +3,9 @@ import { after, before, describe, it, mock, TestContext } from 'node:test'
 import { setImmediate } from 'node:timers/promises'
 import * as Path from 'path'
 import { existsSync } from 'fs'
+import { readFile, writeFile } from 'fs/promises'
+import { exec } from 'dugite'
+import { MultiCommitOperationKind } from '../../../src/models/multi-commit-operation'
 import type { AppStore } from '../../../src/lib/stores/app-store'
 import { API, IAPIPullRequest } from '../../../src/lib/api'
 import { Account } from '../../../src/models/account'
@@ -135,6 +138,67 @@ describe('AppStore explicitly adding repositories', () => {
     return repository
   }
 
+  it(
+    'stages only literal filenames when applying Copilot conflict resolutions',
+    { skip: process.platform === 'win32' },
+    async t => {
+      const {
+        setupConflictedRepoWithPathspecMagicFile,
+        PathspecMagicFileName,
+      } = await import('../../helpers/repositories')
+      const repository = await setupConflictedRepoWithPathspecMagicFile(t)
+      await writeFile(
+        Path.join(repository.path, 'unintended.txt'),
+        'untracked\n'
+      )
+      appStore._initializeMultiCommitOperation(
+        repository,
+        {
+          kind: MultiCommitOperationKind.Merge,
+          sourceBranch: null,
+          isSquash: false,
+        },
+        null,
+        [],
+        null,
+        false
+      )
+      stores.repositoryStateCache.updateMultiCommitOperationState(
+        repository,
+        () => ({
+          copilotResolutions: [
+            {
+              path: PathspecMagicFileName,
+              resolvedContent: 'resolved\n',
+              reasoning: 'Combine both versions',
+            },
+          ],
+        })
+      )
+
+      await appStore._applyCopilotConflictResolutions(repository)
+
+      const staged = await exec(
+        ['diff', '--cached', '--name-only', '-z'],
+        repository.path
+      )
+      assert.deepEqual(staged.stdout.split('\0').filter(Boolean), [
+        PathspecMagicFileName,
+      ])
+      assert.equal(
+        await readFile(
+          Path.join(repository.path, PathspecMagicFileName),
+          'utf8'
+        ),
+        'resolved\n'
+      )
+      assert.equal(
+        await readFile(Path.join(repository.path, 'unintended.txt'), 'utf8'),
+        'untracked\n'
+      )
+    }
+  )
+
   describe('preserving repository state across account changes', () => {
     async function setupDraft(t: TestContext) {
       const repository = await setupRepository(t)
@@ -257,13 +321,16 @@ describe('AppStore explicitly adding repositories', () => {
     })
 
     /** Run a network operation that finishes when the returned function is called. */
-    function startNetworkOperation(repository: Repository) {
+    async function startNetworkOperation(repository: Repository) {
       let finish = () => {}
+      let entered = () => {}
+      const started = new Promise<void>(resolve => (entered = resolve))
       const finished = new Promise<void>(resolve => (finish = resolve))
-      const operation = appStore['withPushPullFetch'](
-        repository,
-        () => finished
-      )
+      const operation = appStore['withPushPullFetch'](repository, () => {
+        entered()
+        return finished
+      })
+      await started
       return async () => {
         finish()
         await operation
@@ -277,7 +344,7 @@ describe('AppStore explicitly adding repositories', () => {
 
     it('finishes a fetch that was running when the account changed', async t => {
       const repository = await setupDraft(t)
-      const finish = startNetworkOperation(repository)
+      const finish = await startNetworkOperation(repository)
       const updated = await appStore._updateRepositoryAccount(repository, 'bob')
       assert.strictEqual(isNetworkOperationInProgress(updated), true)
       await appStore._setCommitMessage(updated, {
@@ -308,7 +375,7 @@ describe('AppStore explicitly adding repositories', () => {
           fetchProtectedBranches: async () => [],
         })
       )
-      const finish = startNetworkOperation(repository)
+      const finish = await startNetworkOperation(repository)
       const refreshed = await appStore[
         'repositoryWithRefreshedGitHubRepository'
       ](repository)
@@ -340,7 +407,7 @@ describe('AppStore explicitly adding repositories', () => {
           fetchProtectedBranches: async () => [],
         })
       )
-      const finish = startNetworkOperation(added)
+      const finish = await startNetworkOperation(added)
       const refreshed = await appStore[
         'repositoryWithRefreshedGitHubRepository'
       ](added)
@@ -354,10 +421,13 @@ describe('AppStore explicitly adding repositories', () => {
     it('finishes a commit that was running when the account changed', async t => {
       const repository = await setupDraft(t)
       let finish = () => {}
-      const commit = appStore['withIsCommitting'](
-        repository,
-        () => new Promise<boolean>(resolve => (finish = () => resolve(true)))
-      )
+      let entered = () => {}
+      const started = new Promise<void>(resolve => (entered = resolve))
+      const commit = appStore['withIsCommitting'](repository, [], () => {
+        entered()
+        return new Promise<boolean>(resolve => (finish = () => resolve(true)))
+      })
+      await started
       const updated = await appStore._updateRepositoryAccount(repository, 'bob')
 
       finish()
@@ -542,7 +612,7 @@ describe('AppStore explicitly adding repositories', () => {
       it('refuses to rename the worktree while a fetch is running', async t => {
         const { added, worktreePath } = await setupWorktree(t)
         const newPath = `${worktreePath}-renamed`
-        const finish = startNetworkOperation(added)
+        const finish = await startNetworkOperation(added)
         await assert.rejects(
           appStore._moveWorktree(added, worktreePath, newPath)
         )
