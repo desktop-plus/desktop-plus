@@ -1,13 +1,7 @@
-import { storePushAfterAssistedCommit } from './helpers/assisted-commit-push-storage'
-import {
-  AssistedCommitPushOutcome as PushBranchOutcome,
-  IAssistedCommitPushObserver,
-} from '../assisted-commit/types'
-import {
-  withRepositoryGitSpawnFence,
-  verifyRepositoryGitSpawnFence,
-} from '../git/repository-operation'
+import { storePushAfterCommit } from './helpers/commit-push-storage'
+import { verifyRepositoryGitSpawnFence } from '../git/repository-operation'
 import { AssistedCommitCoordinator } from '../assisted-commit/coordinator'
+import { getStatus } from '../git/status'
 import * as Path from 'path'
 import { writeFile } from 'fs/promises'
 import { stat } from 'fs/promises'
@@ -1017,28 +1011,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
       this.popupManager,
       {
         getCurrent: repository => this.gitStoreCache.get(repository).repository,
-        push: (repository, branch, remote, options, observer) =>
-          this.withRefreshedGitHubRepository(repository, refreshed => {
-            if (
-              refreshed.id !== repository.id ||
-              refreshed.path !== repository.path
-            ) {
-              throw new Error(
-                'Repository identity changed while preparing push'
-              )
-            }
-            return this.performPushBranch(
-              refreshed,
-              branch,
-              remote,
-              options,
-              observer
-            )
-          }),
-        recordPush: repository =>
-          this.statsStore.recordPush(
-            getAccountForRepository(this.accounts, repository)
-          ),
         refresh: (repository, clearPartialState) =>
           this.refreshAssistedCommitRepositoryCore(
             repository,
@@ -4611,11 +4583,22 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   /** This shouldn't be called directly. See 'Dispatcher'. */
-  public _createCopilotAssistedCommits(
+  public async _createCopilotAssistedCommits(
     repository: Repository,
     request: ICopilotAssistedCommitRequest
   ): Promise<AssistedCommitRunOutcome> {
-    return this.assistedCommits.create(repository, request)
+    const pushAfterCommit =
+      this.repositoryStateCache.get(repository).changesState.pushAfterCommit
+    const outcome = await this.assistedCommits.create(repository, request)
+    if (
+      outcome.kind === 'local-ready' &&
+      pushAfterCommit &&
+      this.repositoryStateCache.get(repository).changesState.assistedCommit
+        .kind === 'idle'
+    ) {
+      await this.pushAfterCommit(repository, outcome.result.head.ref)
+    }
+    return outcome
   }
 
   /** This shouldn't be called directly. See 'Dispatcher'. */
@@ -4652,14 +4635,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   /** This shouldn't be called directly. See 'Dispatcher'. */
-  public _retryCopilotAssistedCommitPush(
-    repository: Repository,
-    runId: string
-  ): Promise<AssistedCommitRunOutcome | undefined> {
-    return this.assistedCommits.push.retry(repository, runId)
-  }
-
-  /** This shouldn't be called directly. See 'Dispatcher'. */
   public _retryCopilotAssistedCommitRecovery(
     repository: Repository,
     runId: string
@@ -4692,90 +4667,122 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const gitStore = this.gitStoreCache.get(repository)
 
-    return this.withIsCommitting(repository, selectedFiles, async () => {
-      const result = await gitStore.performFailableOperation(
-        async () => {
-          const certifiedPartialDiffs =
-            await this.assistedCommits.selections.verifyManual(
-              repository,
-              selectedFiles
-            )
-          const message = await formatCommitMessage(repository, context)
-          let aborted = false
-          return createCommit(repository, message, selectedFiles, {
-            certifiedPartialDiffs,
-            amend: context.amend,
-            onHookProgress: this.onHookProgress(repository),
-            onHookFailure: this.onHookFailure(() => (aborted = true)),
-            onTerminalOutputAvailable: subscribeToCommitOutput => {
-              this.repositoryStateCache.update(repository, state => ({
-                ...state,
-                subscribeToCommitOutput,
-              }))
-            },
-            noVerify: state.skipCommitHooks,
-            signOff: state.signOffCommits,
-            allowEmpty: state.allowEmptyCommit,
-          }).catch(err => (aborted ? undefined : Promise.reject(err)))
-        },
-        { gitContext: { kind: 'commit' }, repository }
-      )
+    let branchToPush: string | null | undefined
+    const committed = await this.withIsCommitting(
+      repository,
+      selectedFiles,
+      async () => {
+        if (
+          state.changesState.pushAfterCommit &&
+          context.amend !== true &&
+          state.commitToAmend === null &&
+          state.changesState.conflictState === null &&
+          state.multiCommitOperationState === null &&
+          !repository.isTutorialRepository
+        ) {
+          const status = await getStatus(repository, false, true)
+          if (
+            !status.mergeHeadFound &&
+            !status.squashMsgFound &&
+            status.rebaseInternalState === null &&
+            !status.isCherryPickingHeadFound
+          ) {
+            branchToPush =
+              status.currentBranch === undefined
+                ? null
+                : `refs/heads/${status.currentBranch}`
+          }
+        }
+        const result = await gitStore.performFailableOperation(
+          async () => {
+            const certifiedPartialDiffs =
+              await this.assistedCommits.selections.verifyManual(
+                repository,
+                selectedFiles
+              )
+            const message = await formatCommitMessage(repository, context)
+            let aborted = false
+            return createCommit(repository, message, selectedFiles, {
+              certifiedPartialDiffs,
+              amend: context.amend,
+              onHookProgress: this.onHookProgress(repository),
+              onHookFailure: this.onHookFailure(() => (aborted = true)),
+              onTerminalOutputAvailable: subscribeToCommitOutput => {
+                this.repositoryStateCache.update(repository, state => ({
+                  ...state,
+                  subscribeToCommitOutput,
+                }))
+              },
+              noVerify: state.skipCommitHooks,
+              signOff: state.signOffCommits,
+              allowEmpty: state.allowEmptyCommit,
+            }).catch(err => (aborted ? undefined : Promise.reject(err)))
+          },
+          { gitContext: { kind: 'commit' }, repository }
+        )
 
-      if (result !== undefined) {
-        this.assistedCommits.selections.retire(repository, selectedFiles)
-      }
-      this.assistedCommits.readers.finishManual(repository)
-      if (result !== undefined) {
-        try {
-          await this._recordCommitStats(
-            gitStore,
+        if (result !== undefined) {
+          this.assistedCommits.selections.retire(repository, selectedFiles)
+        }
+        this.assistedCommits.readers.finishManual(repository)
+        if (result !== undefined) {
+          try {
+            await this._recordCommitStats(
+              gitStore,
+              repository,
+              state,
+              context,
+              selectedFiles,
+              context.amend === true
+            )
+          } catch (error) {
+            log.error(
+              'Commit succeeded, but usage statistics could not be recorded',
+              error
+            )
+          }
+
+          this.repositoryStateCache.update(repository, () => {
+            return {
+              commitToAmend: null,
+              allowEmptyCommit: false,
+            }
+          })
+
+          // Clear the commit message in the git store so that if the user
+          // switched away from the Changes tab while the commit was in progress,
+          // the persisted message (saved on unmount) doesn't reappear when they
+          // return to the Changes tab.
+          await gitStore.setCommitMessage(DefaultCommitMessage)
+
+          await this.refreshChangesSection(repository, {
+            includingStatus: true,
+            clearPartialState: true,
+          })
+
+          // Do not await for refreshing the repository, otherwise this will block
+          // the commit button unnecessarily for a long time in big repos.
+          this._refreshRepositoryAfterCommit(
             repository,
-            state,
-            context,
-            selectedFiles,
-            context.amend === true
+            result,
+            state.commitToAmend
           )
-        } catch (error) {
-          log.error(
-            'Commit succeeded, but usage statistics could not be recorded',
-            error
-          )
+        } else {
+          // The commit failed, but we should still refresh to ensure we
+          // accurately reflect the repository state post failure. See
+          // https://github.com/desktop/desktop/issues/21229
+          this._refreshRepository(repository)
         }
 
-        this.repositoryStateCache.update(repository, () => {
-          return {
-            commitToAmend: null,
-            allowEmptyCommit: false,
-          }
-        })
-
-        // Clear the commit message in the git store so that if the user
-        // switched away from the Changes tab while the commit was in progress,
-        // the persisted message (saved on unmount) doesn't reappear when they
-        // return to the Changes tab.
-        await gitStore.setCommitMessage(DefaultCommitMessage)
-
-        await this.refreshChangesSection(repository, {
-          includingStatus: true,
-          clearPartialState: true,
-        })
-
-        // Do not await for refreshing the repository, otherwise this will block
-        // the commit button unnecessarily for a long time in big repos.
-        this._refreshRepositoryAfterCommit(
-          repository,
-          result,
-          state.commitToAmend
-        )
-      } else {
-        // The commit failed, but we should still refresh to ensure we
-        // accurately reflect the repository state post failure. See
-        // https://github.com/desktop/desktop/issues/21229
-        this._refreshRepository(repository)
+        return result !== undefined
       }
-
-      return result !== undefined
-    })
+    )
+    if (committed && branchToPush !== undefined) {
+      this.pushAfterCommit(repository, branchToPush).catch(error =>
+        this.emitError(new ErrorWithMetadata(error, { repository }))
+      )
+    }
+    return committed
   }
 
   private async _refreshRepositoryAfterCommit(
@@ -5662,14 +5669,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   /** This shouldn't be called directly. See 'Dispatcher'. */
-  public _setPushAfterAssistedCommit(
-    repository: Repository,
-    enabled: boolean
-  ): void {
+  public _setPushAfterCommit(repository: Repository, enabled: boolean): void {
     this.assistedCommits.state.assertAvailable(repository)
-    storePushAfterAssistedCommit(repository, enabled)
+    storePushAfterCommit(repository, enabled)
     this.repositoryStateCache.updateChangesState(repository, () => ({
-      pushAfterAssistedCommit: enabled,
+      pushAfterCommit: enabled,
     }))
     this.emitUpdate()
   }
@@ -7049,6 +7053,46 @@ export class AppStore extends TypedBaseStore<IAppState> {
     })
   }
 
+  /** Hand accepted local commits to the ordinary Push action after ownership settles. */
+  private async pushAfterCommit(
+    repository: Repository,
+    branchRef: string | null
+  ): Promise<void> {
+    const gitStore = this.gitStoreCache.get(repository)
+    const branch = await gitStore.performFailableOperation(async () => {
+      await gitStore.loadRemotes()
+      const status = await this._loadStatus(repository, false, true)
+      if (
+        branchRef === null ||
+        status?.currentBranch === undefined ||
+        `refs/heads/${status.currentBranch}` !== branchRef
+      ) {
+        throw new Error(
+          'Commits were saved locally, but the branch changed before automatic push. Review the current branch and use Push.'
+        )
+      }
+      const branch = this.getBranchToPush(repository)
+      if (branch === undefined || branch.ref !== branchRef) {
+        throw new Error(
+          'Commits were saved locally. Refresh the repository and use Push.'
+        )
+      }
+      return branch
+    })
+    if (branch !== undefined) {
+      try {
+        await this._push(repository, { branch })
+      } catch (error) {
+        this.emitError(
+          new ErrorWithMetadata(error, {
+            repository,
+            retryAction: { type: RetryActionType.Push, repository },
+          })
+        )
+      }
+    }
+  }
+
   private getBranchToPush(
     repository: Repository,
     options?: PushOptions
@@ -7106,7 +7150,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return
     }
 
-    return this.withPushPullFetch(repository, async () => {
+    let started = false
+    await this.withPushPullFetch(repository, async () => {
+      started = true
       const branch = this.getBranchToPush(repository, options)
 
       if (branch === undefined) {
@@ -7164,20 +7210,13 @@ export class AppStore extends TypedBaseStore<IAppState> {
       const gitStore = this.gitStoreCache.get(repository)
       await gitStore.performFailableOperation(
         async () => {
-          const outcome = await this.performPushBranch(
+          await this.performPushBranch(
             repository,
             branch,
             safeRemote,
             options,
-            undefined,
             target
           )
-          if (outcome.kind === 'error') {
-            throw outcome.error
-          }
-          if (outcome.kind === 'pushed' && outcome.refreshError !== undefined) {
-            throw outcome.refreshError
-          }
         },
         { retryAction }
       )
@@ -7185,52 +7224,41 @@ export class AppStore extends TypedBaseStore<IAppState> {
       this.updatePushPullFetchProgress(repository, null)
 
       this.updateMenuLabelsForSelectedRepository()
-
-      // Note that we're using `getAccountForRepository` here instead
-      // of the `account` instance we've got and that's because recordPush
-      // needs to be able to differentiate between a GHES account and a
-      // generic account and it can't do that only based on the endpoint.
-      this.statsStore.recordPush(
-        getAccountForRepository(this.accounts, repository),
-        options
-      )
     })
+    if (!started) {
+      this.emitError(
+        new ErrorWithMetadata(
+          new Error(
+            'The repository is busy. Wait for the current operation to finish and try pushing again.'
+          ),
+          {
+            repository,
+            retryAction: { type: RetryActionType.Push, repository },
+          }
+        )
+      )
+    }
   }
 
-  /** Shared native push pipeline with acknowledgement separate from fallible presentation. */
+  /** Ordinary native Push, shared by explicit and post-commit publication. */
   private async performPushBranch(
     repository: Repository,
     branch: Branch,
     remote: IRemote,
     options?: PushOptions,
-    assistedObserver?: IAssistedCommitPushObserver,
     target?: IPushTarget
-  ): Promise<PushBranchOutcome> {
+  ): Promise<void> {
     const gitStore = this.gitStoreCache.get(repository)
     const pushTitle = `Pushing to ${remote.name}`
     const pushWeight = (2.5 / 3.5) * 0.9
     const fetchWeight = (1 / 3.5) * 0.9
-    const observerErrors: unknown[] = []
-    const observe = (action: () => void) => {
-      if (options?.assistedCommit === undefined) {
-        action()
-        return
-      }
-      try {
-        withoutRepositoryGitAccess(action)
-      } catch (error) {
-        observerErrors.push(error)
-      }
-    }
-    observe(() =>
-      this.updatePushPullFetchProgress(repository, {
-        kind: 'push',
-        title: pushTitle,
-        value: 0,
-        remote: remote.name,
-        branch: branch.name,
-      })
-    )
+    this.updatePushPullFetchProgress(repository, {
+      kind: 'push',
+      title: pushTitle,
+      value: 0,
+      remote: remote.name,
+      branch: branch.name,
+    })
     let aborted = false
     const hookFailure =
       options?.onHookFailure ?? this.onHookFailure(() => (aborted = true))
@@ -7243,134 +7271,53 @@ export class AppStore extends TypedBaseStore<IAppState> {
         gitStore.tagsToPush,
         {
           ...options,
-          onHookFailure: async (name, output) => {
-            try {
-              const resolution = await hookFailure(name, output)
-              if (
-                options?.assistedCommit !== undefined &&
-                resolution === 'abort'
-              ) {
-                aborted = true
-              }
-              return resolution
-            } catch (error) {
-              if (options?.assistedCommit !== undefined) {
-                observerErrors.push(error)
-              }
-              throw error
-            }
-          },
-          onHookProgress: progress =>
-            observe(() => options?.onHookProgress?.(progress)),
-          onTerminalOutputAvailable: subscribe =>
-            observe(() => options?.onTerminalOutputAvailable?.(subscribe)),
+          onHookFailure: hookFailure,
         },
         progress => {
-          observe(() =>
-            this.updatePushPullFetchProgress(repository, {
-              ...progress,
-              title: pushTitle,
-              value: pushWeight * progress.value,
-            })
-          )
-          observe(() => assistedObserver?.onProgress(progress))
+          this.updatePushPullFetchProgress(repository, {
+            ...progress,
+            title: pushTitle,
+            value: pushWeight * progress.value,
+          })
         }
       )
     } catch (error) {
-      return {
-        kind: aborted ? 'aborted' : 'error',
-        error:
-          observerErrors.length === 0
-            ? error
-            : new Error(
-                error instanceof Error ? error.message : 'Push failed',
-                {
-                  cause: new AggregateError([error, ...observerErrors]),
-                }
-              ),
+      if (!aborted) {
+        throw error
       }
+      return
     }
     if (aborted) {
-      return {
-        kind: 'aborted',
-        error: new Error('The pre-push hook was declined', {
-          cause:
-            observerErrors.length === 0
-              ? undefined
-              : new AggregateError(observerErrors),
-        }),
-      }
+      return
     }
-    observe(() => assistedObserver?.onPushed())
-    let refreshError: unknown
-    try {
-      const refresh = async () => {
-        // Keep the tags queued so they also reach the tracked remote later
-        if (
-          options?.assistedCommit === undefined &&
-          (target === undefined || target.setUpstream)
-        ) {
-          gitStore.clearTagsToPush()
-        }
-        await assistedObserver?.completePublication?.()
-        await gitStore.fetchRemotes(
-          [remote],
-          false,
-          progress => {
-            observe(() =>
-              this.updatePushPullFetchProgress(repository, {
-                ...progress,
-                value: pushWeight + progress.value * fetchWeight,
-              })
-            )
-          },
-          options?.assistedCommit === undefined
-        )
-        const title = __DARWIN__
-          ? 'Refreshing Repository'
-          : 'Refreshing repository'
-        observe(() =>
-          this.updatePushPullFetchProgress(repository, {
-            kind: 'generic',
-            title,
-            description: 'Fast-forwarding branches',
-            value: pushWeight + fetchWeight,
-          })
-        )
-        await this.fastForwardBranches(
-          repository,
-          options?.assistedCommit !== undefined
-        )
-        observe(() =>
-          this.updatePushPullFetchProgress(repository, {
-            kind: 'generic',
-            title,
-            value: 0.95,
-          })
-        )
-        await this.refreshBranchProtectionState(repository)
-        await this._refreshRepository(repository)
-      }
-      if (assistedObserver?.verifyFollowUpOwner === undefined) {
-        await refresh()
-      } else {
-        await withRepositoryGitSpawnFence(
-          assistedObserver.verifyFollowUpOwner,
-          refresh
-        )
-      }
-    } catch (error) {
-      refreshError = error
+    this.statsStore.recordPush(
+      getAccountForRepository(this.accounts, repository),
+      options
+    )
+    if (target === undefined || target.setUpstream) {
+      gitStore.clearTagsToPush()
     }
-    if (observerErrors.length > 0) {
-      refreshError = new AggregateError(
-        refreshError === undefined
-          ? observerErrors
-          : [refreshError, ...observerErrors],
-        'Commits were pushed, but Desktop presentation failed'
-      )
-    }
-    return { kind: 'pushed', refreshError }
+    await gitStore.fetchRemotes([remote], false, progress => {
+      this.updatePushPullFetchProgress(repository, {
+        ...progress,
+        value: pushWeight + progress.value * fetchWeight,
+      })
+    })
+    const title = __DARWIN__ ? 'Refreshing Repository' : 'Refreshing repository'
+    this.updatePushPullFetchProgress(repository, {
+      kind: 'generic',
+      title,
+      description: 'Fast-forwarding branches',
+      value: pushWeight + fetchWeight,
+    })
+    await this.fastForwardBranches(repository)
+    this.updatePushPullFetchProgress(repository, {
+      kind: 'generic',
+      title,
+      value: 0.95,
+    })
+    await this.refreshBranchProtectionState(repository)
+    await this._refreshRepository(repository)
   }
 
   private async withIsCommitting(
@@ -7768,21 +7715,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
     })
   }
 
-  private async fastForwardBranches(
-    repository: Repository,
-    assistedCommit: boolean = false
-  ) {
+  private async fastForwardBranches(repository: Repository) {
     try {
       const eligibleBranches = await getBranchesDifferingFromUpstream(
         repository
       )
 
-      await fastForwardBranches(repository, eligibleBranches, !assistedCommit)
+      await fastForwardBranches(repository, eligibleBranches)
     } catch (e) {
       log.error('Branch fast-forwarding failed', e)
-      if (assistedCommit) {
-        throw e
-      }
     }
   }
 
@@ -13853,18 +13794,23 @@ export class AppStore extends TypedBaseStore<IAppState> {
   }
 
   public async _startPullRequest(repository: Repository) {
-    const { tip, defaultBranch } =
-      this.repositoryStateCache.get(repository).branchesState
+    const { branchesState } = this.repositoryStateCache.get(repository)
+    const { tip } = branchesState
 
     if (tip.kind !== TipState.Valid) {
       // Shouldn't even be able to get here if so - just a type check
       return
     }
 
+    const baseBranch = findContributionTargetDefaultBranch(
+      repository,
+      branchesState
+    )
+
     const currentBranch = tip.branch
     return this._initializePullRequestPreview(
       repository,
-      defaultBranch,
+      baseBranch,
       currentBranch
     )
   }
@@ -13995,8 +13941,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     const { branchesState, localCommitSHAs } =
       this.repositoryStateCache.get(repository)
-    const { allBranches, recentBranches, defaultBranch, currentPullRequest } =
+    const { allBranches, recentBranches, currentPullRequest } = branchesState
+    const defaultBranch = findContributionTargetDefaultBranch(
+      repository,
       branchesState
+    )
     const gitStore = this.gitStoreCache.get(repository)
     /*  We only want branches that are also on dotcom such that, when we ask a
      *  user to create a pull request, the base branch also exists on dotcom.
