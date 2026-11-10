@@ -70,6 +70,7 @@ import { copyCopilotDependency } from './copilot'
 import { removeCurlVersionRequirements } from './remove-curl-version-requirements'
 import { pruneCopilotDependency } from './copilot-prune'
 import { assertRelocatableSymlinks } from './verify-symlinks'
+import { getNpmCommand } from './npm'
 
 // Always use ad-hoc code signing ('-'), even for published builds, to avoid "app is damaged" error.
 // This is the friendliest non-paid option.
@@ -382,8 +383,20 @@ function copyDependencies() {
     force: true,
   })
 
-  console.log('  Installing dependencies via yarn…')
-  cp.execSync('yarn install', { cwd: outRoot, env: process.env })
+  console.log('  Installing dependencies via npm…')
+  const npm = getNpmCommand([
+    'install',
+    '--package-lock=false',
+    '--install-links',
+    '--legacy-peer-deps',
+    '--cpu',
+    getDistArchitecture(),
+  ])
+  cp.execFileSync(npm.executable, npm.args, {
+    cwd: outRoot,
+    env: process.env,
+    stdio: 'inherit',
+  })
 
   console.log('  Copying desktop-askpass-trampoline…')
   const trampolineSource = path.resolve(

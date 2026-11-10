@@ -2,33 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "command": "yarn start",
+      "command": "npm start",
       "name": "Start app",
       "request": "launch",
       "type": "node-terminal",
       "nodeVersionHint": 24,
       "preLaunchTask": "Build"
     }
-    /*
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug current test file",
-      "cwd": "${workspaceFolder}",
-      "args": [
-        "--disable-warning=ExperimentalWarning",
-        "--experimental-test-module-mocks",
-        "--import",
-        "tsx",
-        "--import",
-        "./app/test/globals.mts",
-        "--test",
-        "${relativeFile}"
-      ],
-      "envFile": ".test.env",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
-    }
-    */
   ]
 }
