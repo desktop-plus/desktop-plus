@@ -16,15 +16,14 @@ conflicts=(${_pkgname})
 depends=(
     'curl'
     'git'
+    'gtk3'
     'libnotify'
     'libsecret'
-    'libxss'
     'nspr'
     'nss'
     'org.freedesktop.secrets'
-    'unzip'
 )
-optdepends=('hub: CLI interface for GitHub.')
+optdepends=('github-cli: CLI interface for GitHub')
 source=(
     "${_pkgname}.desktop"
     'launch-app.sh'
@@ -44,13 +43,11 @@ package() {
     INSTALL_DIR="$pkgdir/opt/${_pkgname}"
 
     tar --zstd -xf data.tar.zst -C "$pkgdir"
-    install -d "$INSTALL_DIR"
 
-    mv "$pkgdir/usr/lib/desktop-plus/"* "$INSTALL_DIR/"
-    rmdir "$pkgdir/usr/lib/desktop-plus"
+    install -d "$pkgdir/opt"
+    mv "$pkgdir/usr/lib/desktop-plus" "$INSTALL_DIR"
     rmdir "$pkgdir/usr/lib"
 
-    rm "$pkgdir/usr/share/applications/desktop-plus.desktop"
     install -Dm644 "${_pkgname}.desktop" "$pkgdir/usr/share/applications/${_pkgname}.desktop"
 
     install -Dm755 "$srcdir/launch-app.sh" "$pkgdir/usr/bin/${_pkgname}"

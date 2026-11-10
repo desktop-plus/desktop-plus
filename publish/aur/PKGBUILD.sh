@@ -21,18 +21,13 @@ depends=(curl
          gtk3
          libnotify
          libsecret
-         libxss
          nspr
          nss
-         org.freedesktop.secrets
-         unzip)
-optdepends=('github-cli: CLI interface for GitHub'
-            'hub: CLI interface for GitHub')
-makedepends=(python-setuptools
+         org.freedesktop.secrets)
+optdepends=('github-cli: CLI interface for GitHub')
+makedepends=(python
              'nodejs-lts-[[NODE_CODENAME]]'
-             npm
-             util-linux
-             xorg-server-xvfb)
+             npm)
 source=("$pkgname::git+https://github.com/desktop-plus/desktop-plus.git#tag=v$pkgver"
         'git+https://github.com/github/gemoji.git'
         'git+https://github.com/github/gitignore.git'
@@ -57,8 +52,6 @@ prepare() {
     git config submodule."app/static/common/gitignore".url "$srcdir/gitignore"
     git config submodule."app/static/common/choosealicense.com".url "$srcdir/choosealicense.com"
     git -c protocol.file.allow=always submodule update
-    # https://github.com/shiftkey/desktop/issues/809#issuecomment-1348815685
-    sed -e '/compile:prod/s/4096/4096 --openssl-legacy-provider/' -i package.json
 }
 
 build() {
@@ -66,7 +59,7 @@ build() {
     cd "$pkgname"
     # https://github.com/nodejs/node/issues/48444
     export UV_USE_IO_URING=0
-    xvfb-run npm install
+    npm ci
 
     # These can be extracted trivially from the app, so there is no point in trying to hide them.
     # Obfuscate them slightly in the PKGBUILD to prevent bots from easily scraping them.    
@@ -80,7 +73,7 @@ build() {
     export "$(_deobfuscate "[[DESKTOP_OAUTH_CLIENT_SECRET_CODEBERG_NAME]]")"="$(_deobfuscate "[[DESKTOP_OAUTH_CLIENT_SECRET_CODEBERG]]")"
     export "$(_deobfuscate "[[DESKTOP_OAUTH_CLIENT_ID_GITEA_NAME]]")"="$(_deobfuscate "[[DESKTOP_OAUTH_CLIENT_ID_GITEA]]")"
     export "$(_deobfuscate "[[DESKTOP_OAUTH_CLIENT_SECRET_GITEA_NAME]]")"="$(_deobfuscate "[[DESKTOP_OAUTH_CLIENT_SECRET_GITEA]]")"
-    xvfb-run npm run build:prod
+    npm run build:prod
 }
 
 package() {
