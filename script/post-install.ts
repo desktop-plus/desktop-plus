@@ -27,10 +27,10 @@ const playwrightCliPath = Path.join(
   'cli.js'
 )
 
-/** Check if the caller has set the OFFLINe environment variable */
-// function isOffline() {
-//   return process.env.OFFLINE === '1'
-// }
+/** Check if the caller has set the OFFLINE environment variable */
+function isOffline() {
+  return process.env.OFFLINE === '1'
+}
 
 for (const args of getAppInstallCommands()) {
   const appInstall = getNpmCommand(args)
@@ -51,14 +51,17 @@ if (result.status !== 0) {
   process.exit(result.status || 1)
 }
 
-result = spawnSync(
-  'git',
-  ['submodule', 'update', '--recursive', '--init'],
-  options
-)
+// Offline (Flatpak) builds have no network, so submodules must be fetched beforehand.
+if (!isOffline()) {
+  result = spawnSync(
+    'git',
+    ['submodule', 'update', '--recursive', '--init'],
+    options
+  )
 
-if (result.status !== 0) {
-  process.exit(result.status || 1)
+  if (result.status !== 0) {
+    process.exit(result.status || 1)
+  }
 }
 
 const compileScript = getNpmCommand(['run', 'compile:script'])
@@ -97,7 +100,8 @@ if (result.status !== 0) {
 // electron-installer-redhat isn't installed on Windows (its package.json
 // restricts `os` to darwin and linux), so patch-package would fail there.
 if (process.platform !== 'win32') {
-  result = spawnSync('npx', ['patch-package'], options)
+  const patchPackage = getNpmCommand(['exec', 'patch-package'])
+  result = spawnSync(patchPackage.executable, patchPackage.args, options)
 
   if (result.status !== 0) {
     console.error('Failed to run patch-package. Code:', result.status)
