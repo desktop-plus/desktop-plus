@@ -272,10 +272,9 @@ Desktop Plus includes a CLI (`desktop-plus-cli`) for opening and cloning reposit
 ### From the terminal
 
 ```bash
-corepack enable  # Install yarn if needed
-yarn             # Install dependencies
-yarn build:dev   # Initial build
-yarn start       # Start the app for development and watch for changes
+npm install        # Install dependencies
+npm run build:dev  # Initial build
+npm start          # Start the app for development and watch for changes
 ```
 
 - It's normal for the app to take a while to start up, especially the first time.
@@ -283,8 +282,7 @@ yarn start       # Start the app for development and watch for changes
 - While starting up, this error is normal: `UnhandledPromiseRejectionWarning: Error: Invalid header: Does not start with Cr24`
 
 - You don't need to restart the app to apply changes. Just reload the window (`Ctrl + Alt + R` / `Cmd + Alt + R`).
-
-- Changes to the code inside `main-process` do require a full rebuild. Stop the app and run `yarn build:dev` again.
+- Changes to the code inside `main-process` do require a full rebuild. Stop the app and run `npm run build:dev` again.
 
 - [Read this document](docs/contributing/setup.md) for more information on how to set up your development environment.
 
@@ -292,8 +290,7 @@ yarn start       # Start the app for development and watch for changes
 
 The first time you open the project, install the dependencies by running:
 ```bash
-corepack enable
-yarn
+npm install
 ```
 
 Then, you can simply build and run the app by pressing `F5`.  
@@ -302,10 +299,10 @@ Breakpoints should be set in the developer tools, not the VSCode editor.
 ### Running tests
 
 I recommend running the tests in a Docker container for reproducibility and to avoid conflicts with your git configuration.  
-After installing the dependencies with `yarn`, make sure you have Docker installed and run:
+After installing the dependencies with `npm`, make sure you have Docker installed and run:
 
 ```bash
-yarn test:docker
+npm run test:docker
 ```
 
 ## Why this fork?

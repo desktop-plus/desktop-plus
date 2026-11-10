@@ -6,7 +6,6 @@ RUN apt-get -y install git make g++ curl libsecret-1-dev libnss3 libdbus-1-3 lib
 # Install Node.js
 RUN curl -sL https://deb.nodesource.com/setup_24.x | bash -
 RUN apt-get -y install nodejs
-RUN corepack enable
 
 # Disable git dubious ownership checks
 RUN echo "[safe]\n\tdirectory = *" >> ~/.gitconfig
@@ -16,8 +15,5 @@ RUN cp ~/.gitconfig /etc/gitconfig
 RUN echo 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' > /etc/profile.d/set-path.sh
 
 COPY ./entrypoint.sh /entrypoint.sh
-
-# To allow the image to run without internet connection
-RUN corepack pack yarn@1.22.22
 
 CMD ["/entrypoint.sh"]
