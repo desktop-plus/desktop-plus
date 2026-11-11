@@ -236,6 +236,15 @@ jobs:
         run: npm run test:setup
         env:
           npm_config_arch: ${{ matrix.arch }}
+      # TEMPORARY: diagnostics for the Windows CI hang
+      - name: Trace hanging test file
+        if: runner.os == 'Windows' && matrix.arch == 'x64'
+        timeout-minutes: 10
+        run:
+          npm run test:unit --
+          app/test/unit/stores/assisted-commit-upstream-integration-test.ts
+          app/test/unit/ui/assisted-commit-details-test.tsx
+          --test-timeout=120000
       - name: Run unit tests
         if: |
           (runner.os == 'Windows' && matrix.arch == 'x64') || (runner.os == 'macOS' && matrix.arch == 'arm64') || (runner.os == 'Linux' && matrix.arch == 'x64')

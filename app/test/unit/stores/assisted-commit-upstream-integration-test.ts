@@ -10,7 +10,10 @@ import { assistedCommitErrorCauses } from '../../../src/lib/assisted-commit-run'
 import { isRepositoryGitMutationInProgress } from '../../../src/lib/git/repository-operation'
 import { TipState } from '../../../src/models/tip'
 import { Account } from '../../../src/models/account'
-import { createAssistedCommitRunHarness } from '../../helpers/assisted-commit-run'
+import {
+  createAssistedCommitRunHarness,
+  trace,
+} from '../../helpers/assisted-commit-run'
 import {
   count,
   rawGit,
@@ -86,9 +89,11 @@ async function assignedAccountHarness(t: TestContext) {
     )
   )
   assert.ok(other)
+  trace('assigned: other account added')
   const source = await seed(t, { one: 'before one\n', two: 'before two\n' })
   await writeFile(join(source.path, 'one'), 'selected one\n')
   await writeFile(join(source.path, 'two'), 'selected two\n')
+  trace('assigned: seeded')
   const local = await h.register(source)
   const github =
     await h.stores.repositoriesStore.upsertGitHubRepositoryFromMatch({
@@ -101,8 +106,10 @@ async function assignedAccountHarness(t: TestContext) {
     github,
     original.login
   )
+  trace('assigned: github repository set')
   h.appStore['adoptRepository'](repository)
   const background = await h.register(await seed(t, { file: 'unrelated\n' }))
+  trace('assigned: background registered')
   h.appStore['selectedRepository'] = background
   return { ...h, repository, original, other }
 }
@@ -219,11 +226,14 @@ describe('assisted runs with repository-assigned accounts', () => {
   it('refreshes background deferred work with the current assigned repository snapshot', async t => {
     const h = await assignedAccountHarness(t)
     h.assisted.readers.deferRefresh(h.repository)
+    trace('test: first deferRefresh done')
     const updated = await h.appStore._updateRepositoryAccount(
       h.repository,
       h.other.login
     )
+    trace('test: account updated')
     h.assisted.readers.deferRefresh(h.repository)
+    trace('test: second deferRefresh done')
     assert.deepEqual(h.assisted.readers.takeRefresh(h.repository), updated)
   })
 

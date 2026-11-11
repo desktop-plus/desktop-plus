@@ -27,6 +27,20 @@ import {
 
 const RegisteredDefaultBranch = 'master'
 
+// TEMPORARY: diagnostics for the Windows CI hang, remove once it is understood
+const traceStart = Date.now()
+let lastTrace = Date.now()
+export function trace(label: string) {
+  lastTrace = Date.now()
+  process.stderr.write(`[trace +${lastTrace - traceStart}ms] ${label}\n`)
+}
+setInterval(() => {
+  if (Date.now() - lastTrace > 20_000) {
+    const resources = process.getActiveResourcesInfo().join(',')
+    trace(`STALLED, active resources: ${resources}`)
+  }
+}, 20_000).unref()
+
 /** Real AppStore/Dispatcher and Git, with synthetic model/auth and UI clock only. */
 export async function createAssistedCommitRunHarness(
   t: TestContext,
@@ -49,16 +63,25 @@ export async function createAssistedCommitRunHarness(
       process.env.GITHUB_DESKTOP_PREVIEW_FEATURES = previousPreviewFeatures
     }
   })
+  trace(`harness: begin (${t.name})`)
   const stores = createTestStores(accountsStore)
   const account = await stores.accountsStore.addAccount(makeCopilotAccount())
+  trace('harness: account added')
   if (account === null) {
     throw new Error('Could not install the synthetic credential session')
   }
+  stores.repositoriesStore['db'].on('blocked', () =>
+    trace('harness: repositories db delete BLOCKED')
+  )
   await stores.repositoriesStore['db'].delete()
+  trace('harness: repositories db deleted')
   await stores.repositoriesStore['db'].open()
+  trace('harness: repositories db opened')
   t.after(() => stores.repositoriesStore['db'].close())
   const statsDb = new TestStatsDatabase()
+  statsDb.on('blocked', () => trace('harness: stats db delete BLOCKED'))
   await statsDb.reset()
+  trace('harness: stats db reset')
   const statsStore = new StatsStore(
     statsDb,
     new TestActivityMonitor(),
@@ -143,8 +166,11 @@ export async function createAssistedCommitRunHarness(
       false,
       join(source.path, '.git')
     )
+    trace('register: added to db')
     await appStore._loadStatus(repository)
+    trace('register: status loaded')
     await appStore['updateChangesWorkingDirectoryDiff'](repository)
+    trace('register: diff updated')
     dispatcher.setCommitMode(repository, 'copilot')
     return repository
   }
