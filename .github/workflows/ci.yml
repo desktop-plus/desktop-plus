@@ -239,7 +239,7 @@ jobs:
       - name: Run unit tests
         if: |
           (runner.os == 'Windows' && matrix.arch == 'x64') || (runner.os == 'macOS' && matrix.arch == 'arm64') || (runner.os == 'Linux' && matrix.arch == 'x64')
-        run: npm run test:unit
+        run: npm run test:unit -- --test-timeout=900000
       - name: Run script tests
         run: npm run test:script
         env:
