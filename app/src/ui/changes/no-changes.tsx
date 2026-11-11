@@ -293,7 +293,10 @@ export class NoChanges extends React.Component<
 
   private renderViewOnGitHub() {
     const isGitHub = isRepositoryWithGitHubRepository(this.props.repository)
-    const hasOriginUrl = hasDefaultRemoteUrl(this.props.repository)
+    const hasOriginUrl = hasDefaultRemoteUrl(
+      this.props.repository,
+      this.props.repositoryState.remote
+    )
 
     // early exit if not a GitHub repository and no default remote URL set
     if (!isGitHub && !hasOriginUrl) {

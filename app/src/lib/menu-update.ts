@@ -168,8 +168,11 @@ function getRepositoryMenuBuilder(state: IAppState): MenuStateBuilder {
     ? isRepositoryHostedOnGitHub(selectedState.repository)
     : false
   const hasRemoteUrl =
-    selectedState && selectedState.repository instanceof Repository
-      ? hasDefaultRemoteUrl(selectedState.repository)
+    selectedState && selectedState.type === SelectionType.Repository
+      ? hasDefaultRemoteUrl(
+          selectedState.repository,
+          selectedState.state.remote
+        )
       : false
 
   let repositorySelected = false

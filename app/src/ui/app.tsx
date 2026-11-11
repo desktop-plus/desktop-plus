@@ -3941,7 +3941,14 @@ export class App extends React.Component<IAppProps, IAppState> {
       return
     }
 
-    const url = getGitHubHtmlUrl(repository) ?? getNonGitHubUrl(repository)
+    const { selectedState } = this.state
+    const loadedRemote =
+      selectedState?.type === SelectionType.Repository &&
+      selectedState.repository.id === repository.id
+        ? selectedState.state.remote
+        : undefined
+    const url =
+      getGitHubHtmlUrl(repository) ?? getNonGitHubUrl(repository, loadedRemote)
 
     if (url) {
       this.props.dispatcher.openInBrowser(url)
