@@ -19,6 +19,13 @@
   },
   "license": "MIT",
   "allowScripts": {
+    "file:../vendor/desktop-notifications": true,
+    "file:../vendor/desktop-trampoline": true,
+    "file:../vendor/windows-argv-parser": true,
+    "dugite": true,
+    "fs-admin": true,
+    "keytar": true,
+    "registry-js": true,
     "koffi": false
   },
   "dependencies": {
