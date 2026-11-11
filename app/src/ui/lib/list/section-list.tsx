@@ -1069,6 +1069,15 @@ export class SectionList extends React.Component<
     prevProps: ISectionListProps,
     prevState: ISectionListState
   ) {
+    const maxScrollTop = this.clampScrollTop(this.state.scrollTop)
+    if (this.state.scrollTop > maxScrollTop) {
+      this.setState({ scrollTop: maxScrollTop })
+      this.rootGrid?.scrollToPosition({
+        scrollLeft: 0,
+        scrollTop: maxScrollTop,
+      })
+    }
+
     const { scrollToRow, setScrollTop } = this.props
     if (
       scrollToRow !== undefined &&
@@ -1450,6 +1459,14 @@ export class SectionList extends React.Component<
     }, 0)
   }
 
+  private clampScrollTop(scrollTop: number) {
+    const { height } = this.state
+    if (height === undefined || height === 0) {
+      return scrollTop
+    }
+    return Math.min(scrollTop, Math.max(0, this.totalHeight - height))
+  }
+
   private sectionHeight = ({ index }: Index) => {
     return this.getSectionHeight(index)
   }
@@ -1775,6 +1792,8 @@ export class SectionList extends React.Component<
     scrollTop: number
     clientHeight: number
   }) => {
+    scrollTop = this.clampScrollTop(scrollTop)
+
     if (this.props.onScroll) {
       this.props.onScroll(scrollTop, clientHeight)
     }
