@@ -3,6 +3,7 @@ import {
   getGitHubHtmlUrl,
   isRepositoryWithGitHubRepository,
 } from '../models/repository'
+import { IRemote } from '../models/remote'
 import { memoizedGetRemotesFromPath } from './git'
 import { findDefaultRemote } from './stores/helpers/find-default-remote'
 import { remoteUrlToWebUrl } from './remote-parsing'
@@ -35,13 +36,19 @@ export function getDefaultRemoteUrl(repository: Repository): string | null {
  * Will return the origin repository's URL if it has one and the URL is trusted.
  * Otherwise, returns null.
  */
-export function getNonGitHubUrl(repository: Repository): string | null {
+export function getNonGitHubUrl(
+  repository: Repository,
+  loadedRemote?: IRemote | null
+): string | null {
   // Usually, this method will not be called for GitHub repositories, but better be safe than sorry.
   if (isRepositoryWithGitHubRepository(repository)) {
     return null
   }
 
-  const url = getDefaultRemoteUrl(repository)
+  const url =
+    loadedRemote === undefined
+      ? getDefaultRemoteUrl(repository)
+      : loadedRemote?.url ?? null
   return url ? remoteUrlToWebUrl(url) : null
 }
 
@@ -50,6 +57,12 @@ export function getNonGitHubUrl(repository: Repository): string | null {
  *
  * This function does not check the validity of the URL.
  */
-export function hasDefaultRemoteUrl(repository: Repository): boolean {
-  return (getGitHubHtmlUrl(repository) ?? getNonGitHubUrl(repository)) !== null
+export function hasDefaultRemoteUrl(
+  repository: Repository,
+  loadedRemote?: IRemote | null
+): boolean {
+  return (
+    (getGitHubHtmlUrl(repository) ??
+      getNonGitHubUrl(repository, loadedRemote)) !== null
+  )
 }
