@@ -96,15 +96,3 @@ if (result.status !== 0) {
     result.stderr
   )
 }
-
-// electron-installer-redhat isn't installed on Windows (its package.json
-// restricts `os` to darwin and linux), so patch-package would fail there.
-if (process.platform !== 'win32') {
-  const patchPackage = getNpmCommand(['exec', 'patch-package'])
-  result = spawnSync(patchPackage.executable, patchPackage.args, options)
-
-  if (result.status !== 0) {
-    console.error('Failed to run patch-package. Code:', result.status)
-    process.exit(result.status || 1)
-  }
-}

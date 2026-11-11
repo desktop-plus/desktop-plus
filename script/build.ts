@@ -58,7 +58,9 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
+  symlinkSync,
   unlinkSync,
   writeFileSync,
 } from 'fs'
@@ -225,10 +227,9 @@ async function packageApp() {
     dir: outRoot,
     overwrite: true,
     tmpdir: false,
-    // Windows' git has no symlinks to preserve, and patch-package (which makes
-    // the packager keep symlinks relative) doesn't run there.
-    // TODO: Make this 'false' once https://github.com/electron/packager/pull/1964 is merged and released.
+    // Windows' git has no symlinks to preserve.
     derefSymlinks: process.platform === 'win32',
+    afterCopy: [restoreRelativeSymlinks],
     prune: false, // We'll prune them ourselves below.
     // @electron/get re-downloads SHASUMS256.txt on every run, even when the
     // Electron zip is already in its cache, so validating it would defeat the
@@ -283,6 +284,31 @@ async function packageApp() {
       InternalName: getProductName(),
     },
   })
+}
+
+/**
+ * The packager copies relative symlinks as absolute ones pointing into the
+ * build directory. Restore the original targets.
+ *
+ * TODO: Remove once https://github.com/electron/packager/pull/1964 is merged and released.
+ */
+function restoreRelativeSymlinks({ buildPath }: { buildPath: string }) {
+  const entries = readdirSync(buildPath, {
+    recursive: true,
+    withFileTypes: true,
+  })
+  for (const entry of entries) {
+    if (!entry.isSymbolicLink()) {
+      continue
+    }
+    const copied = path.join(entry.parentPath, entry.name)
+    const original = path.join(outRoot, path.relative(buildPath, copied))
+    const target = readlinkSync(original)
+    if (readlinkSync(copied) !== target) {
+      unlinkSync(copied)
+      symlinkSync(target, copied)
+    }
+  }
 }
 
 function getIcon() {

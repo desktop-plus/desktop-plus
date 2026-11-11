@@ -153,6 +153,14 @@ export async function packageRedhat(): Promise<string> {
     // stripping entirely, which is fine for an Electron app.
     specContent = '%global __strip /bin/true\n' + specContent
 
+    // rpm >= 4.20 runs %install in a per-package subdirectory of BUILD, so the
+    // template's relative `usr/*` no longer resolves.
+    specContent = specContent.replace(
+      /^(cp -[rR]) usr\/\*/m,
+      '$1 %{_topdir}/BUILD/usr/*'
+    )
+    specContent = '%define _build_id_links none\n' + specContent
+
     await writeFile(this.specPath, specContent)
   }
 
