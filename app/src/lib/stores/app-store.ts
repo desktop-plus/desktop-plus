@@ -474,7 +474,12 @@ import {
   setShowSideBySideDiff,
   setWrapDiffLines,
 } from '../../ui/lib/diff-mode'
-import { getFileTreeView, setFileTreeView } from '../../ui/lib/file-tree-folder'
+import {
+  getFileTreeView,
+  getHistoryFileTreeView,
+  setFileTreeView,
+  setHistoryFileTreeView,
+} from '../../ui/lib/file-tree-folder'
 import {
   abortCherryPick,
   cherryPick,
@@ -852,6 +857,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private showDiffMinimap: boolean = ShowDiffMinimapDefault
   private wrapDiffLines: boolean = WrapDiffLinesDefault
   private fileTreeView: boolean = false
+  private historyFileTreeView: boolean = false
   private showViewModeSwitches: boolean = showViewModeSwitchesDefault
 
   private uncommittedChangesStrategy = defaultUncommittedChangesStrategy
@@ -1616,6 +1622,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       showDiffMinimap: this.showDiffMinimap,
       wrapDiffLines: this.wrapDiffLines,
       fileTreeView: this.fileTreeView,
+      historyFileTreeView: this.historyFileTreeView,
       showViewModeSwitches: this.showViewModeSwitches,
       selectedShell: this.selectedShell,
       repositoryFilterText: this.repositoryFilterText,
@@ -3449,6 +3456,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.showDiffMinimap = getShowDiffMinimap()
     this.wrapDiffLines = getWrapDiffLines()
     this.fileTreeView = getFileTreeView()
+    this.historyFileTreeView = getHistoryFileTreeView()
     this.showViewModeSwitches = getBoolean(
       showViewModeSwitchesKey,
       showViewModeSwitchesDefault
@@ -10820,6 +10828,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
     if (fileTreeView !== this.fileTreeView) {
       setFileTreeView(fileTreeView)
       this.fileTreeView = fileTreeView
+      this.emitUpdate()
+    }
+  }
+
+  public _setHistoryFileTreeView(historyFileTreeView: boolean) {
+    if (historyFileTreeView !== this.historyFileTreeView) {
+      setHistoryFileTreeView(historyFileTreeView)
+      this.historyFileTreeView = historyFileTreeView
       this.emitUpdate()
     }
   }

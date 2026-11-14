@@ -86,6 +86,9 @@ interface ISelectedCommitsProps {
   /** Whether the list of changed files is shown as a tree */
   readonly fileTreeView: boolean
 
+  /** Whether the list/tree view mode switch is shown in the file list header */
+  readonly showViewModeSwitches: boolean
+
   /**
    * Called when the user requests to open a binary file in an the
    * system-assigned application for said file type.
@@ -375,8 +378,15 @@ export class SelectedCommits extends DiffPresentationStateComponent<
         fileCount={this.props.changesetData.files.length}
         filterText={this.state.fileFilterText}
         onFilterTextChanged={this.onFileFilterTextChanged}
+        treeView={this.props.fileTreeView}
+        onTreeViewChanged={this.onTreeViewChanged}
+        showViewModeSwitches={this.props.showViewModeSwitches}
       />
     )
+  }
+
+  private onTreeViewChanged = (treeView: boolean) => {
+    this.props.dispatcher.setHistoryFileTreeView(treeView)
   }
 
   private getFolderContextMenuItems = (path: string) =>

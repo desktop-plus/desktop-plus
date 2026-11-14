@@ -61,6 +61,7 @@ interface IRepositoryViewProps {
   readonly showDiffMinimap: boolean
   readonly wrapDiffLines: boolean
   readonly fileTreeView: boolean
+  readonly historyFileTreeView: boolean
 
   /** Whether the list/tree and list/graph view mode switches are shown */
   readonly showViewModeSwitches: boolean
@@ -697,7 +698,8 @@ export class RepositoryView extends React.Component<
         showSideBySideDiff={this.props.showSideBySideDiff}
         showDiffMinimap={this.props.showDiffMinimap}
         wrapDiffLines={this.props.wrapDiffLines}
-        fileTreeView={this.props.fileTreeView}
+        fileTreeView={this.props.historyFileTreeView}
+        showViewModeSwitches={this.props.showViewModeSwitches}
         onOpenBinaryFile={this.onOpenBinaryFile}
         onOpenSubmodule={this.onOpenSubmodule}
         onChangeImageDiffType={this.onChangeImageDiffType}

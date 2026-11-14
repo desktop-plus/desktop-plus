@@ -4646,6 +4646,7 @@ export class App extends React.Component<IAppProps, IAppState> {
           showDiffMinimap={state.showDiffMinimap}
           wrapDiffLines={state.wrapDiffLines}
           fileTreeView={state.fileTreeView}
+          historyFileTreeView={state.historyFileTreeView}
           showViewModeSwitches={state.showViewModeSwitches}
           focusCommitMessage={state.focusCommitMessage}
           askForConfirmationOnDiscardChanges={

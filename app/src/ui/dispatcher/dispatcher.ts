@@ -2931,6 +2931,11 @@ export class Dispatcher {
     return this.appStore._setFileTreeView(fileTreeView)
   }
 
+  /** Change whether the History tab's changed files are shown as a tree */
+  public setHistoryFileTreeView(historyFileTreeView: boolean) {
+    return this.appStore._setHistoryFileTreeView(historyFileTreeView)
+  }
+
   /** Show or hide the list/tree and list/graph view mode switches */
   public toggleViewModeSwitchesVisibility() {
     this.appStore._toggleViewModeSwitchesVisibility()

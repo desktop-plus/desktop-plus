@@ -1,11 +1,11 @@
 import * as React from 'react'
-import classNames from 'classnames'
 
 import { TextBox } from '../lib/text-box'
 import { Tooltip, TooltipDirection } from '../lib/tooltip'
 import { createObservableRef } from '../lib/observable-ref'
 import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
+import { FileTreeViewToggle } from '../lib/file-tree-folder'
 
 const FilterLabel = 'Filter changed files'
 
@@ -18,6 +18,15 @@ interface IChangedFilesHeaderProps {
 
   /** Called on every keystroke in the filter text box */
   readonly onFilterTextChanged: (text: string) => void
+
+  /** Whether the list of changed files is shown as a tree */
+  readonly treeView: boolean
+
+  /** Called when the user switches between the list and tree views */
+  readonly onTreeViewChanged: (treeView: boolean) => void
+
+  /** Whether the list/tree view mode switch is shown */
+  readonly showViewModeSwitches: boolean
 }
 
 interface IChangedFilesHeaderState {
@@ -65,11 +74,24 @@ export class ChangedFilesHeader extends React.Component<
   public render() {
     const { isSearching } = this.state
     return (
-      <div
-        className={classNames('file-list-header', { searching: isSearching })}
-      >
+      <div className="file-list-header">
         {isSearching ? this.renderFilterTextBox() : this.renderLabel()}
+        {this.renderTreeViewToggle()}
       </div>
+    )
+  }
+
+  private renderTreeViewToggle() {
+    if (!this.props.showViewModeSwitches) {
+      return null
+    }
+
+    return (
+      <FileTreeViewToggle
+        treeView={this.props.treeView}
+        onChange={this.props.onTreeViewChanged}
+        ariaLabel="Changed files view mode"
+      />
     )
   }
 
@@ -81,7 +103,6 @@ export class ChangedFilesHeader extends React.Component<
   private renderLabel() {
     return (
       <>
-        <span className="file-list-header-label">{this.changedFilesText}</span>
         <button
           className="file-list-filter-button"
           aria-label={FilterLabel}
@@ -98,6 +119,7 @@ export class ChangedFilesHeader extends React.Component<
           </Tooltip>
           <Octicon symbol={octicons.search} />
         </button>
+        <span className="file-list-header-label">{this.changedFilesText}</span>
       </>
     )
   }

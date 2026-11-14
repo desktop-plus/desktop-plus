@@ -22,27 +22,29 @@
     flex: 0 0 auto;
     padding: 0 var(--spacing);
     text-align: center;
-    position: relative;
+    // Filter button, left-aligned label and view mode switch in a row
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-half);
+    line-height: normal;
+    text-align: left;
 
     .file-list-header-label {
-      display: block;
-      // Keep the label centred while leaving room for the filter button
-      padding: 0 var(--spacing-double);
+      flex: 1 1 auto;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .file-list-filter-button {
-      position: absolute;
-      top: 50%;
-      right: var(--spacing-half);
-      transform: translateY(-50%);
       display: flex;
+      flex-shrink: 0;
       align-items: center;
       justify-content: center;
       width: 20px;
       height: 20px;
+      margin-right: var(--spacing-half);
       padding: 0;
       border: 0;
       border-radius: var(--border-radius);
@@ -64,16 +66,13 @@
       opacity: 1;
     }
 
-    &.searching {
-      display: flex;
-      align-items: center;
-      padding: 0 var(--spacing-half);
-      line-height: normal;
-      text-align: left;
-    }
+    .file-list-filter {
+      flex: 1 1 auto;
+      min-width: 0;
 
-    .file-list-filter input {
-      width: 100%;
+      input {
+        width: 100%;
+      }
     }
   }
 

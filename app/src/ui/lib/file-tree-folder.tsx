@@ -24,6 +24,18 @@ export const getFileTreeView = () => getBoolean(fileTreeViewKey, false)
 export const setFileTreeView = (treeView: boolean) =>
   setBoolean(fileTreeViewKey, treeView)
 
+const historyFileTreeViewKey = 'history-file-list-tree-view'
+
+export const getHistoryFileTreeView = () => {
+  if (localStorage.getItem(historyFileTreeViewKey) === null) {
+    setHistoryFileTreeView(getFileTreeView())
+  }
+  return getBoolean(historyFileTreeViewKey, false)
+}
+
+export const setHistoryFileTreeView = (treeView: boolean) =>
+  setBoolean(historyFileTreeViewKey, treeView)
+
 /** Horizontal indentation per tree level, in pixels */
 const FileTreeIndent = 16
 
@@ -146,6 +158,7 @@ export class FileTreeFolder extends React.Component<IFileTreeFolderProps> {
 interface IFileTreeViewToggleProps {
   readonly treeView: boolean
   readonly onChange: (treeView: boolean) => void
+  readonly ariaLabel?: string
 }
 
 /** Buttons switching a file list between a plain list and a folder tree */
@@ -159,7 +172,7 @@ export class FileTreeViewToggle extends React.Component<IFileTreeViewToggleProps
       <div
         className="file-tree-view-toggle view-mode-switch"
         role="group"
-        aria-label="File list view mode"
+        aria-label={this.props.ariaLabel ?? 'File list view mode'}
       >
         <Button
           size="small"

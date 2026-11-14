@@ -102,6 +102,7 @@ describe('assisted commit error details', () => {
           showDiffMinimap={false}
           wrapDiffLines={false}
           fileTreeView={false}
+          historyFileTreeView={false}
           showViewModeSwitches={false}
           showConventionalCommitBadges={false}
           showCommitAuthorInfo={false}

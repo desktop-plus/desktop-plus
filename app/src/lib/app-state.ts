@@ -328,6 +328,12 @@ export interface IAppState {
   /** Whether lists of changed files are shown as a tree of folders */
   readonly fileTreeView: boolean
 
+  /**
+   * Whether the changed files of the selected commit(s) in the History tab
+   * are shown as a tree of folders
+   */
+  readonly historyFileTreeView: boolean
+
   /** Whether the list/tree and list/graph view mode switches are shown */
   readonly showViewModeSwitches: boolean
 
