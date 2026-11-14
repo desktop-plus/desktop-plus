@@ -686,7 +686,7 @@ describe('git/assisted-commit real hook interception', () => {
     assert.ok(rejected)
     assert.strictEqual(await fixtures.tip(repository), original)
   })
-  it('preserves the underlying native credential helper instead of freezing transient Desktop overrides', async t => {
+  it('replaces the native credential helper with the Desktop one', async t => {
     const repository = await fixtures.seed(t, { file: 'old\n' })
     await fixtures.rawGit(repository, [
       'config',
@@ -698,7 +698,7 @@ describe('git/assisted-commit real hook interception', () => {
     await fixtures.writeHook(
       repository,
       'pre-commit',
-      'printf "protocol=https\\nhost=example.invalid\\n\\n" | git -c credential.interactive=false credential fill > native-credential-check\ngrep -q "username=fixture" native-credential-check'
+      'git config --get-all credential.helper | tail -n 2 > credential-helper-check\n[ -z "$(head -n 1 credential-helper-check)" ] && tail -n 1 credential-helper-check | grep -q "git-credential-desktop"'
     )
     const result = await fixtures.single(repository, input)
     assert.strictEqual(await fixtures.count(repository), 2)

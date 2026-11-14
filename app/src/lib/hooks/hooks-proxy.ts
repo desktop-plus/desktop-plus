@@ -11,6 +11,7 @@ import { promisify } from 'util'
 import memoizeOne from 'memoize-one'
 import which from 'which'
 import { createWriteStream } from 'fs'
+import { getHookCredentialHelperEnv } from './credential-helper-env'
 
 const execFileAsync = promisify(execFile)
 
@@ -258,6 +259,10 @@ export const createHooksProxy = (
           ...(capturedGitParameters === undefined
             ? {}
             : { GIT_CONFIG_PARAMETERS: capturedGitParameters }),
+          ...getHookCredentialHelperEnv(
+            proxyEnv,
+            capturedGitParameters ?? shellEnv.env.GIT_CONFIG_PARAMETERS
+          ),
         },
         signal: abortController.signal,
       })
