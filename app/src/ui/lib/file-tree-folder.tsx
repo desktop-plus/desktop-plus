@@ -156,10 +156,16 @@ export class FileTreeViewToggle extends React.Component<IFileTreeViewToggleProps
   public render() {
     const { treeView } = this.props
     return (
-      <div className="file-tree-view-toggle view-mode-switch button-group">
+      <div
+        className="file-tree-view-toggle view-mode-switch"
+        role="group"
+        aria-label="File list view mode"
+      >
         <Button
           size="small"
-          className={classNames('button-group-item', { selected: !treeView })}
+          className={classNames('view-mode-switch-item', {
+            selected: !treeView,
+          })}
           onClick={this.onPathView}
           ariaLabel="Plain list"
           ariaPressed={!treeView}
@@ -169,7 +175,9 @@ export class FileTreeViewToggle extends React.Component<IFileTreeViewToggleProps
         </Button>
         <Button
           size="small"
-          className={classNames('button-group-item', { selected: treeView })}
+          className={classNames('view-mode-switch-item', {
+            selected: treeView,
+          })}
           onClick={this.onTreeView}
           ariaLabel="Folder tree"
           ariaPressed={treeView}

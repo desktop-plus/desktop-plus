@@ -19,11 +19,10 @@
     }
 
     .commitGraph-view-mode-switch {
-      display: flex;
-      align-items: center;
       flex: 0 0 auto;
-      padding: var(--spacing-half);
-      padding-left: 0;
+      align-self: center;
+      margin: var(--spacing-half);
+      margin-left: 0;
     }
   }
 

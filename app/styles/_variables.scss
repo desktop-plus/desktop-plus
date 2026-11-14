@@ -51,6 +51,14 @@ $overlay-background-color: rgba(0, 0, 0, 0.4);
   --button-destructive-focus-background: #{$red-200};
   --button-destructive-focus-border-color: #{$red-300};
 
+  --segmented-control-track-background: #{darken($gray-100, 3%)};
+  --segmented-control-track-border-color: var(--box-border-color);
+  --segmented-control-text-color: var(--text-secondary-color);
+  --segmented-control-hover-background: #{$gray-200};
+  --segmented-control-selected-background: #{$white};
+  --segmented-control-selected-border-color: #{$gray-300};
+  --segmented-control-selected-text-color: var(--text-color);
+
   /**
    * Color for icons that are placed on top of a colored backing
    * (like a circle badge icon)

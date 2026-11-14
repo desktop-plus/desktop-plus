@@ -50,6 +50,14 @@ body.theme-dark {
   --button-destructive-focus-background: #{$red-900};
   --button-destructive-focus-border-color: #{$red-900};
 
+  --segmented-control-track-background: var(--box-background-color);
+  --segmented-control-track-border-color: #{$gray-800};
+  --segmented-control-text-color: var(--text-secondary-color);
+  --segmented-control-hover-background: #{rgba($gray-800, 0.6)};
+  --segmented-control-selected-background: #{$gray-800};
+  --segmented-control-selected-border-color: #{$gray-600};
+  --segmented-control-selected-text-color: var(--text-color);
+
   /**
    * Color for icons that are placed on top of a colored backing
    * (like a circle badge icon)

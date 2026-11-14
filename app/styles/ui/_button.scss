@@ -163,31 +163,90 @@
   margin-left: 0;
 }
 
-/** A button group switching between view modes, e.g. a list or a tree */
 .view-mode-switch {
-  .button-group-item .octicon {
-    height: 14px;
-    width: 14px;
-  }
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  // 2 * 1px track border + 21px items
+  height: 23px;
+  padding: 0;
+  background-color: var(--segmented-control-track-background);
+  border: 1px solid var(--segmented-control-track-border-color);
+  border-radius: var(--button-border-radius);
+  // Each switch tracks its own selected item, even with several on screen
+  anchor-scope: --view-mode-switch-selected;
 
-  .button-group-item.selected,
-  .button-group-item[aria-pressed='true'] {
-    color: var(--box-selected-active-text-color);
-    background-color: var(--box-selected-active-background-color);
-    border-color: var(--box-selected-active-background-color);
-    z-index: 1;
+  &::before {
+    content: '';
+    position: absolute;
+    position-anchor: --view-mode-switch-selected;
+    inset: anchor(top) anchor(right) anchor(bottom) anchor(left);
+    background-color: var(--segmented-control-selected-background);
+    border: 1px solid var(--segmented-control-selected-border-color);
+    border-radius: calc(var(--button-border-radius) - 1px);
 
-    &:not([aria-disabled='true']):hover,
-    &:focus,
-    &:active {
-      color: var(--box-selected-active-text-color);
-      background-color: var(--box-selected-active-background-color);
-      border-color: var(--box-selected-active-background-color);
+    @media (prefers-reduced-motion: no-preference) {
+      transition: inset 0.1s cubic-bezier(0.6, 0, 0.2, 1);
     }
 
-    + .button-group-item:not([aria-disabled='true']):hover {
-      margin-left: -1px;
-      border-left-width: 1px;
+    // Forced colors drop the knob's background and border; use system
+    // colors (which are preserved) so the selected item stays distinct
+    @media (forced-colors: active) {
+      background-color: Highlight;
+      border-color: Highlight;
+    }
+  }
+
+  .view-mode-switch-item {
+    position: relative;
+    // Above the knob
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0 var(--spacing-half);
+    color: var(--segmented-control-text-color);
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: calc(var(--button-border-radius) - 1px);
+
+    .octicon {
+      height: 14px;
+      width: 14px;
+      margin-left: 0;
+    }
+
+    &:not(.selected):not([aria-pressed='true']):not([aria-disabled='true']):hover {
+      color: var(--segmented-control-selected-text-color);
+      background-color: var(--segmented-control-hover-background);
+      border-color: transparent;
+    }
+
+    &.selected,
+    &[aria-pressed='true'] {
+      // The knob (the track's ::before) is the selected item's background
+      anchor-name: --view-mode-switch-selected;
+
+      &,
+      &:not([aria-disabled='true']):hover,
+      &:active {
+        color: var(--segmented-control-selected-text-color);
+        background-color: transparent;
+        border-color: transparent;
+      }
+
+      @media (forced-colors: active) {
+        &,
+        &:not([aria-disabled='true']):hover,
+        &:active {
+          color: HighlightText;
+        }
+      }
+    }
+
+    &:focus {
+      outline-offset: 0;
       z-index: 2;
     }
   }
