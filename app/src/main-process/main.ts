@@ -91,6 +91,7 @@ app.userAgentFallback = app.userAgentFallback.replace(
 )
 
 const windows = new Map<number, AppWindow>()
+let lastFocusedWindowId: number | null = null
 
 const launchTime = now()
 
@@ -261,9 +262,26 @@ function shouldHandleMenuUpdate(webContents: WebContents) {
     return false
   }
 
-  const focusedWindow = BrowserWindow.getFocusedWindow()
-  return focusedWindow === null || focusedWindow.id === sourceWindow.id
+  const ownerWindowId = getMenuOwnerWindowId()
+  return ownerWindowId === sourceWindow.id
 }
+
+function getMenuOwnerWindowId(): number | null {
+  const windowIds = [...windows.keys()]
+  const focusedWindowId = BrowserWindow.getFocusedWindow()?.id ?? null
+  for (const id of [focusedWindowId, lastFocusedWindowId]) {
+    if (id !== null && windowIds.includes(id)) {
+      return id
+    }
+  }
+  return windowIds.at(0) ?? null
+}
+
+app.on('browser-window-focus', (_, browserWindow) => {
+  if (windows.has(browserWindow.id)) {
+    lastFocusedWindowId = browserWindow.id
+  }
+})
 
 function sendAppMenuToAllWindows() {
   for (const window of getAppWindows()) {
