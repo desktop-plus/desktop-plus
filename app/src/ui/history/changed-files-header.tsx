@@ -119,7 +119,9 @@ export class ChangedFilesHeader extends React.Component<
           </Tooltip>
           <Octicon symbol={octicons.search} />
         </button>
-        <span className="file-list-header-label">{this.changedFilesText}</span>
+        <span className="file-list-header-label" onClick={this.onOpenFilter}>
+          {this.changedFilesText}
+        </span>
       </>
     )
   }
