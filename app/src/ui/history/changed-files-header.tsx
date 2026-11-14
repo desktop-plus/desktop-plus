@@ -119,6 +119,8 @@ export class ChangedFilesHeader extends React.Component<
           </Tooltip>
           <Octicon symbol={octicons.search} />
         </button>
+        {/* Mouse-only shortcut; keyboard users have the filter button above */}
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
         <span className="file-list-header-label" onClick={this.onOpenFilter}>
           {this.changedFilesText}
         </span>
@@ -132,6 +134,7 @@ export class ChangedFilesHeader extends React.Component<
         className="file-list-filter"
         autoFocus={this.state.focusOnOpen}
         displayClearButton={true}
+        prefixedIcon={octicons.search}
         placeholder={`Filter ${this.changedFilesText}`}
         value={this.props.filterText}
         onValueChanged={this.onFilterTextChanged}

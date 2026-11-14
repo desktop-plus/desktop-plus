@@ -44,6 +44,8 @@
       justify-content: center;
       width: 20px;
       height: 20px;
+      position: relative;
+      top: 1px;
       margin-right: var(--spacing-half);
       padding: 0;
       border: 0;
@@ -72,6 +74,18 @@
 
       input {
         width: 100%;
+      }
+
+      &.display-prefixed-icon input {
+        padding-left: 22px;
+      }
+
+      .prefixed-icon {
+        width: 12px;
+        height: 12px;
+        top: 50%;
+        left: 6px;
+        transform: translateY(-50%);
       }
     }
   }
