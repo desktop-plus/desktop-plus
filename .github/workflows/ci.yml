@@ -596,9 +596,7 @@ jobs:
         id: release_notes
         run: |
           RELEASE_NOTES_FILE=".github/desktop-plus-release-notes.md"
-          TITLE=$(head -n 1 "$RELEASE_NOTES_FILE")
-          BODY=$(tail -n +3 "$RELEASE_NOTES_FILE")
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          BODY=$(cat "$RELEASE_NOTES_FILE")
           {
             echo 'body<<EOF'
             echo "$BODY"
@@ -608,7 +606,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ steps.release_notes.outputs.title }}
+          name: Desktop Plus v${{ env.APP_VERSION }}
           body: ${{ steps.release_notes.outputs.body }}
           files: |
             artifacts/**/DesktopPlus-*.AppImage
