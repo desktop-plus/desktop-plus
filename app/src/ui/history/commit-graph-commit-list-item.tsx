@@ -18,6 +18,7 @@ import { AvatarStack } from '../lib/avatar-stack'
 import { Account } from '../../models/account'
 import { GitHubRepository } from '../../models/github-repository'
 import { Avatar } from '../lib/avatar'
+import { RelativeTime } from '../relative-time'
 
 interface ICommitGraphCommitListItemProps {
   readonly commit: Commit
@@ -41,12 +42,7 @@ const commitGraph_LaneGap = 18
 const commitGraph_LeadingPadding = 8
 const commitGraph_MessageGap = 16
 const commitGraph_DotRadius = 5
-const commitGraph_RecentCommitWeekdayThreshold = 6
 const commitGraph_ShortRefLabelLength = 12
-
-const commitGraph_CommitWeekdayFormatter = new Intl.DateTimeFormat('en-US', {
-  weekday: 'long',
-})
 
 interface ICommitGraphSummaryProps {
   readonly className: string
@@ -466,7 +462,11 @@ export class CommitGraphCommitListItem extends React.PureComponent<ICommitGraphC
   }
 
   private commitGraph_renderCommitTime(date: Date) {
-    return commitGraph_formatDate(date, this.props.preferAbsoluteDates)
+    return this.props.preferAbsoluteDates ? (
+      commitGraph_formatDate(date)
+    ) : (
+      <RelativeTime date={date} tooltip={false} />
+    )
   }
 
   private commitGraph_renderUnpushedIndicator() {
@@ -486,61 +486,21 @@ export class CommitGraphCommitListItem extends React.PureComponent<ICommitGraphC
   }
 }
 
-function commitGraph_formatDate(date: Date, preferAbsoluteDates: boolean) {
-  const now = new Date()
+function commitGraph_formatDate(date: Date) {
   const unpaddedTime = formatDate(date, {
     date: false,
     timeStyle: 'short',
   })
-  const time = commitGraph_padTimeHour(unpaddedTime)
-
-  if (!preferAbsoluteDates && commitGraph_isSameDay(date, now)) {
-    return time
-  }
-
-  const ageInDays = commitGraph_getDayDifference(now, date)
-
-  if (
-    !preferAbsoluteDates &&
-    ageInDays > 0 &&
-    ageInDays <= commitGraph_RecentCommitWeekdayThreshold
-  ) {
-    return `${commitGraph_CommitWeekdayFormatter.format(date)} ${time}`
-  }
-
   const dateTime = formatDate(date, {
     dateStyle: 'short',
     timeStyle: 'short',
   })
 
-  return dateTime.replace(unpaddedTime, time)
+  return dateTime.replace(unpaddedTime, commitGraph_padTimeHour(unpaddedTime))
 }
 
 function commitGraph_padTimeHour(time: string) {
   return time.replace(/^(\d)(?=[:.]\d{2})/, '0$1')
-}
-
-function commitGraph_isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
-
-function commitGraph_getDayDifference(newerDate: Date, olderDate: Date) {
-  const newerDay = new Date(
-    newerDate.getFullYear(),
-    newerDate.getMonth(),
-    newerDate.getDate()
-  )
-  const olderDay = new Date(
-    olderDate.getFullYear(),
-    olderDate.getMonth(),
-    olderDate.getDate()
-  )
-
-  return Math.round((newerDay.getTime() - olderDay.getTime()) / 86400000)
 }
 
 function commitGraph_getCommitSummary(commit: Commit) {
