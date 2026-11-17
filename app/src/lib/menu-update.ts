@@ -12,7 +12,7 @@ import { AppMenu, MenuItem } from '../models/app-menu'
 import { hasConflictedFiles } from './status'
 import { findContributionTargetDefaultBranch } from './branch'
 import { hasDefaultRemoteUrl } from './repository-remote-url'
-import { enableCopilotAppHandoff, enableWorktreeSupport } from './feature-flag'
+import { enableWorktreeSupport } from './feature-flag'
 import { isAssistedCommitRepositoryLocked } from '../models/assisted-commit-run'
 import { isRepositoryAffectedByAssistedCommit } from './git/repository-operation'
 
@@ -137,7 +137,7 @@ const allMenuIds: ReadonlyArray<MenuIDs> = [
   'show-repository-settings',
   'manage-remotes',
   'open-external-editor',
-  ...(enableCopilotAppHandoff() ? (['open-in-copilot-app'] as const) : []),
+  'open-in-copilot-app',
   'open-with-external-editor',
   'remove-repository',
   'new-repository',
@@ -265,7 +265,7 @@ function getRepositoryMenuBuilder(state: IAppState): MenuStateBuilder {
     'show-branches-list',
     'show-worktrees-list',
     'open-external-editor',
-    ...(enableCopilotAppHandoff() ? (['open-in-copilot-app'] as const) : []),
+    'open-in-copilot-app',
     'open-with-external-editor',
     'compare-to-branch',
     'toggle-changes-filter',

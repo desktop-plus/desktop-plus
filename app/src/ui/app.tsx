@@ -230,10 +230,7 @@ import { AboutTestDialog } from './about/about-test-dialog'
 import { TestCLIActionDialog } from './cli-action/test-cli-action-dialog'
 import { TestCopilotSnapshotCardDialog } from './preferences/test-copilot-snapshot-card-dialog'
 import { TestTokenExpirationDialog } from './preferences/test-token-expiration-dialog'
-import {
-  enableCopilotAppHandoff,
-  enableWorktreeSupport,
-} from '../lib/feature-flag'
+import { enableWorktreeSupport } from '../lib/feature-flag'
 import {
   getCopilotAccountCacheKey,
   type CopilotFeature,
@@ -593,10 +590,10 @@ export class App extends React.Component<IAppProps, IAppState> {
       case 'open-external-editor':
         return this.openCurrentRepositoryInExternalEditor()
       case 'open-in-copilot-app':
-        if (
-          enableCopilotAppHandoff() &&
-          this.state.selectedState?.type === SelectionType.Repository
-        ) {
+        if (__LINUX__) {
+          return
+        }
+        if (this.state.selectedState?.type === SelectionType.Repository) {
           return this.props.dispatcher.openInCopilotApp(
             this.state.selectedState.repository.path
           )
