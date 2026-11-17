@@ -5,7 +5,7 @@
   "productName": "Desktop Plus",
   "bundleID": "org.desktop-plus.DesktopPlus",
   "companyName": "Desktop Plus",
-  "version": "3.6.12-beta1",
+  "version": "3.6.12-beta2",
   "main": "./main.js",
   "repository": {
     "type": "git",

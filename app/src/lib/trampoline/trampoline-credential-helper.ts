@@ -40,6 +40,7 @@ import {
   isAccountCredential,
   rememberAccountCredential,
 } from './third-party-git-auth'
+import { CredentialOutcome } from '../stats/multi-account-stats'
 
 /** Memoize an async computation so it runs at most once. */
 function once<T>(fn: () => Promise<T>): () => Promise<T> {
@@ -49,6 +50,8 @@ function once<T>(fn: () => Promise<T>): () => Promise<T> {
 
 type Credential = Map<string, string>
 type Store = Pick<AccountsStore, 'getAll' | 'leaseAccountToken'>
+
+type OnCredentialOutcome = (outcome: CredentialOutcome) => void
 
 const info = (msg: string) => log.info(`credential-helper: ${msg}`)
 const debug = (msg: string) => log.debug(`credential-helper: ${msg}`)
@@ -145,7 +148,8 @@ async function getCredential(
   cred: Credential,
   store: Store,
   token: string,
-  repositories: ReadonlyArray<Repository>
+  repositories: ReadonlyArray<Repository>,
+  onOutcome: OnCredentialOutcome
 ) {
   const credentialUrl = getCredentialUrl(cred)
   const endpoint = `${credentialUrl}`
@@ -178,14 +182,31 @@ async function getCredential(
     isSameOrigin(credentialUrl, repositoryEndpoint) &&
     !(await usesGenericCredentials(repository, store))
   ) {
+    const isBackgroundTask = getIsBackgroundTaskEnvironment(token)
+    const assigned = getAccountForRepository(await store.getAll(), repository)
     const account =
-      getAccountForRepository(await store.getAll(), repository) ??
-      (getIsBackgroundTaskEnvironment(token)
+      assigned ??
+      (isBackgroundTask
         ? undefined
         : await ui.promptForRepositoryAccount(repository))
-    return account?.endpoint === repositoryEndpoint
-      ? getLeasedCredential(cred, store, token, account)
-      : undefined
+    const failure = isBackgroundTask
+      ? 'unavailable-in-background'
+      : 'not-provided'
+    const result =
+      account?.endpoint === repositoryEndpoint
+        ? await getLeasedCredential(cred, store, token, account).catch(e => {
+            onOutcome(failure)
+            throw e
+          })
+        : undefined
+    onOutcome(
+      result === undefined
+        ? failure
+        : assigned !== null
+        ? 'assigned-account'
+        : 'after-prompt'
+    )
+    return result
   }
 
   const fallbackAccount = getTrampolineFallbackAccount(token)
@@ -293,15 +314,21 @@ const storeExternalCredential = (cred: Credential, token: string) => {
 }
 
 /** Implementation of the 'erase' git credential helper command */
-async function eraseCredential(cred: Credential, store: Store, token: string) {
+async function eraseCredential(
+  cred: Credential,
+  store: Store,
+  token: string,
+  onOutcome: OnCredentialOutcome
+) {
+  if ((await getEndpointKind(cred, store)) !== 'generic') {
+    onOutcome('rejected')
+    return
+  }
+
   // Credentials that came from one of the user's accounts are never
   // persisted, so there's nothing to erase and generic credentials must be
   // left untouched
   if (isAccountCredential(token, getCredentialUrl(cred))) {
-    return
-  }
-
-  if ((await getEndpointKind(cred, store)) !== 'generic') {
     return
   }
 
@@ -320,7 +347,8 @@ const eraseExternalCredential = (cred: Credential, token: string) => {
 
 export function createCredentialHelperTrampolineHandler(
   accountsStore: AccountsStore,
-  repositoriesStore: RepositoriesStore
+  repositoriesStore: RepositoriesStore,
+  onOutcome: OnCredentialOutcome = () => {}
 ): TrampolineCommandHandler {
   let accounts: ReadonlyArray<Account> = []
   let repositories: ReadonlyArray<Repository> = []
@@ -372,7 +400,13 @@ export function createCredentialHelperTrampolineHandler(
 
     try {
       if (firstParameter === 'get') {
-        const cred = await getCredential(input, store, token, repositories)
+        const cred = await getCredential(
+          input,
+          store,
+          token,
+          repositories,
+          onOutcome
+        )
         if (!cred) {
           const endpoint = `${getCredentialUrl(input)}`
           info(`could not find credential for ${endpoint}`)
@@ -382,7 +416,7 @@ export function createCredentialHelperTrampolineHandler(
       } else if (firstParameter === 'store') {
         await storeCredential(input, store, token)
       } else if (firstParameter === 'erase') {
-        await eraseCredential(input, store, token)
+        await eraseCredential(input, store, token, onOutcome)
       }
       return undefined
     } catch (e) {
