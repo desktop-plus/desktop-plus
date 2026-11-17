@@ -62,16 +62,16 @@
     align-self: stretch;
   }
 
+  // Use lower-opacity text color for border to reuse selection states
   .file-tree-guide {
     width: 16px;
-    margin-left: 7px;
-    margin-right: -7px;
-    border-left: 1px solid var(--box-border-color);
+    margin-left: 5px;
+    margin-right: -4px;
+    border-left: 1px solid var(--text-secondary-color);
+    opacity: 0.3;
   }
 
   .file-tree-folder {
-    gap: var(--spacing-half);
-
     &:hover {
       background-color: var(--box-hover-background-color);
     }
