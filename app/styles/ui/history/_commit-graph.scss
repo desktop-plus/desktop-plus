@@ -178,6 +178,7 @@
     min-width: 0;
     padding-left: 0;
     padding-right: var(--spacing-half);
+    container: commit-graph / inline-size;
   }
 
   .commitGraph-svg {
@@ -355,6 +356,12 @@
     color: var(--text-secondary-color);
     min-width: 0;
     line-height: 18px;
+  }
+
+  @container commit-graph (max-width: 360px) {
+    .commitGraph-date {
+      display: none;
+    }
   }
 
   .commitGraph-unpushed-indicator {
