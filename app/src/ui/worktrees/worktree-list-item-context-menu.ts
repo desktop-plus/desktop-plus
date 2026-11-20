@@ -11,6 +11,7 @@ interface IWorktreeContextMenuConfig {
   readonly onRenameWorktree?: (path: string) => void
   readonly onRemoveWorktree?: (path: string) => void
   readonly onOpenInNewWindow?: () => void
+  readonly onCopyPath?: (path: string) => void
 }
 
 export function generateWorktreeContextMenuItems(
@@ -23,6 +24,7 @@ export function generateWorktreeContextMenuItems(
     onRenameWorktree,
     onRemoveWorktree,
     onOpenInNewWindow,
+    onCopyPath = writeClipboardText,
   } = config
   const name = Path.basename(path)
   const canMutate =
@@ -54,7 +56,7 @@ export function generateWorktreeContextMenuItems(
 
   items.push({
     label: __DARWIN__ ? 'Copy Worktree Path' : 'Copy worktree path',
-    action: () => writeClipboardText(path),
+    action: () => onCopyPath(path),
   })
 
   if (onRemoveWorktree !== undefined) {

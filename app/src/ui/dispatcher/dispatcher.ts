@@ -5095,10 +5095,9 @@ export class Dispatcher {
   }
 
   public copyPathsToClipboard(paths: ReadonlyArray<string>) {
+    const copyPathNormalization = this.appStore.getState().copyPathNormalization
     const text = paths
-      .map(p =>
-        convertToCopyPath(p, this.appStore.getState().copyPathNormalization)
-      )
+      .map(p => convertToCopyPath(p, copyPathNormalization))
       .join(EOL)
     writeClipboardText(text)
   }

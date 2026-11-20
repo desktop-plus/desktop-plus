@@ -1513,8 +1513,7 @@ export class Preferences extends React.Component<
     dispatcher.setShowBranchNameInRepoList(this.state.showBranchNameInRepoList)
     dispatcher.setBranchSortOrder(this.state.branchSortOrder)
 
-    dispatcher.setShowBranchNameInRepoList(this.state.showBranchNameInRepoList)
-    dispatcher.setBranchSortOrder(this.state.branchSortOrder)
+    dispatcher.setCopyPathNormalization(this.state.copyPathNormalization)
 
     dispatcher.setSelectedCopilotModelsByAccount(
       this.state.selectedCopilotModelsByAccount

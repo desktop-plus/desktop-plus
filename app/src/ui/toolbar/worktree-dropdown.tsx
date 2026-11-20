@@ -69,9 +69,14 @@ export class WorktreeDropdown extends React.Component<
       onRenameWorktree: this.onRenameWorktree,
       onRemoveWorktree: this.onRemoveWorktree,
       onOpenInNewWindow: () => this.onOpenWorktreeInNewWindow(worktree.path),
+      onCopyPath: this.onCopyWorktreePath,
     })
 
     showContextualMenu(items)
+  }
+
+  private onCopyWorktreePath = (path: string) => {
+    this.props.dispatcher.copyPathToClipboard(path)
   }
 
   private onOpenWorktreeInNewWindow = (worktreePath: string) => {
@@ -119,6 +124,7 @@ export class WorktreeDropdown extends React.Component<
       isMainWorktree: isMain,
       isLocked: currentWorktree.isLocked,
       onRemoveWorktree: isMain ? undefined : this.onRemoveWorktree,
+      onCopyPath: this.onCopyWorktreePath,
     })
 
     const newWorktreeItem: IMenuItem = {
