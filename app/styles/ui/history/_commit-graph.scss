@@ -1,6 +1,8 @@
 @import '../../mixins';
 
 #compare-view {
+  container: commit-graph / inline-size;
+
   .commitGraph-view-toolbar {
     display: flex;
     align-items: stretch;
@@ -41,6 +43,22 @@
     min-width: 0;
     border-right: var(--base-border);
     background: var(--box-alt-background-color);
+  }
+
+  @container commit-graph (width < 360px) {
+    .commitGraph-view {
+      flex-flow: column nowrap;
+    }
+    // since the branch list is normally resizable,
+    // the inline size style needs to be overridden
+    #commitGraph-branches-pane {
+      width: auto !important;
+      max-height: 50%;
+    }
+    .commitGraph-branches-pane {
+      border-right: none;
+      border-bottom: var(--base-border);
+    }
   }
 
   .commitGraph-branch-list {
