@@ -83,8 +83,10 @@
       display: flex;
       height: auto;
       flex-direction: column;
+      justify-content: center;
       padding: var(--spacing-half) var(--spacing-half);
       margin: 0;
+      min-height: 38px;
 
       .filter-box-container {
         display: flex;
