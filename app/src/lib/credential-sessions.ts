@@ -6,6 +6,8 @@ import {
   IOAuthToken,
   OAuthRefreshRejectedError,
   OAuthTokenResponseError,
+  OAuthTokenRequestError,
+  TokenRefreshFailureKind,
 } from './oauth-token'
 import {
   AccountCredential,
@@ -95,12 +97,15 @@ export interface IAccountTokenExpiration {
 
 /** Credential-free lifecycle events for actual token refresh exchanges. */
 export type TokenRefreshEvent =
-  | 'attempt'
-  | 'success'
-  | 'transient-failure'
-  | 'non-transient-failure'
-  | 'abandoned'
-  | 'required-sign-in'
+  | { readonly kind: 'attempt' }
+  | { readonly kind: 'success' }
+  | {
+      readonly kind: 'transient-failure'
+      readonly failureKind: TokenRefreshFailureKind
+    }
+  | { readonly kind: 'non-transient-failure' }
+  | { readonly kind: 'abandoned' }
+  | { readonly kind: 'required-sign-in' }
 
 /** Account-list changes that credential sessions ask their owner to perform. */
 export interface ICredentialSessionsDelegate {
@@ -947,11 +952,11 @@ export class CredentialSessions {
       const signOut = this.requireSignIn(session)
       // The delegate retires the session synchronously, before deleting storage.
       if (!wasRetired && session.retired) {
-        notifyRefreshEvent('required-sign-in')
+        notifyRefreshEvent({ kind: 'required-sign-in' })
       }
       await signOut
     }
-    notifyRefreshEvent('attempt')
+    notifyRefreshEvent({ kind: 'attempt' })
     let renewed: IOAuthToken
     try {
       renewed = await this.renewToken(
@@ -972,10 +977,14 @@ export class CredentialSessions {
           if (concurrent !== null && concurrent !== 'missing') {
             return concurrent.accessToken
           }
-          notifyRefreshEvent('non-transient-failure')
+          notifyRefreshEvent({ kind: 'non-transient-failure' })
           await requireSignInAfterRefreshFailure()
         } else {
-          notifyRefreshEvent('transient-failure')
+          notifyRefreshEvent({
+            kind: 'transient-failure',
+            failureKind:
+              e instanceof OAuthTokenRequestError ? e.kind : 'unknown',
+          })
           log.warn(
             'OAuth renewal failed; retaining credentials for a later retry.'
           )
@@ -984,13 +993,13 @@ export class CredentialSessions {
           )
         }
       } else {
-        notifyRefreshEvent('abandoned')
+        notifyRefreshEvent({ kind: 'abandoned' })
       }
       throw e
     }
 
     if (session.retired) {
-      notifyRefreshEvent('abandoned')
+      notifyRefreshEvent({ kind: 'abandoned' })
       void this.revokeUnusedToken(account.withToken(renewed.accessToken))
       throw new AccountRequiresSignInError()
     }
@@ -1009,7 +1018,7 @@ export class CredentialSessions {
       if (!session.retired) {
         await requireSignInAfterRefreshFailure()
       } else {
-        notifyRefreshEvent('abandoned')
+        notifyRefreshEvent({ kind: 'abandoned' })
       }
       void this.revokeUnusedToken(account.withToken(renewed.accessToken))
       throw new Error(
@@ -1017,7 +1026,7 @@ export class CredentialSessions {
       )
     }
     if (session.retired) {
-      notifyRefreshEvent('abandoned')
+      notifyRefreshEvent({ kind: 'abandoned' })
       void this.revokeUnusedToken(account.withToken(renewed.accessToken))
       throw new AccountRequiresSignInError()
     }
@@ -1028,7 +1037,7 @@ export class CredentialSessions {
       session
     )
     this.delegate.onTokenRenewed(account, renewed.accessToken)
-    notifyRefreshEvent('success')
+    notifyRefreshEvent({ kind: 'success' })
     log.info('OAuth credentials renewed and saved.')
     return renewed.accessToken
   }

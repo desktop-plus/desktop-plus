@@ -5,7 +5,7 @@
   "productName": "Desktop Plus",
   "bundleID": "org.desktop-plus.DesktopPlus",
   "companyName": "Desktop Plus",
-  "version": "3.6.12-beta2",
+  "version": "3.7.0",
   "main": "./main.js",
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.2",
     "@github/alive-client": "^1.2.0",
-    "@github/copilot-sdk": "1.0.27-preview.1",
+    "@github/copilot-sdk": "1.0.34",
     "@xterm/xterm": "^5.5.0",
     "app-path": "^3.3.0",
     "byline": "^5.0.0",

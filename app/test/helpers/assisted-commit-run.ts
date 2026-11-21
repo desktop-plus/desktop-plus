@@ -86,8 +86,10 @@ export async function createAssistedCommitRunHarness(
     async () => true
   )
   const defaultProposal: typeof planner.store.proposeAssistedCommitPlan =
-    async (_account, analysis) =>
-      wholeSelectionResponse(analysis, 'Commit selected changes')
+    async (_account, analysis, _path, options) => {
+      options?.onPlanningStarted?.()
+      return wholeSelectionResponse(analysis, 'Commit selected changes')
+    }
   const propose = t.mock.method(
     planner.store,
     'proposeAssistedCommitPlan',
@@ -181,6 +183,7 @@ export async function createAssistedCommitRunHarness(
     runtime,
     stores,
     statsStore,
+    measures: () => statsStore['getDailyMeasures'](),
     commits,
     register,
     request,
