@@ -1593,6 +1593,19 @@ export class App extends React.Component<IAppProps, IAppState> {
       : this.state.selectedExternalEditor ?? undefined
   }
 
+  private getConflictsEditorLabel(repo: Repository): string | null {
+    const override = repo.customEditorOverride
+    const settings = override ?? this.state
+
+    if (settings.useSystemDefaultProgram) {
+      return SystemDefaultProgramLabel
+    }
+    if (settings.useCustomEditor && settings.customEditor) {
+      return __DARWIN__ ? 'External Editor' : 'external editor'
+    }
+    return override?.selectedExternalEditor ?? this.state.resolvedExternalEditor
+  }
+
   private openCurrentRepositoryInExternalEditor() {
     const repository = this.getRepository()
     if (!repository) {
@@ -2843,11 +2856,9 @@ export class App extends React.Component<IAppProps, IAppState> {
             openFileInExternalEditor={this.getOpenFileInExternalEditorHandler(
               popup.repository
             )}
-            resolvedExternalEditor={
-              this.state.useSystemDefaultProgram
-                ? SystemDefaultProgramLabel
-                : this.state.resolvedExternalEditor
-            }
+            resolvedExternalEditor={this.getConflictsEditorLabel(
+              popup.repository
+            )}
             openRepositoryInShell={this.openCurrentRepositoryInShell}
             wrapDiffLines={this.state.wrapDiffLines}
           />

@@ -27,7 +27,6 @@ import { Account } from '../../../models/account'
 import { Octicon } from '../../octicons'
 import * as octicons from '../../octicons/octicons.generated'
 import { Button } from '../../lib/button'
-import { SystemDefaultProgramLabel } from '../../../models/editor-override'
 
 interface IConflictsDialogProps {
   readonly dispatcher: Dispatcher
@@ -174,7 +173,6 @@ export class ConflictsDialog extends React.Component<
     files: ReadonlyArray<WorkingDirectoryFileChange>
   ) {
     let isFirstUnmergedFile = true
-    const externalEditorName = this.getExternalEditorName()
     return (
       <ul className="unmerged-file-statuses">
         {files.map(f => {
@@ -184,7 +182,7 @@ export class ConflictsDialog extends React.Component<
             return renderUnmergedFile({
               path: f.path,
               status: f.status,
-              resolvedExternalEditor: externalEditorName,
+              resolvedExternalEditor: this.props.resolvedExternalEditor,
               openFileInExternalEditor: this.props.openFileInExternalEditor,
               repository: this.props.repository,
               dispatcher: this.props.dispatcher,
@@ -202,20 +200,6 @@ export class ConflictsDialog extends React.Component<
         })}
       </ul>
     )
-  }
-
-  private getExternalEditorName() {
-    const { repository, resolvedExternalEditor } = this.props
-    const repoEditor = repository.customEditorOverride
-    if (!repoEditor) {
-      return resolvedExternalEditor
-    }
-    if (repoEditor.useSystemDefaultProgram) {
-      return SystemDefaultProgramLabel
-    }
-    return repoEditor.useCustomEditor
-      ? 'External Editor'
-      : repoEditor.selectedExternalEditor
   }
 
   private renderContent(
