@@ -428,10 +428,7 @@ export class CommitGraphCommitListItem extends React.PureComponent<ICommitGraphC
   private commitGraph_renderCommitterTooltip(
     avatarUsers: ReadonlyArray<IAvatarUser>
   ) {
-    const absoluteDate = formatDate(this.props.commit.author.date, {
-      dateStyle: 'full',
-      timeStyle: 'short',
-    })
+    const absoluteDate = formatDate(this.props.commit.author.date)
 
     return (
       <div className="commit-list-item-tooltip list-item-tooltip">
@@ -487,14 +484,8 @@ export class CommitGraphCommitListItem extends React.PureComponent<ICommitGraphC
 }
 
 function commitGraph_formatDate(date: Date) {
-  const unpaddedTime = formatDate(date, {
-    date: false,
-    timeStyle: 'short',
-  })
-  const dateTime = formatDate(date, {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
+  const unpaddedTime = formatDate(date, { date: false })
+  const dateTime = formatDate(date)
 
   return dateTime.replace(unpaddedTime, commitGraph_padTimeHour(unpaddedTime))
 }

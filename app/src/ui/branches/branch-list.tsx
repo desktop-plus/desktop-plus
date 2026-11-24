@@ -318,12 +318,7 @@ export class BranchList extends React.Component<IBranchListProps> {
 
     const authorDate = tip.author.date
 
-    const absoluteDate = authorDate
-      ? formatDate(authorDate, {
-          dateStyle: 'full',
-          timeStyle: 'short',
-        })
-      : null
+    const absoluteDate = authorDate ? formatDate(authorDate) : null
 
     return (
       <div className="branches-list-item-tooltip list-item-tooltip">

@@ -5,7 +5,6 @@ import { Row } from '../../ui/lib/row'
 import { Select } from '../lib/select'
 import { suggestedExternalEditor } from '../../lib/editors/shared'
 import { ICustomIntegration } from '../../lib/custom-integration'
-import { enableCustomIntegration } from '../../lib/feature-flag'
 import { CustomIntegrationForm } from '../preferences/custom-integration-form'
 
 const CustomIntegrationValue = 'other'
@@ -79,27 +78,25 @@ export class Integrations extends React.Component<
   }
 
   public componentDidMount(): void {
-    if (enableCustomIntegration()) {
-      const {
-        availableEditors,
-        useCustomEditor,
-        useDefaultEditor,
-        useSystemDefaultProgram,
-      } = this.props
+    const {
+      availableEditors,
+      useCustomEditor,
+      useDefaultEditor,
+      useSystemDefaultProgram,
+    } = this.props
 
-      // When there are no available editors or shells, the `Select` component
-      // will have the custom editor or shell already selected, but we need
-      // to handle that as initial value, otherwise the custom integration
-      // form won't be rendered.
+    // When there are no available editors or shells, the `Select` component
+    // will have the custom editor or shell already selected, but we need
+    // to handle that as initial value, otherwise the custom integration
+    // form won't be rendered.
 
-      if (
-        availableEditors.length === 0 &&
-        !useCustomEditor &&
-        !useDefaultEditor &&
-        !useSystemDefaultProgram
-      ) {
-        this.setSelectedEditor(CustomIntegrationValue)
-      }
+    if (
+      availableEditors.length === 0 &&
+      !useCustomEditor &&
+      !useDefaultEditor &&
+      !useSystemDefaultProgram
+    ) {
+      this.setSelectedEditor(CustomIntegrationValue)
     }
   }
 

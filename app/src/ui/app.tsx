@@ -230,7 +230,6 @@ import { AboutTestDialog } from './about/about-test-dialog'
 import { TestCLIActionDialog } from './cli-action/test-cli-action-dialog'
 import { TestCopilotSnapshotCardDialog } from './preferences/test-copilot-snapshot-card-dialog'
 import { TestTokenExpirationDialog } from './preferences/test-token-expiration-dialog'
-import { enableWorktreeSupport } from '../lib/feature-flag'
 import {
   getCopilotAccountCacheKey,
   type CopilotFeature,
@@ -1123,10 +1122,6 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private showWorktrees() {
-    if (!enableWorktreeSupport()) {
-      return
-    }
-
     const state = this.state.selectedState
     if (state == null || state.type !== SelectionType.Repository) {
       return
@@ -1143,10 +1138,6 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private showCreateWorktree() {
-    if (!enableWorktreeSupport()) {
-      return
-    }
-
     const state = this.state.selectedState
     if (state == null || state.type !== SelectionType.Repository) {
       return
@@ -4227,8 +4218,8 @@ export class App extends React.Component<IAppProps, IAppState> {
       groupNames: getKnownGroupNames(this.state.repositories),
       onAssignRepositoryGroupName: onAssignRepositoryGroupName,
       onViewOnGitHub: this.viewOnGitHub,
-      onCreateWorktree: enableWorktreeSupport() ? onCreateWorktree : undefined,
-      onShowWorktrees: enableWorktreeSupport() ? onShowWorktrees : undefined,
+      onCreateWorktree,
+      onShowWorktrees,
       repository: repository,
       shellLabel: this.state.useCustomShell
         ? undefined
@@ -4449,9 +4440,6 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private renderWorktreeToolbarButton(): JSX.Element | null {
-    if (!enableWorktreeSupport()) {
-      return null
-    }
     if (!this.state.showWorktrees) {
       return null
     }

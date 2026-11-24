@@ -27,7 +27,6 @@ import {
   getAvailableDiffFontFamilies,
   getDiffFontFamilyLabel,
 } from '../../models/diff-font'
-import { enableFormattingPreferences } from '../../lib/feature-flag'
 import {
   DateFormat,
   TimeFormat,
@@ -576,10 +575,6 @@ export class Appearance extends React.Component<
   }
 
   private renderFormatting() {
-    if (!enableFormattingPreferences()) {
-      return null
-    }
-
     return (
       <div className="appearance-section formatting-section">
         <h2 id="formatting-heading">Formatting</h2>

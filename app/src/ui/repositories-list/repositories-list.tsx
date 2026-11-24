@@ -60,7 +60,6 @@ import { KeyboardShortcut } from '../keyboard-shortcut/keyboard-shortcut'
 import { generateRepositoryListContextMenu } from '../repositories-list/repository-list-item-context-menu'
 import { generateWorktreeListItemContextMenu } from '../repositories-list/repository-list-item-context-menu'
 import { openRepositoryInNewWindow } from '../main-process-proxy'
-import { enableWorktreeSupport } from '../../lib/feature-flag'
 import { SectionFilterList } from '../lib/section-filter-list'
 import { assertNever } from '../../lib/fatal-error'
 import { IAheadBehind } from '../../models/branch'
@@ -1276,13 +1275,10 @@ export class RepositoriesList extends React.Component<
       groupNames: getKnownGroupNames(this.props.repositories),
       onAssignRepositoryGroupName: this.onAssignRepositoryGroupName,
       onViewOnGitHub: this.props.onViewOnGitHub,
-      onCreateWorktree: enableWorktreeSupport()
-        ? this.onCreateWorktree
+      onCreateWorktree: this.onCreateWorktree,
+      onShowWorktrees: this.props.showWorktrees
+        ? this.onShowWorktrees
         : undefined,
-      onShowWorktrees:
-        enableWorktreeSupport() && this.props.showWorktrees
-          ? this.onShowWorktrees
-          : undefined,
       repository: item.repository,
       shellLabel: this.props.shellLabel,
       onCopyRepoPath: path => this.props.dispatcher.copyPathToClipboard(path),

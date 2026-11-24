@@ -12,7 +12,6 @@ import { generateWorktreeContextMenuItems } from '../worktrees/worktree-list-ite
 import { openRepositoryInNewWindow } from '../main-process-proxy'
 import { PopupType } from '../../models/popup'
 import { Resizable } from '../resizable'
-import { enableResizingToolbarButtons } from '../../lib/feature-flag'
 
 interface IWorktreeDropdownProps {
   readonly dispatcher: Dispatcher
@@ -195,21 +194,13 @@ export class WorktreeDropdown extends React.Component<
         disabled={this.props.disabled}
         showDisclosureArrow={true}
         enableFocusTrap={enableFocusTrap}
-        foldoutStyleOverrides={
-          enableResizingToolbarButtons()
-            ? {
-                width: this.props.worktreeDropdownWidth.value,
-                maxWidth: this.props.worktreeDropdownWidth.max,
-                minWidth: 365,
-              }
-            : undefined
-        }
+        foldoutStyleOverrides={{
+          width: this.props.worktreeDropdownWidth.value,
+          maxWidth: this.props.worktreeDropdownWidth.max,
+          minWidth: 365,
+        }}
       />
     )
-
-    if (!enableResizingToolbarButtons()) {
-      return toolbarDropdown
-    }
 
     return (
       <Resizable

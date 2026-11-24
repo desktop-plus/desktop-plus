@@ -22,10 +22,7 @@ export class SnoozedRepositoryListItem extends React.Component<ISnoozedRepositor
 
   public render() {
     const name = nameOf(this.props.repository)
-    const until = formatDate(new Date(this.props.until), {
-      dateStyle: 'full',
-      timeStyle: 'short',
-    })
+    const until = formatDate(new Date(this.props.until))
     const unsnoozeLabel = `Unsnooze "${name}"`
 
     return (

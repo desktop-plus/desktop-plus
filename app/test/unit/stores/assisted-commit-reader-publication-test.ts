@@ -343,13 +343,13 @@ describe('assisted commit reader settlement and publication', () => {
     )
     let owned: ReturnType<typeof h.assisted.state['runs']['get']>
     let paused = false
-    h.assisted.readers['updateDiffCore'] = async repo => {
+    h.assisted.readers['updateDiffCore'] = async (...args) => {
       if (!paused && owned !== undefined && owned.lease === undefined) {
         paused = true
         entered.resolve()
         await finish.promise
       }
-      return loadDiff(repo)
+      return loadDiff(...args)
     }
     let reader: Promise<unknown> | undefined
     h.propose.mock.mockImplementation(async (_account, analysis) => {
@@ -452,7 +452,8 @@ describe('assisted commit reader settlement and publication', () => {
     const load = h.assisted.readers['updateDiffCore'].bind(h.assisted.readers)
     let owned: ReturnType<typeof h.assisted.state['runs']['get']>
     let paused = false
-    h.assisted.readers['updateDiffCore'] = async repo => {
+    h.assisted.readers['updateDiffCore'] = async (...args) => {
+      const [repo] = args
       if (
         repo.id === child.id &&
         !paused &&
@@ -463,7 +464,7 @@ describe('assisted commit reader settlement and publication', () => {
         entered.resolve()
         await finish.promise
       }
-      return load(repo)
+      return load(...args)
     }
     h.propose.mock.mockImplementation(async (_account, analysis) => {
       owned = h.assisted.state['runs'].get(child.id)
