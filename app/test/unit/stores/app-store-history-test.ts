@@ -17,6 +17,7 @@ describe('AppStore history pagination', () => {
       namedExports: {
         ...(await import('../../../src/ui/main-process-proxy')),
         getAppMenu: () => {},
+        updateMenuState: () => {},
       },
     })
     const { AppStore } = await import('../../../src/lib/stores/app-store')
