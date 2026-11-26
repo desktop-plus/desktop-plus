@@ -158,7 +158,9 @@ import {
   getAssistedCommitProtectedPaths,
   withRepositoryGitResourceMutation,
   canonicalMutationPath,
+  hasActiveAssistedCommitProtection,
   isRepositoryAffectedByAssistedCommit,
+  isRepositoryOverlappingAssistedCommit,
 } from '../git/repository-operation'
 import { storeCommitMode } from './helpers/commit-mode-storage'
 import {
@@ -2421,15 +2423,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return
     }
 
-    const latestCompareState =
-      this.repositoryStateCache.get(repository).compareState
-    if (latestCompareState.allHistoryCommitSHAs !== commits) {
-      // The history list was replaced or extended while this batch was loading
+    // History may have been refreshed while this batch was loading.
+    const { compareState } = this.repositoryStateCache.get(repository)
+    if (compareState.allHistoryCommitSHAs !== commits) {
       return
     }
 
     // The search may have changed while the batch was loading
-    const searchQuery = latestCompareState.filteredHistoryCommitSearchQuery
+    const searchQuery = compareState.filteredHistoryCommitSearchQuery
     const searchFilter = parseCommitSearchFilter(searchQuery)
     const newFilteredCommits = newCommits.filter(sha =>
       commitMatchesSearchFilter(gitStore.commitLookup.get(sha), searchFilter)
@@ -2438,14 +2439,14 @@ export class AppStore extends TypedBaseStore<IAppState> {
     this.repositoryStateCache.updateCompareState(repository, () => ({
       allHistoryCommitSHAs: commits.concat(newCommits),
       filteredHistoryCommitSHAs:
-        latestCompareState.filteredHistoryCommitSHAs.concat(newFilteredCommits),
+        compareState.filteredHistoryCommitSHAs.concat(newFilteredCommits),
     }))
 
     if (newFilteredCommits.length > 0) {
       this.emitUpdate()
     }
 
-    if (latestCompareState.commitSearchQuery !== searchQuery) {
+    if (compareState.commitSearchQuery !== searchQuery) {
       // A pending search query update will refilter and load more if needed
       return
     }
@@ -2453,7 +2454,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     const numFilteredCommits =
       (searchQuery === filteredHistoryCommitSearchQuery
         ? alreadyFiltered
-        : latestCompareState.filteredHistoryCommitSHAs.length) +
+        : compareState.filteredHistoryCommitSHAs.length) +
       newFilteredCommits.length
     if (numFilteredCommits < MinimumFilteredCommitsToLoad) {
       return this._loadNextCommitBatch(repository, numFilteredCommits)
@@ -3213,7 +3214,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   ): Promise<boolean> {
     if (
       isRepositoryGitPaused(repository.path) ||
-      isRepositoryAffectedByAssistedCommit(repository.path)
+      (await isRepositoryOverlappingAssistedCommit(repository.path))
     ) {
       return false
     }
@@ -7418,6 +7419,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     if (this.isWorktreeMoving(repository)) {
       return false
     }
+    this.assistedCommits.state.assertAvailable(repository)
+    if (this.repositoryStateCache.get(repository).isCommitting) {
+      return false
+    }
     return this.withAssistedCommitMutationResources(repository, async () => {
       this.assistedCommits.state.assertAvailable(repository)
       const state = this.repositoryStateCache.get(repository)
@@ -7453,6 +7458,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     fn: (signal: AbortSignal) => Promise<boolean>
   ): Promise<boolean> {
     if (this.isWorktreeMoving(repository)) {
+      return false
+    }
+    this.assistedCommits.state.assertAvailable(repository)
+    if (this.repositoryStateCache.get(repository).isGeneratingCommitMessage) {
       return false
     }
     return this.withAssistedCommitMutationResources(repository, async () => {
@@ -7501,6 +7510,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
     fn: () => Promise<void>
   ): Promise<void> {
     if (this.isWorktreeMoving(repository)) {
+      return
+    }
+    this.assistedCommits.state.assertAvailable(repository)
+    if (this.repositoryStateCache.get(repository).isPushPullFetchInProgress) {
       return
     }
     return this.withAssistedCommitMutationResources(repository, async () => {
@@ -11715,13 +11728,36 @@ export class AppStore extends TypedBaseStore<IAppState> {
   ): Promise<T> {
     this.assistedCommits.state.assertAvailable(repository)
     return withRepositoryGitOperation(repository.path, 'mutation', async () => {
-      const resources = await getAssistedCommitProtectedPaths(repository.path)
-      const paths = [
-        ...new Set(
-          await Promise.all(resources.map(path => canonicalMutationPath(path)))
-        ),
-      ]
-      return withRepositoryGitResourceMutation(paths, operation)
+      if (hasActiveAssistedCommitProtection()) {
+        const resources = await getAssistedCommitProtectedPaths(repository.path)
+        const paths = [
+          ...new Set(
+            await Promise.all(
+              resources.map(path => canonicalMutationPath(path))
+            )
+          ),
+        ]
+        return withRepositoryGitResourceMutation(paths, operation)
+      }
+      const canonical = await canonicalMutationPath(repository.path)
+      if (hasActiveAssistedCommitProtection()) {
+        const resources = await getAssistedCommitProtectedPaths(repository.path)
+        const paths = [
+          ...new Set(
+            await Promise.all(
+              resources.map(path => canonicalMutationPath(path))
+            )
+          ),
+        ]
+        return withRepositoryGitResourceMutation(paths, operation)
+      }
+      const paths =
+        repository.path === canonical
+          ? [canonical]
+          : [repository.path, canonical]
+      return withRepositoryGitResourceMutation(paths, operation, {
+        unresolvedRepositoryPath: repository.path,
+      })
     })
   }
 
