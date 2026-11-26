@@ -93,7 +93,7 @@ export interface ICommitGraphRow {
   readonly maxColumn: number
 }
 
-export const commitGraph_RowHeight = 32
+export const commitGraph_RowHeight = 28
 
 export function commitGraph_getColor(index: number) {
   if (index < commitGraph_Colors.length) {

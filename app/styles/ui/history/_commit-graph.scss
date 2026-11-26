@@ -247,7 +247,7 @@
     @include ellipsis;
     flex: 1 1 auto;
     min-width: 0;
-    font-size: calc(var(--font-size) + 1px);
+    font-size: var(--font-size);
     font-weight: var(--font-weight-semibold);
 
     &.empty-summary {
@@ -371,6 +371,7 @@
 
   .commitGraph-date {
     @include ellipsis;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary-color);
     min-width: 0;
     line-height: 18px;
