@@ -255,6 +255,12 @@
     }
   }
 
+  .commitGraph-commit.merge-commit .commitGraph-summary > span:not(.conventional-commit-prefix, .conventional-commit-badge) {
+    color: var(--text-secondary-color);
+    font-style: italic;
+    font-weight: var(--font-weight-normal);
+  }
+
   .commitGraph-ref-labels {
     display: flex;
     flex: 0 1 auto;
