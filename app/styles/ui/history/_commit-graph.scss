@@ -340,6 +340,41 @@
     min-width: max-content;
   }
 
+  .commitGraph-ref-icon {
+    display: none;
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    fill: currentColor;
+  }
+
+  @container commit-graph (max-width: 500px) {
+    .commitGraph-ref-labels.collapsible {
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .commitGraph-ref-labels.collapsible:not(:hover) .commitGraph-ref-label:not(.short) {
+      position: relative;
+      flex-shrink: 0;
+      min-width: max-content;
+      height: 16px;
+
+      .commitGraph-ref-icon {
+        display: block;
+      }
+
+      .commitGraph-ref-name {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+    }
+  }
+
   .commitGraph-committer-badge {
     display: flex;
     flex: 0 0 30px;

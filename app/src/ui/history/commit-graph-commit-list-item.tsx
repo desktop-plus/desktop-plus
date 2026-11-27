@@ -300,6 +300,7 @@ export class CommitGraphCommitListItem extends React.PureComponent<ICommitGraphC
     ]
     const className = classNames('commitGraph-ref-labels', {
       compact: commitGraph_isCompactRefLabelGroup(refNames),
+      collapsible: refNames.some(name => !commitGraph_isShortRefLabel(name)),
     })
 
     if (labels.length === 0 && tags.length === 0) {
@@ -331,7 +332,8 @@ export class CommitGraphCommitListItem extends React.PureComponent<ICommitGraphC
         tooltip={tag}
         direction={TooltipDirection.SOUTH_EAST}
       >
-        {tag}
+        <Octicon className="commitGraph-ref-icon" symbol={octicons.tag} />
+        <span className="commitGraph-ref-name">{tag}</span>
       </TooltippedContent>
     )
   }
@@ -358,6 +360,7 @@ export class CommitGraphCommitListItem extends React.PureComponent<ICommitGraphC
         {isCurrentBranch ? (
           <span className="commitGraph-ref-current-indicator" />
         ) : null}
+        <Octicon className="commitGraph-ref-icon" symbol={octicons.gitBranch} />
         <span className="commitGraph-ref-name">{branch.name}</span>
       </>
     )
