@@ -194,7 +194,7 @@ describe('Copilot account resolution', () => {
       undefined
     )
   })
-  it('selects only entitled accounts with their own assisted rollout flag outside preview', t => {
+  it('ignores the assisted rollout flag outside preview', t => {
     const previousPreview = process.env.GITHUB_DESKTOP_PREVIEW_FEATURES
     delete process.env.GITHUB_DESKTOP_PREVIEW_FEATURES
     t.after(() => {
@@ -212,7 +212,7 @@ describe('Copilot account resolution', () => {
         [assigned, optedIn],
         repository('alice')
       ),
-      optedIn
+      undefined
     )
     const assignedOptedIn = withCopilotAccess(alice, true, features)
     assert.equal(
@@ -220,7 +220,7 @@ describe('Copilot account resolution', () => {
         [optedIn, assignedOptedIn],
         repository('ALICE')
       ),
-      assignedOptedIn
+      undefined
     )
     for (const account of [
       assigned,
@@ -236,6 +236,14 @@ describe('Copilot account resolution', () => {
     assert.equal(
       getAccountForCopilot([assigned, optedIn], repository('alice')),
       assigned
+    )
+    process.env.GITHUB_DESKTOP_PREVIEW_FEATURES = '1'
+    assert.equal(
+      getAccountForCopilotAssistedCommits(
+        [optedIn, assignedOptedIn],
+        repository('ALICE')
+      ),
+      assignedOptedIn
     )
   })
 })
